@@ -3,12 +3,12 @@ import './SpiderChart.css';
 
 const SpiderChart = () => {
   const data = [
-    { label: 'Управление инцидентами и запросами пользователей', value: 4 },
-    { label: 'Управление проблемами', value: 1 },
-    { label: 'Управление доступом', value: 3 },
-    { label: 'Управление эмоциональным состоянием', value: 1 },
-    { label: 'Управление изменениями и релизами', value: 4 },
-    { label: 'Управление уровнем услуг', value: 1 }
+    { label: 'Коммуникация', value: 4 },
+    { label: 'Работа с критикой/обратной связью', value: 1 },
+    { label: 'Командная работа', value: 3 },
+    { label: 'Самоорганизация и планирование', value: 1 },
+    { label: 'Обучаемость', value: 4 },
+    { label: 'Инициативность и ответственность', value: 1 }
   ];
 
   const size = 350; // Размер для сетки оценок
@@ -118,7 +118,7 @@ const SpiderChart = () => {
         
         {/* Подписи в несколько строк */}
         {angles.map((angle, i) => {
-          const labelRadius = radius + 35; // Расстояние для подписей
+          const labelRadius = radius + 25; // Расстояние для подписей
           const x = center + labelRadius * Math.sin(angle);
           const y = center - labelRadius * Math.cos(angle);
           const lines = splitTextIntoLines(data[i].label, 12);

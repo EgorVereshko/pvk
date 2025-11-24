@@ -95,7 +95,7 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/events" element={<EventsStudent />} />
-        <Route path="/eventstutor" element={<EventsTutor />} />
+        <Route path="/events/tutor" element={<EventsTutor />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
