@@ -50,20 +50,20 @@ class Skill(models.Model):  # Компетенция
         return f'{self.name}'
 
 
-class Criteria(models.Model):
-    name = models.CharField(max_length=50)
-    description = models.TextField(max_length=1000)
-
-    def __str__(self):
-        return f'{self.name}'
-
-
 class UserSkill(models.Model):
     user = models.ForeignKey(UserProfile, models.CASCADE, related_name='skill_owner')
     skill = models.ForeignKey(Skill, models.CASCADE, related_name='skill_object')
 
     def __str__(self):
         return f'{self.user} - {self.skill}'
+
+
+class Criteria(models.Model):
+    name = models.CharField(max_length=50)
+    description = models.TextField(max_length=1000)
+
+    def __str__(self):
+        return f'{self.name}'
 
 
 class Team(models.Model):
