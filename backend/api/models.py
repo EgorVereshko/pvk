@@ -9,7 +9,7 @@ class UserProfile(models.Model):
     middle_name = models.CharField(max_length=50)  # Отчество
     phone_number = models.CharField(max_length=11, null=True, blank=True)
     telegram = models.CharField(max_length=50, null=True, blank=True)
-    email = models.CharField(max_length=50, null=True, blank=True)
+    email = models.CharField(null=True, blank=True)
     vk = models.CharField(max_length=100, null=True, blank=True)
     university = models.CharField(max_length=200, null=True, blank=True)
     year_of_study = models.CharField(max_length=4, null=True, blank=True)

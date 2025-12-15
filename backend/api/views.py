@@ -1,11 +1,14 @@
+from django.contrib.auth import authenticate
 from rest_framework import generics, status
+from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth.models import User
 from .models import *
-from .serializers import RegisterSerializer, UserProfileSerializer
+from .serializers import *
 
 
 class RegisterView(generics.CreateAPIView):
@@ -30,9 +33,12 @@ class RegisterView(generics.CreateAPIView):
         }, status=status.HTTP_201_CREATED)
 
 
+
+
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def get_current_user(request):
+def get_profile(request):
     try:
         profile = request.user.profile
         serializer = UserProfileSerializer(profile)
@@ -59,3 +65,6 @@ def update_user(request):
             {'error': 'Профиль не найден'},
             status=status.HTTP_404_NOT_FOUND
         )
+
+
+

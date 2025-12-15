@@ -14,7 +14,7 @@ const Header = ({ onLogout, user }) => {
       <a href='/' className='header__item'>Главная</a>
       <a href='#' className='header__item'>Веб сервис стажировок</a>
       <a href='/profile' className='header__item'>
-        <img className='header__ava' src='/ava.jpg' />
+        <img className='header__ava' src={user.photo_url} />
       </a>
       {user && (
         <a 
