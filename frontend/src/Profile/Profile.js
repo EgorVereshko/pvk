@@ -5,6 +5,8 @@ import Header from '../Header/Header';
 import SpiderChart from '../SpiderChart/SpiderChart';
 import './Profile.css';
 
+
+
 const Profile = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -81,22 +83,16 @@ const Profile = () => {
         <div className="tab-content">
           {activeTab === 'profile' && (
             <div className="profile-info">
-              <h1>Профиль пользователя</h1>
-              
+            
               {error && (
                 <div className="error-message">
                   {error}
                 </div>
               )}
               
-              <div className="user-card">
-                <h2>Информация о пользователе</h2>
-                <div className="user-details">
-                  <p><strong>Имя пользователя:</strong> {user.username}</p>
-                  <p><strong>Имя:</strong> {user.name}</p>
-                  <p><strong>Возраст:</strong> {user.age}</p>
-                  <p><strong>Описание:</strong> {user.description || 'Не указано'}</p>
-                </div>
+              <h1>Информация о пользователе</h1>
+              <div className="user-details">
+                <p><strong>Имя:</strong> {user.first_name} {user.last_name}</p>
               </div>
             </div>
           )}
@@ -107,9 +103,9 @@ const Profile = () => {
                 <div className="lk-left">
                   <h1>Личный кабинет</h1>
                   <div className='lk-info'>
-                    <div className='lk-photo'></div>
+                    <img className='lk-photo' src={user.photo_url}/>
                     <div className='lk-text'>
-                      <p>Иванов Иван Иванович</p>
+                      <p>{user.first_name} {user.last_name}</p>
                       <p>4 курс РИ 410947</p>
                       <p>команда 1</p>
                     </div>
@@ -117,7 +113,7 @@ const Profile = () => {
                 </div>
 
                 <div className='lk-right'>
-                  <p>Статистика</p>
+                  <h2>Статистика</h2>
                   <div className='stats'>
                     <SpiderChart />
                   </div>

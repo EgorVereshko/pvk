@@ -1,41 +1,61 @@
+from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
-from django.contrib.auth.models import User
-from .models import UserProfile
+from .models import *
+
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
-    name = serializers.CharField(write_only=True)
-    age = serializers.IntegerField(write_only=True)
-    description = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    last_name = serializers.CharField(write_only=True)
+    first_name = serializers.CharField(write_only=True)
+    middle_name = serializers.CharField(write_only=True)
 
     class Meta:
         model = User
-        fields = ['username', 'password', 'name', 'age', 'description']
+        fields = ['username', 'password', 'last_name', 'first_name', 'middle_name']
+
+    def validate_username(self, value):
+        if User.objects.filter(username=value).exists():
+            raise serializers.ValidationError("Пользователь с таким именем уже существует.")
+        return value
 
     def create(self, validated_data):
-        name = validated_data.pop('name')
-        age = validated_data.pop('age')
-        description = validated_data.pop('description', '')
+        last_name = validated_data.pop('last_name')
+        first_name = validated_data.pop('first_name')
+        middle_name = validated_data.pop('middle_name')
         password = validated_data.pop('password')
-        
+
         user = User.objects.create_user(
             username=validated_data['username'],
             password=password
         )
-        
+
         UserProfile.objects.create(
             user=user,
-            name=name,
-            age=age,
-            description=description
+            last_name=last_name,
+            first_name=first_name,
+            middle_name=middle_name
         )
-        
+
         return user
 
+
 class UserProfileSerializer(serializers.ModelSerializer):
-    username = serializers.CharField(source='user.username', read_only=True)
-    
+    photo_url = serializers.SerializerMethodField()
+
     class Meta:
         model = UserProfile
-        fields = ['id', 'username', 'name', 'age', 'description']
-        read_only_fields = ['id']
+        fields = [
+            'last_name', 'first_name', 'middle_name',
+            'phone_number', 'telegram', 'email', 'vk',
+            'university', 'year_of_study', 'description', 'photo_url'
+        ]
+
+    def get_photo_url(self, obj):
+        if obj.photo and hasattr(obj.photo, 'url'):
+            return obj.photo.url
+        return '/media/default_avatar.jpeg'
+
+
+class LoginSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    password = serializers.CharField()

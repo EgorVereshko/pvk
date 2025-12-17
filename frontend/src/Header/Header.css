@@ -49,4 +49,6 @@
     border-radius: 50%;
     background: linear-gradient(135deg, #667eea, #764ba2);
     flex-shrink: 0;
+    object-fit: cover;
+    object-position: center;
 }

@@ -1,17 +1,17 @@
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import axios from 'axios';
-import { useNavigate, Link } from 'react-router-dom';
+import {useNavigate, Link} from 'react-router-dom';
 import './Register.css';
 
 function Register() {
   const [formData, setFormData] = useState({
     username: '',
     password: '',
-    name: '',
-    age: '',
-    description: '',
+    last_name: '',
+    first_name: '',
+    middle_name: ''
   });
-  const [error, setError] = useState('');
+  const [errors, setErrors] = useState({});
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -23,7 +23,6 @@ function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
 
     try {
       const response = await axios.post('http://localhost:8000/api/register/', formData);
@@ -31,22 +30,10 @@ function Register() {
       localStorage.setItem('access_token', response.data.access);
       localStorage.setItem('refresh_token', response.data.refresh);
       navigate('/');
-    } catch (err) {
-      if (err.response?.data) {
-        const errors = err.response.data;
-        if (errors.username) {
-          setError(`Имя пользователя: ${errors.username[0]}`);
-        } else if (errors.password) {
-          setError(`Пароль: ${errors.password[0]}`);
-        } else if (errors.non_field_errors) {
-          setError(errors.non_field_errors[0]);
-        } else {
-          setError('Ошибка при регистрации. Проверьте все поля.');
-        }
-      } else {
-        setError('Ошибка при регистрации');
+    } catch (error) {
+      if (error.response && error.response.data) {
+        setErrors(error.response.data);
       }
-      console.error('Ошибка регистрации:', err);
     }
   };
 
@@ -56,7 +43,7 @@ function Register() {
         <h2>Регистрация</h2>
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
-            <label>Имя пользователя</label>
+            <label>Логин</label>
             <input
               type="text"
               name="username"
@@ -65,7 +52,9 @@ function Register() {
               required
               className="auth-input"
             />
+            {errors.username && <span>{errors.username}</span>}
           </div>
+
           <div className="form-group">
             <label>Пароль (минимум 8 символов)</label>
             <input
@@ -77,44 +66,49 @@ function Register() {
               minLength={8}
               className="auth-input"
             />
+            {errors.password && <span>{errors.password}</span>}
           </div>
+
+          <div className="form-group">
+            <label>Фамилия</label>
+            <input
+              type="text"
+              name="last_name"
+              value={formData.last_name}
+              onChange={handleChange}
+              required
+              className="auth-input"
+            />
+            {errors.last_name && <span>{errors.last_name}</span>}
+          </div>
+
           <div className="form-group">
             <label>Имя</label>
             <input
               type="text"
-              name="name"
-              value={formData.name}
+              name="first_name"
+              value={formData.first_name}
               onChange={handleChange}
               required
               className="auth-input"
             />
+            {errors.first_name && <span>{errors.first_name}</span>}
           </div>
+
           <div className="form-group">
-            <label>Возраст</label>
+            <label>Отчество</label>
             <input
-              type="number"
-              name="age"
-              value={formData.age}
+              type="text"
+              name="middle_name"
+              value={formData.middle_name}
               onChange={handleChange}
               required
-              min="1"
               className="auth-input"
             />
+            {errors.middle_name && <span>{errors.middle_name}</span>}
           </div>
-          <div className="form-group">
-            <label>Описание</label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              rows="4"
-              className="auth-textarea"
-            />
-          </div>
-          {error && <p className="error-message">{error}</p>}
-          <button type="submit" className="auth-submit-button">
-            Зарегистрироваться
-          </button>
+
+          <button type="submit" className="auth-submit-button">Зарегистрироваться</button>
         </form>
         <p className="auth-link">
           Уже есть аккаунт? <Link to="/login">Войти</Link>
