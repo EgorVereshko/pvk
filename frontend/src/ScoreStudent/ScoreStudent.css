@@ -1,0 +1,152 @@
+.score-container {
+  min-height: 100vh;
+  background: #f6f7fb;
+  font-family: Inter, Arial, sans-serif;
+}
+
+.score-content {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+.score-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 30px 40px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.05);
+}
+
+.score-title {
+  text-align: center;
+  font-size: 26px;
+  font-weight: 600;
+  margin-bottom: 30px;
+  color: #1f2937;
+}
+
+.student-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 260px;
+  margin-bottom: 30px;
+}
+
+.student-selector label {
+  font-size: 14px;
+  color: #374151;
+}
+
+.student-selector select {
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  font-size: 15px;
+}
+
+.competence-sliders {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.competence-row {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  align-items: center;
+  gap: 20px;
+}
+
+.competence-name {
+  font-size: 15px;
+  font-weight: 500;
+  color: #111827;
+}
+
+.slider-wrapper {
+  position: relative;
+}
+
+.slider-wrapper input[type="range"] {
+  width: 100%;
+  height: 2px;
+  background: #1f2937;
+  appearance: none;
+}
+
+.slider-wrapper input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: #111827;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.slider-wrapper input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: #111827;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.score-diagram {
+  margin-top: 40px;
+  background: white;
+  border-radius: 14px;
+  padding: 30px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.05);
+  display: flex;
+  justify-content: center;
+}
+
+.loading {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  font-size: 16px;
+}
+
+.slider-ticks {
+  display: flex;
+  justify-content: space-between;
+  position: absolute;
+  width: 100%;
+  top: 10px;
+  pointer-events: none;
+}
+
+.slider-tick {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform: translateX(0);
+}
+
+.tick-line {
+  width: 1px;
+  height: 10px;
+  background: #1f2937;
+  margin-bottom: 6px;
+}
+
+.tick-value {
+  font-size: 12px;
+  color: #1f2937;
+}
+
+/* adaptive */
+@media (max-width: 768px) {
+  .competence-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .score-card {
+    padding: 20px;
+  }
+}
