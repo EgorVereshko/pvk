@@ -1,6 +1,6 @@
-import React, {useState} from 'react';
-import axios from 'axios';
-import {useNavigate, Link} from 'react-router-dom';
+import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import api from '../api';
 import './Register.css';
 
 function Register() {
@@ -11,29 +11,52 @@ function Register() {
     first_name: '',
     middle_name: ''
   });
+  
   const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
+  const fieldConfig = [
+    { name: 'username', label: 'Логин', type: 'text' },
+    { name: 'password', label: 'Пароль (минимум 8 символов)', type: 'password' },
+    { name: 'last_name', label: 'Фамилия', type: 'text' },
+    { name: 'first_name', label: 'Имя', type: 'text' },
+    { name: 'middle_name', label: 'Отчество', type: 'text' }
+  ];
+
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+    setIsSubmitting(true);
+    setErrors({});
+    
     try {
-      const response = await axios.post('http://localhost:8000/api/register/', formData);
+      const res = await api.post('/api/register/', formData);
       
-      localStorage.setItem('access_token', response.data.access);
-      localStorage.setItem('refresh_token', response.data.refresh);
-      navigate('/');
-    } catch (error) {
-      if (error.response && error.response.data) {
-        setErrors(error.response.data);
+      localStorage.setItem('access_token', res.data.access);
+      localStorage.setItem('refresh_token', res.data.refresh);
+      
+      navigate('/profile');
+      
+    } catch (err) {
+      if (err.response?.data) {
+        setErrors(err.response.data);
+      } else {
+        setErrors({ general: 'Ошибка соединения с сервером. Попробуйте позже.' });
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -41,75 +64,51 @@ function Register() {
     <div className="auth-container">
       <div className="auth-card">
         <h2>Регистрация</h2>
+
+        {errors.general && (
+          <div className="error-message general-error">
+            {errors.general}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="auth-form">
-          <div className="form-group">
-            <label>Логин</label>
-            <input
-              type="text"
-              name="username"
-              value={formData.username}
-              onChange={handleChange}
-              required
-              className="auth-input"
-            />
-            {errors.username && <span>{errors.username}</span>}
-          </div>
+          {fieldConfig.map((field) => (
+            <div className="form-group" key={field.name}>
+              <label htmlFor={field.name}>{field.label}</label>
+              <input
+                id={field.name}
+                type={field.type}
+                name={field.name}
+                value={formData[field.name]}
+                onChange={handleChange}
+                required
+                className={`auth-input ${errors[field.name] ? 'error' : ''}`}
+                minLength={field.name === 'password' ? 8 : undefined}
+                disabled={isSubmitting}
+                autoComplete={
+                  field.name === 'password' ? 'new-password' : 
+                  field.name === 'username' ? 'username' : 'name'
+                }
+              />
+              {errors[field.name] && (
+                <span className="error-text">
+                  {Array.isArray(errors[field.name]) 
+                    ? errors[field.name].join(', ') 
+                    : errors[field.name]}
+                </span>
+              )}
+            </div>
+          ))}
 
-          <div className="form-group">
-            <label>Пароль (минимум 8 символов)</label>
-            <input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-              minLength={8}
-              className="auth-input"
-            />
-            {errors.password && <span>{errors.password}</span>}
-          </div>
-
-          <div className="form-group">
-            <label>Фамилия</label>
-            <input
-              type="text"
-              name="last_name"
-              value={formData.last_name}
-              onChange={handleChange}
-              required
-              className="auth-input"
-            />
-            {errors.last_name && <span>{errors.last_name}</span>}
-          </div>
-
-          <div className="form-group">
-            <label>Имя</label>
-            <input
-              type="text"
-              name="first_name"
-              value={formData.first_name}
-              onChange={handleChange}
-              required
-              className="auth-input"
-            />
-            {errors.first_name && <span>{errors.first_name}</span>}
-          </div>
-
-          <div className="form-group">
-            <label>Отчество</label>
-            <input
-              type="text"
-              name="middle_name"
-              value={formData.middle_name}
-              onChange={handleChange}
-              required
-              className="auth-input"
-            />
-            {errors.middle_name && <span>{errors.middle_name}</span>}
-          </div>
-
-          <button type="submit" className="auth-submit-button">Зарегистрироваться</button>
+          <button 
+            type="submit" 
+            className="auth-submit-button"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? 'Регистрация...' : 'Зарегистрироваться'}
+          </button>
         </form>
+
         <p className="auth-link">
           Уже есть аккаунт? <Link to="/login">Войти</Link>
         </p>

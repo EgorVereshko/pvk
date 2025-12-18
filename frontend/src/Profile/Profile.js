@@ -1,78 +1,63 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api';
 import Header from '../Header/Header';
 import SpiderChart from '../SpiderChart/SpiderChart';
+import LineChart from '../LineChart/LineChart';
 import './Profile.css';
-
-
 
 const Profile = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('profile');
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({});
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchUser = async () => {
-      const token = localStorage.getItem('access_token');
-      
-      if (!token) {
-        navigate('/');
-        return;
-      }
-
-      try {
-        const response = await axios.get('http://localhost:8000/api/user/', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setUser(response.data);
-        setError(null);
-      } catch (err) {
-        if (err.response?.status === 401) {
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('refresh_token');
-          navigate('/');
-        } else {
-          setError('Ошибка при загрузке данных пользователя');
-        }
-        console.error('Ошибка:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUser();
+    fetchUserProfile();
   }, [navigate]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    navigate('/');
+  const fetchUserProfile = async () => {
+    try {
+      const res = await api.get('/api/user/');
+      setUser(res.data);
+      setEditForm(res.data);
+    } catch (err) {
+      if (err.response?.status === 401) {
+        localStorage.clear();
+        navigate('/');
+      } else {
+        setError('Ошибка при загрузке профиля');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
-  if (loading) {
-    return <div className="loading">Загрузка профиля...</div>;
-  }
+  if (loading) return <div className="loading">Загрузка профиля...</div>;
+  if (!user) return <Navigate to="/" replace />;
 
-  if (!user) {
-    return <Navigate to="/" replace />;
-  }
+  const renderFieldValue = (value, placeholder = 'Не указано') =>
+    value && value.trim()
+      ? value
+      : <span className="placeholder">{placeholder}</span>;
 
   return (
     <div className="profile-container">
-      <Header onLogout={handleLogout} user={user} />
-      
+      <Header onLogout={() => { localStorage.clear(); navigate('/'); }} user={user} />
+
       <div className="profile-content">
         <div className="tabs">
-          <button 
+          <button
             className={`tab ${activeTab === 'profile' ? 'active' : ''}`}
             onClick={() => setActiveTab('profile')}
           >
             Профиль пользователя
           </button>
-          <button 
+
+          <button
             className={`tab ${activeTab === 'stats' ? 'active' : ''}`}
             onClick={() => setActiveTab('stats')}
           >
@@ -81,40 +66,32 @@ const Profile = () => {
         </div>
 
         <div className="tab-content">
-          {activeTab === 'profile' && (
-            <div className="profile-info">
-            
-              {error && (
-                <div className="error-message">
-                  {error}
-                </div>
-              )}
-              
-              <h1>Информация о пользователе</h1>
-              <div className="user-details">
-                <p><strong>Имя:</strong> {user.first_name} {user.last_name}</p>
-              </div>
-            </div>
-          )}
-
           {activeTab === 'stats' && (
             <div className="stats-info">
               <div className="lk-content">
                 <div className="lk-left">
                   <h1>Личный кабинет</h1>
-                  <div className='lk-info'>
-                    <img className='lk-photo' src={user.photo_url}/>
-                    <div className='lk-text'>
-                      <p>{user.first_name} {user.last_name}</p>
-                      <p>4 курс РИ 410947</p>
-                      <p>команда 1</p>
+
+                  <div className="lk-info">
+                    <img
+                      className="lk-photo"
+                      src={user.photo_url || '/default_avatar.jpeg'}
+                      alt="avatar"
+                    />
+
+                    <div className="lk-text">
+                      <h3>{user.first_name} {user.last_name}</h3>
+                      <p>4 курс РИ-410947</p>
+                      <p>Команда: team1</p>
                     </div>
                   </div>
+
+                  <LineChart />
                 </div>
 
-                <div className='lk-right'>
+                <div className="lk-right">
                   <h2>Статистика</h2>
-                  <div className='stats'>
+                  <div className="stats">
                     <SpiderChart />
                   </div>
                 </div>
