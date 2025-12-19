@@ -1,44 +1,96 @@
-from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate, logout, login
+from django.middleware.csrf import get_token
+from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework import generics, status
-from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth.models import User
 from .models import *
 from .serializers import *
 
 
-class RegisterView(generics.CreateAPIView):
-    queryset = User.objects.all()
-    permission_classes = [AllowAny]
-    serializer_class = RegisterSerializer
+@api_view(['GET'])
+@ensure_csrf_cookie
+@permission_classes([AllowAny])
+def get_csrf_token(request):
+    token = get_token(request)
+    return Response({'csrfToken': str(token)})
 
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.save()
 
-        refresh = RefreshToken.for_user(user)
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def register(request):
+    serializer = RegisterSerializer(data=request.data)
+    if serializer.is_valid():
+        user_profile = serializer.save()
 
-        return Response({
-            'user': {
-                'id': user.id,
+        user = authenticate(
+            username=user_profile.user.username,
+            password=request.data.get('password')
+        )
+        if user:
+            login(request, user)
+            return Response({
+                'user_id': user.id,
                 'username': user.username,
-            },
-            'refresh': str(refresh),
-            'access': str(refresh.access_token),
-        }, status=status.HTTP_201_CREATED)
+                'is_authenticated': request.user.is_authenticated
+            }, status=status.HTTP_201_CREATED)
+
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def login_view(request):
+    serializer = LoginSerializer(data=request.data)
+    if serializer.is_valid():
+        username = serializer.validated_data['username']
+        password = serializer.validated_data['password']
 
+        user = authenticate(username=username, password=password)
+
+        if user:
+            login(request, user)
+            return Response({
+                'user_id': user.id,
+                'username': user.username,
+                'is_authenticated': request.user.is_authenticated
+            })
+        else:
+            return Response({'error': 'Неверные учетные данные'},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def logout_view(request):
+    try:
+        logout(request)
+        return Response({'message': 'Успешный выход'}, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({'error': 'Ошибка при выходе'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def get_profile(request):
+def check_auth(request):
+    if request.user.is_authenticated:
+        return Response({
+            'is_authenticated': True,
+            'user_id': request.user.id,
+            'username': request.user.username,
+        })
+    else:
+        return Response({'is_authenticated': False})
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_user(request):
     try:
         profile = request.user.profile
         serializer = UserProfileSerializer(profile)
@@ -67,4 +119,23 @@ def update_user(request):
         )
 
 
+@api_view(['GET'])
+def get_student_events(request):
+    profile = UserProfile.objects.get(user=request.user)
+    team = TeamMember.objects.get(member=profile).team
 
+    events = Event.objects.filter(team=team)
+    serializer = StudentEventsSerializer(events, many=True)
+
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+def get_tutor_events(request):
+    profile = UserProfile.objects.get(user=request.user)
+    teams = Team.objects.filter(tutor=profile)
+
+    events = Event.objects.filter(team__in=teams).select_related('team')
+    serializer = TutorEventsSerializer(events, many=True)
+
+    return Response(serializer.data, status=status.HTTP_200_OK)

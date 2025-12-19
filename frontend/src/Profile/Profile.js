@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, Navigate } from 'react-router-dom';
+import React, {useState, useEffect} from 'react';
+import {useNavigate, Navigate} from 'react-router-dom';
 import axios from 'axios';
 import Header from '../Header/Header';
 import SpiderChart from '../SpiderChart/SpiderChart';
 import './Profile.css';
 
 
-
 const Profile = () => {
   const [user, setUser] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('profile');
@@ -16,28 +16,18 @@ const Profile = () => {
 
   useEffect(() => {
     const fetchUser = async () => {
-      const token = localStorage.getItem('access_token');
-      
-      if (!token) {
-        navigate('/');
-        return;
-      }
-
       try {
-        const response = await axios.get('http://localhost:8000/api/user/', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setUser(response.data);
-        setError(null);
-      } catch (err) {
-        if (err.response?.status === 401) {
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('refresh_token');
-          navigate('/');
-        } else {
-          setError('Ошибка при загрузке данных пользователя');
+        const authResponse = await axios.get('/api/check_auth/');
+        if (authResponse.data.is_authenticated) {
+          setIsAuthenticated(true);
+
+          const profileResponse = await axios.get('/api/user/');
+          setUser(profileResponse.data)
         }
-        console.error('Ошибка:', err);
+      } catch (err) {
+        console.log('Error', err.message);
+        setIsAuthenticated(false);
+        setUser(null);
       } finally {
         setLoading(false);
       }
@@ -46,10 +36,14 @@ const Profile = () => {
     fetchUser();
   }, [navigate]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    navigate('/');
+  const handleLogout = async () => {
+    try {
+      await axios.post('/api/logout/');
+      setIsAuthenticated(false);
+      setUser(null);
+    } catch (error) {
+      console.error('Ошибка при выходе:', error);
+    }
   };
 
   if (loading) {
@@ -57,22 +51,22 @@ const Profile = () => {
   }
 
   if (!user) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/" replace/>;
   }
 
   return (
     <div className="profile-container">
-      <Header onLogout={handleLogout} user={user} />
-      
+      <Header onLogout={handleLogout} user={user}/>
+
       <div className="profile-content">
         <div className="tabs">
-          <button 
+          <button
             className={`tab ${activeTab === 'profile' ? 'active' : ''}`}
             onClick={() => setActiveTab('profile')}
           >
             Профиль пользователя
           </button>
-          <button 
+          <button
             className={`tab ${activeTab === 'stats' ? 'active' : ''}`}
             onClick={() => setActiveTab('stats')}
           >
@@ -83,13 +77,13 @@ const Profile = () => {
         <div className="tab-content">
           {activeTab === 'profile' && (
             <div className="profile-info">
-            
+
               {error && (
                 <div className="error-message">
                   {error}
                 </div>
               )}
-              
+
               <h1>Информация о пользователе</h1>
               <div className="user-details">
                 <p><strong>Имя:</strong> {user.first_name} {user.last_name}</p>
@@ -115,7 +109,7 @@ const Profile = () => {
                 <div className='lk-right'>
                   <h2>Статистика</h2>
                   <div className='stats'>
-                    <SpiderChart />
+                    <SpiderChart/>
                   </div>
                 </div>
               </div>

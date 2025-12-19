@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import axios from 'axios';
-import { useNavigate, Link } from 'react-router-dom';
+import {useNavigate, Link} from 'react-router-dom';
 import './Login.css';
 
 function Login() {
@@ -14,21 +14,19 @@ function Login() {
     setError('');
 
     try {
-      const response = await axios.post('http://localhost:8000/api/token/', {
+      const response = await axios.post('http://localhost:8000/api/login/', {
         username,
         password,
       });
-
-      localStorage.setItem('access_token', response.data.access);
-      localStorage.setItem('refresh_token', response.data.refresh);
       navigate('/');
-    } catch (err) {
-      if (err.response?.status === 401) {
+    } catch (error) {
+      if (error.response?.status === 401) {
         setError('Неверное имя пользователя или пароль');
       } else {
         setError('Ошибка при входе. Попробуйте еще раз.');
+        console.error('Ошибка входа:', error)
       }
-      console.error('Ошибка входа:', err);
+      console.error('Ошибка входа:', error);
     }
   };
 
