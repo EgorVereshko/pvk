@@ -63,19 +63,25 @@ class UserProfileSerializer(serializers.ModelSerializer):
 class StudentEventsSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     title = serializers.CharField()
-    date = serializers.DateTimeField(source='datetime', format='%Y-%m-%d')
+    datetime = serializers.DateTimeField(
+        # source='datetime',
+        # format='%Y-%m-%d'
+    )
 
     class Meta:
         model = Event
-        fields = ['id', 'title', 'date']
+        fields = ['id', 'title', 'datetime']
 
 
 class TutorEventsSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     title = serializers.CharField()
     team_name = serializers.CharField(source='team.name', read_only=True)
-    date = serializers.DateTimeField(source='datetime', format='%Y-%m-%d')
+    datetime = serializers.DateTimeField(
+        # source='datetime',
+        # format='%Y-%m-%d'
+    )
 
     class Meta:
         model = Event
-        fields = ['id', 'title', 'date', 'team_name']
+        fields = ['id', 'title', 'datetime', 'team_name']

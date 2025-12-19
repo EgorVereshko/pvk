@@ -45,7 +45,7 @@ const EventsStudent = () => {
           const formattedEvents = data.map(event => ({
             id: event.id,
             name: event.title,
-            date: event.date,
+            date: event.datetime,
           }));
           setEvents(formattedEvents);
         } else {

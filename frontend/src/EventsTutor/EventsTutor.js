@@ -322,7 +322,7 @@ const EventsTutor = () => {
             id: event.id,
             name: event.title,
             team: event.team_name,
-            datetime: event.datetime,
+            date: event.datetime,
           }));
           setEvents(formattedEvents);
         } else {
@@ -345,7 +345,7 @@ const EventsTutor = () => {
 
   const eventsWithType = events.map(event => ({
     ...event,
-    type: getEventType(event.datetime)
+    type: getEventType(event.date)
   }));
 
   const teams = [...new Set(events.map(event => event.team))];
