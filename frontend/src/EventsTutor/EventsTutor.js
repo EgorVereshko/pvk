@@ -42,7 +42,7 @@
 //   useEffect(() => {
 //     const fetchUser = async () => {
 //       const token = localStorage.getItem('access_token');
-      
+
 //       if (!token) {
 //         navigate('/');
 //         return;
@@ -138,7 +138,7 @@
 //   return (
 //     <div className="profile-container">
 //       <Header onLogout={handleLogout} user={user} />
-      
+
 //       <div className="profile-content">
 //         <div className="content-type-switcher">
 //           <button 
@@ -180,7 +180,7 @@
 //                 Создать
 //               </button>
 //             </div>
-            
+
 //             <div className="filter-section">
 //               <div className="filter-buttons">
 //                 <button 
@@ -271,14 +271,15 @@
 // export default EventsTutor;
 
 
-import React, { useState, useEffect } from 'react';
-import { useNavigate, Navigate } from 'react-router-dom';
+import React, {useState, useEffect} from 'react';
+import {useNavigate, Navigate} from 'react-router-dom';
 import axios from 'axios';
 import Header from '../Header/Header';
 import './EventsTutor.css';
 
 const EventsTutor = () => {
   const [user, setUser] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('upcoming');
@@ -290,14 +291,51 @@ const EventsTutor = () => {
   const [showMenu, setShowMenu] = useState(null);
   const navigate = useNavigate();
 
-  const [events] = useState([
-    { id: 1, name: 'Техническое собеседование', team: 'ЛК1', date: '2025-12-12' },
-    { id: 2, name: 'Оценка soft skills', team: 'ПВК', date: '2025-05-05' },
-    { id: 3, name: 'Групповая дискуссия', team: 'ЛК1', date: '2025-12-25' },
-    { id: 4, name: 'Вводное собрание', team: 'ЛК2', date: '2025-11-28' },
-    { id: 5, name: 'Тестирование навыков', team: 'Команда3', date: '2025-11-22' },
-    { id: 6, name: 'Финальное интервью', team: 'ЛК1', date: '2025-12-30' }
-  ]);
+  const [events, setEvents] = useState([]);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const authResponse = await axios.get('/api/check_auth/');
+        if (authResponse.data.is_authenticated) {
+          setIsAuthenticated(true);
+
+          const profileResponse = await axios.get('/api/user/');
+          setUser(profileResponse.data)
+        }
+      } catch (error) {
+        console.log('Error', error.message);
+        setIsAuthenticated(false);
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const fetchEvents = async () => {
+      try {
+        const res = await fetch('/api/tutor_events/');
+
+        if (res.ok) {
+          const data = await res.json();
+          const formattedEvents = data.map(event => ({
+            id: event.id,
+            name: event.title,
+            team: event.team_name,
+            date: event.datetime,
+          }));
+          setEvents(formattedEvents);
+        } else {
+          console.error('Ошибка загрузки мероприятий');
+        }
+      } catch (error) {
+        console.error('Сетевая ошибка:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUser().then(fetchEvents);
+  }, [navigate]);
 
   const getEventType = (eventDate) => {
     const today = new Date();
@@ -312,42 +350,14 @@ const EventsTutor = () => {
 
   const teams = [...new Set(events.map(event => event.team))];
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      const token = localStorage.getItem('access_token');
-      
-      if (!token) {
-        navigate('/');
-        return;
-      }
-
-      try {
-        const response = await axios.get('http://localhost:8000/api/user/', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setUser(response.data);
-        setError(null);
-      } catch (err) {
-        if (err.response?.status === 401) {
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('refresh_token');
-          navigate('/');
-        } else {
-          setError('Ошибка при загрузке данных пользователя');
-        }
-        console.error('Ошибка:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUser();
-  }, [navigate]);
-
-  const handleLogout = () => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    navigate('/');
+  const handleLogout = async () => {
+    try {
+      await axios.post('/api/logout/');
+      setIsAuthenticated(false);
+      setUser(null);
+    } catch (error) {
+      console.error('Ошибка при выходе:', error);
+    }
   };
 
   const handleSort = (field) => {
@@ -386,7 +396,7 @@ const EventsTutor = () => {
     .filter(event => selectedTeams.length === 0 || selectedTeams.includes(event.team))
     .sort((a, b) => {
       if (sortBy === 'name') {
-        return sortOrder === 'asc' 
+        return sortOrder === 'asc'
           ? a.name.localeCompare(b.name)
           : b.name.localeCompare(a.name);
       } else if (sortBy === 'team') {
@@ -405,13 +415,13 @@ const EventsTutor = () => {
   }
 
   if (!user) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/" replace/>;
   }
 
   return (
     <div className="profile-container">
-      <Header onLogout={handleLogout} user={user} />
-      
+      <Header onLogout={handleLogout} user={user}/>
+
       <div className="profile-content">
         <div className="events-header-main">
           <h1>
@@ -425,13 +435,13 @@ const EventsTutor = () => {
         {/* Обертка для всех табов в одной строке */}
         <div className="tabs-container">
           <div className="tabs">
-            <button 
+            <button
               className={`tab ${activeTab === 'upcoming' ? 'active' : ''}`}
               onClick={() => setActiveTab('upcoming')}
             >
               Предстоящие
             </button>
-            <button 
+            <button
               className={`tab ${activeTab === 'completed' ? 'active' : ''}`}
               onClick={() => setActiveTab('completed')}
             >
@@ -440,13 +450,13 @@ const EventsTutor = () => {
           </div>
 
           <div className="tabs content-type-tabs">
-            <button 
+            <button
               className={`tab ${contentType === 'checklist' ? 'active' : ''}`}
               onClick={() => setContentType('checklist')}
             >
               Чек-листы
             </button>
-            <button 
+            <button
               className={`tab ${contentType === 'assessment' ? 'active' : ''}`}
               onClick={() => setContentType('assessment')}
             >
@@ -459,19 +469,19 @@ const EventsTutor = () => {
           <div className="events-info">
             <div className="filter-section">
               <div className="filter-buttons">
-                <button 
+                <button
                   className={`filter-button name-button ${sortBy === 'name' ? 'active' : ''}`}
                   onClick={() => handleSort('name')}
                 >
                   Название {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
                 </button>
-                <button 
+                <button
                   className={`filter-button team-filter ${showTeamFilter ? 'active' : ''}`}
                   onClick={toggleTeamFilter}
                 >
                   Команда {showTeamFilter && '▼'}
                 </button>
-                <button 
+                <button
                   className={`filter-button date-button ${sortBy === 'date' ? 'active' : ''}`}
                   onClick={() => handleSort('date')}
                 >
@@ -508,7 +518,7 @@ const EventsTutor = () => {
                     </div>
                   </div>
                   <div className="event-actions">
-                    <button 
+                    <button
                       className="menu-button"
                       onClick={() => toggleMenu(event.id)}
                     >
@@ -525,7 +535,7 @@ const EventsTutor = () => {
                         <button onClick={() => handleMenuAction('view', event.id)}>
                           Посмотреть
                         </button>
-                        <button 
+                        <button
                           onClick={() => handleMenuAction('delete', event.id)}
                           className="delete-action"
                         >

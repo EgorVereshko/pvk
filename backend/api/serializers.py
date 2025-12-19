@@ -1,4 +1,3 @@
-from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from .models import *
 
@@ -13,10 +12,10 @@ class RegisterSerializer(serializers.ModelSerializer):
         model = User
         fields = ['username', 'password', 'last_name', 'first_name', 'middle_name']
 
-    def validate_username(self, value):
-        if User.objects.filter(username=value).exists():
+    def validate_username(self, username):
+        if User.objects.filter(username=username).exists():
             raise serializers.ValidationError("Пользователь с таким именем уже существует.")
-        return value
+        return username
 
     def create(self, validated_data):
         last_name = validated_data.pop('last_name')
@@ -39,6 +38,11 @@ class RegisterSerializer(serializers.ModelSerializer):
         return user
 
 
+class LoginSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    password = serializers.CharField()
+
+
 class UserProfileSerializer(serializers.ModelSerializer):
     photo_url = serializers.SerializerMethodField()
 
@@ -56,6 +60,28 @@ class UserProfileSerializer(serializers.ModelSerializer):
         return '/media/default_avatar.jpeg'
 
 
-class LoginSerializer(serializers.Serializer):
-    username = serializers.CharField()
-    password = serializers.CharField()
+class StudentEventsSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    title = serializers.CharField()
+    datetime = serializers.DateTimeField(
+        # source='datetime',
+        # format='%Y-%m-%d'
+    )
+
+    class Meta:
+        model = Event
+        fields = ['id', 'title', 'datetime']
+
+
+class TutorEventsSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    title = serializers.CharField()
+    team_name = serializers.CharField(source='team.name', read_only=True)
+    datetime = serializers.DateTimeField(
+        # source='datetime',
+        # format='%Y-%m-%d'
+    )
+
+    class Meta:
+        model = Event
+        fields = ['id', 'title', 'datetime', 'team_name']
