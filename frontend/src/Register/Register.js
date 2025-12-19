@@ -3,7 +3,7 @@ import axios from 'axios';
 import {useNavigate, Link} from 'react-router-dom';
 import './Register.css';
 
-function Register() {
+const Register = ({ onRegister }) => {
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -26,9 +26,8 @@ function Register() {
 
     try {
       const response = await axios.post('http://localhost:8000/api/register/', formData);
-      
-      localStorage.setItem('access_token', response.data.access);
-      localStorage.setItem('refresh_token', response.data.refresh);
+      onRegister(response.data)
+
       navigate('/');
     } catch (error) {
       if (error.response && error.response.data) {

@@ -147,12 +147,13 @@ class QualitiesScore(models.Model):
 
 
 class Event(models.Model):
+    title = models.CharField(max_length=200)
     team = models.ForeignKey(Team, models.CASCADE, related_name='team_on_event')
     tutor = models.ForeignKey(UserProfile, models.CASCADE, related_name='event_tutor')
     datetime = models.DateTimeField()
 
     def __str__(self):
-        return f'{self.team.name}, {self.datetime}'
+        return f'{self.title}, {self.team.name}, {self.datetime}'
 
 
 class CheckList(models.Model):
