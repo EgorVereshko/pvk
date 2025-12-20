@@ -13,6 +13,7 @@ urlpatterns = [
     path('api/user/update/', update_user, name='update_user'),
     path('api/student_events/', get_student_events, name='get_student_events'),
     path('api/tutor_events/', get_tutor_events, name='get_student_events'),
+    path('api/qualities/<int:user_id>/', get_qualities_data, name='get_qualities_data'),
 ]
 
 if settings.DEBUG:

@@ -45,10 +45,12 @@ class LoginSerializer(serializers.Serializer):
 
 class UserProfileSerializer(serializers.ModelSerializer):
     photo_url = serializers.SerializerMethodField()
+    id = serializers.IntegerField(source='user.id')
 
     class Meta:
         model = UserProfile
         fields = [
+            'id',
             'last_name', 'first_name', 'middle_name',
             'phone_number', 'telegram', 'email', 'vk',
             'university', 'year_of_study', 'description', 'photo_url'
@@ -85,3 +87,14 @@ class TutorEventsSerializer(serializers.Serializer):
     class Meta:
         model = Event
         fields = ['id', 'title', 'datetime', 'team_name']
+
+
+class QualitiesScoreSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = QualitiesScore
+        fields = [
+            'learning_score',
+            'involvement_score',
+            'organization_score',
+            'teamwork_score'
+        ]

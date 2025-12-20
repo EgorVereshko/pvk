@@ -109,7 +109,7 @@ const Profile = () => {
                 <div className='lk-right'>
                   <h2>Статистика</h2>
                   <div className='stats'>
-                    <SpiderChart/>
+                    <SpiderChart user={user}/>
                   </div>
                 </div>
               </div>
