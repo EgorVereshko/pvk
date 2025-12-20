@@ -1,5 +1,7 @@
+from django.utils import timezone
 from django.contrib.auth import authenticate, logout, login
 from django.middleware.csrf import get_token
+from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework import generics, status
 from rest_framework.decorators import api_view, permission_classes
@@ -117,6 +119,23 @@ def update_user(request):
             {'error': 'Профиль не найден'},
             status=status.HTTP_404_NOT_FOUND
         )
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_qualities_data(request, user_id=None):
+    if user_id:
+        profile = get_object_or_404(UserProfile, user__id=user_id)
+    else:
+        profile = request.user.profile
+
+    if len(profile.users_qualities.all()) == 0:
+        QualitiesScore.objects.create(user=profile, datetime=timezone.now())
+
+    qualities_scores = profile.users_qualities.latest('datetime')
+    serializer = QualitiesScoreSerializer(qualities_scores)
+
+    return Response(serializer.data)
 
 
 @api_view(['GET'])
