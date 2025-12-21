@@ -1,15 +1,38 @@
 import axios from 'axios';
 
-const api = axios.create({
-  baseURL: 'http://localhost:8000',
-});
+axios.defaults.withCredentials = true;
 
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('access_token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+export const getCsrfToken = async () => {
+  try {
+    const response = await axios.get('/api/csrf/');
+    return response.data;
+  } catch (error) {
+    console.error('Error getting CSRF token:', error);
+    throw error;
   }
-  return config;
-});
+};
 
-export default api;
+export const setupAxiosInterceptors = () => {
+  axios.interceptors.request.use(async (config) => {
+    const csrfToken = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('csrftoken='))
+      ?.split('=')[1];
+
+    if (csrfToken) {
+      config.headers['X-CSRFToken'] = csrfToken;
+    }
+
+    return config;
+  });
+
+  axios.interceptors.response.use(
+    (response) => response,
+    (error) => {
+      if (error.response?.status === 403) {
+        console.error('CSRF or permissions error:', error);
+      }
+      return Promise.reject(error);
+    }
+  );
+};

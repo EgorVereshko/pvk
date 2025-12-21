@@ -66,28 +66,20 @@ class Indicator(models.Model):
         return f'{self.name}'
 
 
-class IndicatorsList(models.Model):
-    indicator1 = models.ForeignKey(Indicator, models.CASCADE, related_name='indicator_1')
-    indicator2 = models.ForeignKey(Indicator, models.CASCADE, related_name='indicator_2')
-    indicator3 = models.ForeignKey(Indicator, models.CASCADE, related_name='indicator_3')
-    indicator4 = models.ForeignKey(Indicator, models.CASCADE, related_name='indicator_4')
-    indicator5 = models.ForeignKey(Indicator, models.CASCADE, related_name='indicator_5')
-
-    def __str__(self):
-        return f'{self.indicator1} ' \
-               f'{self.indicator2} ' \
-               f'{self.indicator3} ' \
-               f'{self.indicator4} ' \
-               f'{self.indicator5}'
-
-
-class IndicatorsListTemplate(models.Model):
+class Template(models.Model):
     user = models.ForeignKey(UserProfile, models.CASCADE, related_name='template_user')
     name = models.CharField(max_length=100)
-    indicators_list = models.ForeignKey(IndicatorsList, models.CASCADE)
 
     def __str__(self):
-        return f'Шаблон "{self.name}" от {self.user}'
+        return f'Шаблон "{self.name}" пользователя:{self.user}'
+
+
+class IndicatorTemplate(models.Model):
+    indicator = models.ForeignKey(Indicator, models.CASCADE, related_name='+')
+    template = models.ForeignKey(Template, models.CASCADE)
+
+    def __str__(self):
+        return f''
 
 
 class Competence(models.Model):
@@ -99,8 +91,8 @@ class Competence(models.Model):
 
 
 class CompetencesScore(models.Model):
-    user = models.ForeignKey(UserProfile, models.CASCADE, related_name='compentences_score_related_user')
-    competence = models.ForeignKey(Competence, models.CASCADE, related_name='compentences_score_related_competence')
+    user = models.ForeignKey(UserProfile, models.CASCADE, related_name='+')
+    competence = models.ForeignKey(Competence, models.CASCADE, related_name='+')
     score = models.DecimalField(default=0.0, max_digits=3, decimal_places=2)
 
     def __str__(self):
@@ -132,7 +124,8 @@ class CompetenceIndicatorRatio(models.Model):
 
 
 class QualitiesScore(models.Model):
-    user = models.ForeignKey(UserProfile, models.CASCADE, related_name='qualities_related_user')
+    user = models.ForeignKey(UserProfile, models.CASCADE, related_name='users_qualities')
+    datetime = models.DateTimeField()
     learning_score = models.DecimalField(default=0.0, max_digits=3, decimal_places=2)
     involvement_score = models.DecimalField(default=0.0, max_digits=3, decimal_places=2)
     organization_score = models.DecimalField(default=0.0, max_digits=3, decimal_places=2)
@@ -146,16 +139,36 @@ class QualitiesScore(models.Model):
                f'Работа в команде:{self.teamwork_score}'
 
 
+class QualitiesAssessment(models.Model):
+    evaluated_student = models.ForeignKey(UserProfile, models.CASCADE, related_name='+')
+    evaluator = models.ForeignKey(UserProfile, models.CASCADE, related_name='+')
+    datetime = models.DateTimeField()
+    learning_score = models.DecimalField(default=0.0, max_digits=3, decimal_places=2)
+    involvement_score = models.DecimalField(default=0.0, max_digits=3, decimal_places=2)
+    organization_score = models.DecimalField(default=0.0, max_digits=3, decimal_places=2)
+    teamwork_score = models.DecimalField(default=0.0, max_digits=3, decimal_places=2)
+
+    def __str__(self):
+        return f'Оценка ПВК {self.datetime}. Кто оценил: {self.evaluator}, кого: {self.evaluated_student}'
+
+
 class Event(models.Model):
-    team = models.ForeignKey(Team, models.CASCADE, related_name='team_on_event')
-    tutor = models.ForeignKey(UserProfile, models.CASCADE, related_name='event_tutor')
+    title = models.CharField(max_length=200)
+    team = models.ForeignKey(Team, models.CASCADE, related_name='teams_events')
+    tutor = models.ForeignKey(UserProfile, models.CASCADE, related_name='tutors_events')
     datetime = models.DateTimeField()
 
     def __str__(self):
-        return f'{self.team.name}, {self.datetime}'
+        return f'{self.title}, {self.team.name}, {self.datetime}'
 
 
 class CheckList(models.Model):
-    indicators_list = models.ForeignKey(IndicatorsList, models.CASCADE, related_name='indicators_for_checklist')
+    template = models.ForeignKey(Template, models.CASCADE, related_name='+')
     evaluated_projectant = models.ForeignKey(UserProfile, models.CASCADE, null=True)
-    event = models.ForeignKey(Event, models.CASCADE, related_name='checklist_event')
+    event = models.ForeignKey(Event, models.CASCADE, related_name='+')
+
+
+class CheckListScoresRegister(models.Model):
+    checklist = models.ForeignKey(CheckList, models.CASCADE, related_name='+')
+    indicator = models.ForeignKey(Indicator, models.CASCADE, related_name='+')
+    score = models.DecimalField(default=0.0, max_digits=3, decimal_places=2)

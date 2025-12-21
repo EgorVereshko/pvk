@@ -1,29 +1,46 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, Navigate } from 'react-router-dom';
+import React, {useState, useEffect} from 'react';
+import {useNavigate, Navigate} from 'react-router-dom';
 import axios from 'axios';
 import Header from '../Header/Header';
 import './EventsStudent.css';
+import {useAuth} from "../authHook";
 
 const EventsStudent = () => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const {user, authLoading, handleLogout, isAuthenticated} = useAuth();
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('upcoming');
   const [sortBy, setSortBy] = useState('date');
   const [sortOrder, setSortOrder] = useState('asc');
   const navigate = useNavigate();
+  const [events, setEvents] = useState([]);
 
-  const [events] = useState([
-    { id: 1, name: 'Техническое собеседование', date: '2025-11-29' },
-    { id: 2, name: 'Оценка soft skills', date: '2025-12-05' },
-    { id: 3, name: 'Групповая дискуссия', date: '2025-12-25' },
-    { id: 4, name: 'Вводное собрание', date: '2023-11-24' },
-    { id: 5, name: 'Тестирование навыков', date: '2023-11-22' }
-  ]);
+   useEffect(() => {
+    if (!authLoading) {
+      fetchEvents();
+    }
+  }, [navigate, authLoading]);
 
-  const getEventType = (eventDate) => {
+  const fetchEvents = async () => {
+    try {
+      const response = await axios.get('/api/student_events/');
+      const data = await response.data
+      const formattedEvents = data.map(event => ({
+        id: event.id,
+        name: event.title,
+        date: event.datetime,
+      }));
+      setEvents(formattedEvents);
+    } catch (error) {
+      console.error('Ошибка загрузки мероприятий:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getEventType = (eventDateTime) => {
     const today = new Date();
-    const event = new Date(eventDate);
+    const event = new Date(eventDateTime);
     return event >= today ? 'upcoming' : 'completed';
   };
 
@@ -31,44 +48,6 @@ const EventsStudent = () => {
     ...event,
     type: getEventType(event.date)
   }));
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      const token = localStorage.getItem('access_token');
-      
-      if (!token) {
-        navigate('/');
-        return;
-      }
-
-      try {
-        const response = await axios.get('http://localhost:8000/api/user/', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setUser(response.data);
-        setError(null);
-      } catch (err) {
-        if (err.response?.status === 401) {
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('refresh_token');
-          navigate('/');
-        } else {
-          setError('Ошибка при загрузке данных пользователя');
-        }
-        console.error('Ошибка:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUser();
-  }, [navigate]);
-
-  const handleLogout = () => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    navigate('/');
-  };
 
   const handleSort = (field) => {
     if (sortBy === field) {
@@ -83,7 +62,7 @@ const EventsStudent = () => {
     .filter(event => event.type === activeTab)
     .sort((a, b) => {
       if (sortBy === 'name') {
-        return sortOrder === 'asc' 
+        return sortOrder === 'asc'
           ? a.name.localeCompare(b.name)
           : b.name.localeCompare(a.name);
       } else {
@@ -97,23 +76,23 @@ const EventsStudent = () => {
     return <div className="loading">Загрузка...</div>;
   }
 
-  if (!user) {
-    return <Navigate to="/" replace />;
+  if (!isAuthenticated) {
+    return <Navigate to="/" replace/>;
   }
 
   return (
     <div className="profile-container">
-      <Header onLogout={handleLogout} user={user} />
-      
+      <Header onLogout={handleLogout} user={user}/>
+
       <div className="profile-content">
         <div className="tabs">
-          <button 
+          <button
             className={`tab ${activeTab === 'upcoming' ? 'active' : ''}`}
             onClick={() => setActiveTab('upcoming')}
           >
             Предстоящие
           </button>
-          <button 
+          <button
             className={`tab ${activeTab === 'completed' ? 'active' : ''}`}
             onClick={() => setActiveTab('completed')}
           >
@@ -124,15 +103,15 @@ const EventsStudent = () => {
         <div className="tab-content">
           <div className="events-info">
             <h1>Оценочные мероприятия</h1>
-            
+
             <div className="events-header">
-              <button 
+              <button
                 className={`header-button name-button ${sortBy === 'name' ? 'active' : ''}`}
                 onClick={() => handleSort('name')}
               >
                 Название {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
               </button>
-              <button 
+              <button
                 className={`header-button date-button ${sortBy === 'date' ? 'active' : ''}`}
                 onClick={() => handleSort('date')}
               >

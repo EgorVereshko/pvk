@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import api from '../api';
+import React, {useState} from 'react';
+import axios from 'axios';
+import {useNavigate, Link} from 'react-router-dom';
 import './Login.css';
 
 function Login() {
@@ -24,17 +24,13 @@ function Login() {
     setIsSubmitting(true);
 
     try {
-      const response = await api.post('/api/token/', formData);
-      
-      localStorage.setItem('access_token', response.data.access);
-      localStorage.setItem('refresh_token', response.data.refresh);
-      
-      navigate('/profile');
-      
-    } catch (err) {
-      console.error('Ошибка входа:', err);
-      
-      if (err.response?.status === 401) {
+      const response = await axios.post('http://localhost:8000/api/login/', {
+        username,
+        password,
+      });
+      navigate('/');
+    } catch (error) {
+      if (error.response?.status === 401) {
         setError('Неверное имя пользователя или пароль');
       } else if (err.response?.status === 400) {
         setError('Пожалуйста, заполните все поля правильно');
@@ -42,6 +38,7 @@ function Login() {
         setError('Ошибка соединения. Проверьте интернет.');
       } else {
         setError('Ошибка при входе. Попробуйте еще раз.');
+        console.error('Ошибка входа:', error)
       }
     } finally {
       setIsSubmitting(false);
