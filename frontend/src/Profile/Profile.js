@@ -4,53 +4,19 @@ import axios from 'axios';
 import Header from '../Header/Header';
 import SpiderChart from '../SpiderChart/SpiderChart';
 import './Profile.css';
+import {useAuth} from "../authHook";
 
 
 const Profile = () => {
-  const [user, setUser] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const {user, authLoading, handleLogout, isAuthenticated} = useAuth();
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('profile');
-  const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const authResponse = await axios.get('/api/check_auth/');
-        if (authResponse.data.is_authenticated) {
-          setIsAuthenticated(true);
-
-          const profileResponse = await axios.get('/api/user/');
-          setUser(profileResponse.data)
-        }
-      } catch (err) {
-        console.log('Error', err.message);
-        setIsAuthenticated(false);
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUser();
-  }, [navigate]);
-
-  const handleLogout = async () => {
-    try {
-      await axios.post('/api/logout/');
-      setIsAuthenticated(false);
-      setUser(null);
-    } catch (error) {
-      console.error('Ошибка при выходе:', error);
-    }
-  };
-
-  if (loading) {
+  if (authLoading) {
     return <div className="loading">Загрузка профиля...</div>;
   }
 
-  if (!user) {
+  if (!isAuthenticated) {
     return <Navigate to="/" replace/>;
   }
 

@@ -13,24 +13,20 @@ const SpiderChart = ({user}) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchQualitiesData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-
-        const response = await axios.get(`/api/qualities/${user.id}/`);
-        setQualitiesData(response.data);
-      } catch (err) {
-        console.error('Error fetching qualities ', err);
-        setError('Ошибка загрузки данных о качествах');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchQualitiesData();
   }, []);
+
+  const fetchQualitiesData = async () => {
+    try {
+      const response = await axios.get(`/api/qualities/${user.id}/`);
+      setQualitiesData(response.data);
+    } catch (err) {
+      console.error('Error fetching qualities ', err);
+      setError('Ошибка загрузки данных о качествах');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (error) {
     return <div style={{color: 'red'}}>{error}</div>;

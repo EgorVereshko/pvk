@@ -8,54 +8,20 @@ import EventsStudent from './EventsStudent/EventsStudent';
 import EventsTutor from './EventsTutor/EventsTutor';
 import './App.css';
 import {setupAxiosInterceptors} from "./api";
+import {useAuth} from "./authHook";
 
 axios.defaults.withCredentials = true;
 setupAxiosInterceptors();
 
 function Home() {
-  const [user, setUser] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const {isAuthenticated, authLoading} = useAuth();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const authResponse = await axios.get('/api/check_auth/');
-        if (authResponse.data.is_authenticated) {
-          setIsAuthenticated(true);
-
-          const profileResponse = await axios.get('/api/user/');
-          setUser(profileResponse.data)
-        }
-      } catch (err) {
-        console.log('Error', err.message);
-        setIsAuthenticated(false);
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUser();
-  }, [navigate]);
-
-  const handleLogout = async () => {
-    try {
-      await axios.post('/api/logout/');
-      setIsAuthenticated(false);
-      setUser(null);
-    } catch (error) {
-      console.error('Ошибка при выходе:', error);
-    }
-  };
-
-
-  if (loading) {
+  if (authLoading) {
     return <div className="loading">Загрузка...</div>;
   }
 
-  if (user) {
+  if (isAuthenticated) {
     return <Navigate to="/profile" replace/>;
   }
 

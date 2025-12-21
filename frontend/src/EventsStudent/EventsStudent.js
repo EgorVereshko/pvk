@@ -3,64 +3,40 @@ import {useNavigate, Navigate} from 'react-router-dom';
 import axios from 'axios';
 import Header from '../Header/Header';
 import './EventsStudent.css';
+import {useAuth} from "../authHook";
 
 const EventsStudent = () => {
-  const [user, setUser] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const {user, authLoading, handleLogout, isAuthenticated} = useAuth();
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('upcoming');
   const [sortBy, setSortBy] = useState('date');
   const [sortOrder, setSortOrder] = useState('asc');
   const navigate = useNavigate();
-
-
   const [events, setEvents] = useState([]);
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const authResponse = await axios.get('/api/check_auth/');
-        if (authResponse.data.is_authenticated) {
-          setIsAuthenticated(true);
+   useEffect(() => {
+    if (!authLoading) {
+      fetchEvents();
+    }
+  }, [navigate, authLoading]);
 
-          const profileResponse = await axios.get('/api/user/');
-          setUser(profileResponse.data)
-        }
-      } catch (error) {
-        console.log('Error', error.message);
-        setIsAuthenticated(false);
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    const fetchEvents = async () => {
-      try {
-        const res = await fetch('/api/student_events/');
-
-        if (res.ok) {
-          const data = await res.json();
-          const formattedEvents = data.map(event => ({
-            id: event.id,
-            name: event.title,
-            date: event.datetime,
-          }));
-          setEvents(formattedEvents);
-        } else {
-          console.error('Ошибка загрузки мероприятий');
-        }
-      } catch (error) {
-        console.error('Сетевая ошибка:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUser().then(fetchEvents)
-  }, [navigate]);
-
+  const fetchEvents = async () => {
+    try {
+      const response = await axios.get('/api/student_events/');
+      const data = await response.data
+      const formattedEvents = data.map(event => ({
+        id: event.id,
+        name: event.title,
+        date: event.datetime,
+      }));
+      setEvents(formattedEvents);
+    } catch (error) {
+      console.error('Ошибка загрузки мероприятий:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getEventType = (eventDateTime) => {
     const today = new Date();
@@ -72,18 +48,6 @@ const EventsStudent = () => {
     ...event,
     type: getEventType(event.date)
   }));
-
-
-  const handleLogout = async () => {
-    try {
-      await axios.post('/api/logout/');
-      setIsAuthenticated(false);
-      setUser(null);
-    } catch (error) {
-      console.error('Ошибка при выходе:', error);
-    }
-    navigate('/');
-  };
 
   const handleSort = (field) => {
     if (sortBy === field) {
@@ -112,7 +76,7 @@ const EventsStudent = () => {
     return <div className="loading">Загрузка...</div>;
   }
 
-  if (!user) {
+  if (!isAuthenticated) {
     return <Navigate to="/" replace/>;
   }
 
