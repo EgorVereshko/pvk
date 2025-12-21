@@ -6,8 +6,6 @@ import Register from './Register/Register';
 import Profile from './Profile/Profile';
 import EventsStudent from './EventsStudent/EventsStudent';
 import EventsTutor from './EventsTutor/EventsTutor';
-import ProfileEdit from './ProfileEdit/ProfileEdit';
-import ScoreStudent from './ScoreStudent/ScoreStudent';
 import './App.css';
 import {setupAxiosInterceptors} from "./api";
 import {useAuth} from "./authHook";
@@ -18,7 +16,6 @@ setupAxiosInterceptors();
 function Home() {
   const {isAuthenticated, authLoading} = useAuth();
   const navigate = useNavigate();
-  const isAuth = !!localStorage.getItem('access_token');
 
   if (authLoading) {
     return <div className="loading">Загрузка...</div>;
@@ -33,10 +30,16 @@ function Home() {
       <div className="home-container">
         <h1>Сервис оценки профессионально важных качеств</h1>
         <div className="auth-buttons">
-          <button onClick={() => navigate('/login')} className="auth-button login-button">
+          <button
+            onClick={() => navigate('/login')}
+            className="auth-button login-button"
+          >
             Войти
           </button>
-          <button onClick={() => navigate('/register')} className="auth-button register-button">
+          <button
+            onClick={() => navigate('/register')}
+            className="auth-button register-button"
+          >
             Зарегистрироваться
           </button>
         </div>
@@ -49,15 +52,13 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/profile/edit" element={<ProfileEdit />} />
-        <Route path="/score/student" element={<ScoreStudent />} />
-        <Route path="/events" element={<EventsStudent />} />
-        <Route path="/events/tutor" element={<EventsTutor />} />
-        <Route path="*" element={<Navigate to="/" />} />
+        <Route path="/" element={<Home/>}/>
+        <Route path="/login" element={<Login/>}/>
+        <Route path="/register" element={<Register/>}/>
+        <Route path="/profile" element={<Profile/>}/>
+        <Route path="/events" element={<EventsStudent/>}/>
+        <Route path="/events/tutor" element={<EventsTutor/>}/>
+        <Route path="*" element={<Navigate to="/"/>}/>
       </Routes>
     </Router>
   );
