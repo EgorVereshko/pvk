@@ -1,6 +1,5 @@
-import React, {useState, useEffect} from 'react';
-import {BrowserRouter as Router, Routes, Route, Navigate, useNavigate} from 'react-router-dom';
-import axios from 'axios';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import Login from './Login/Login';
 import Register from './Register/Register';
 import Profile from './Profile/Profile';
@@ -9,23 +8,13 @@ import EventsTutor from './EventsTutor/EventsTutor';
 import ProfileEdit from './ProfileEdit/ProfileEdit';
 import ScoreStudent from './ScoreStudent/ScoreStudent';
 import './App.css';
-import {setupAxiosInterceptors} from "./api";
-import {useAuth} from "./authHook";
-
-axios.defaults.withCredentials = true;
-setupAxiosInterceptors();
 
 function Home() {
-  const {isAuthenticated, authLoading} = useAuth();
   const navigate = useNavigate();
   const isAuth = !!localStorage.getItem('access_token');
 
-  if (authLoading) {
-    return <div className="loading">Загрузка...</div>;
-  }
-
-  if (isAuthenticated) {
-    return <Navigate to="/profile" replace/>;
+  if (isAuth) {
+    return <Navigate to="/profile" replace />;
   }
 
   return (

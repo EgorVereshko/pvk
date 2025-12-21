@@ -1,15 +1,14 @@
-import React, {useState, useEffect} from 'react';
-import {useNavigate, Navigate} from 'react-router-dom';
-import axios from 'axios';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Navigate } from 'react-router-dom';
+import api from '../api';
 import Header from '../Header/Header';
 import SpiderChart from '../SpiderChart/SpiderChart';
 import LineChart from '../LineChart/LineChart';
 import './Profile.css';
-import {useAuth} from "../authHook";
-
 
 const Profile = () => {
-  const {user, authLoading, handleLogout, isAuthenticated} = useAuth();
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('profile');
   const [isEditing, setIsEditing] = useState(false);
@@ -48,18 +47,6 @@ const Profile = () => {
   return (
     <div className="profile-container">
       <Header onLogout={() => { localStorage.clear(); navigate('/'); }} user={user} />
-
-  if (authLoading) {
-    return <div className="loading">Загрузка профиля...</div>;
-  }
-
-  if (!isAuthenticated) {
-    return <Navigate to="/" replace/>;
-  }
-
-  return (
-    <div className="profile-container">
-      <Header onLogout={handleLogout} user={user}/>
 
       <div className="profile-content">
         <div className="tabs">
@@ -104,8 +91,8 @@ const Profile = () => {
 
                 <div className="lk-right">
                   <h2>Статистика</h2>
-                  <div className='stats'>
-                    <SpiderChart user={user}/>
+                  <div className="stats">
+                    <SpiderChart />
                   </div>
                 </div>
               </div>

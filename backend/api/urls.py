@@ -1,19 +1,15 @@
 from django.urls import path
 from django.conf import settings
 from django.conf.urls.static import static
-from .views import *
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from .views import RegisterView, get_profile, update_user
 
 urlpatterns = [
-    path('api/register/', register, name='register'),
-    path('api/login/', login_view, name='login_view'),
-    path('api/logout/', logout_view, name='logout'),
-    path('api/check_auth/', check_auth, name='check_auth'),
-    path('api/csrf/', get_csrf_token, name='csrf'),
-    path('api/user/', get_user, name='get_user'),
+    path('api/register/', RegisterView.as_view(), name='register'),
+    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/user/', get_profile, name='current_user'),
     path('api/user/update/', update_user, name='update_user'),
-    path('api/student_events/', get_student_events, name='get_student_events'),
-    path('api/tutor_events/', get_tutor_events, name='get_student_events'),
-    path('api/qualities/<int:user_id>/', get_qualities_data, name='get_qualities_data'),
 ]
 
 if settings.DEBUG:

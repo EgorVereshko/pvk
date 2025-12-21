@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import api from '../api';
 import './Register.css';
 
-const Register = ({ onRegister }) => {
+function Register() {
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -42,14 +42,19 @@ const Register = ({ onRegister }) => {
     setErrors({});
     
     try {
-      const response = await axios.post('http://localhost:8000/api/register/', formData);
-      onRegister(response.data)
+      const res = await api.post('/api/register/', formData);
+      
+      localStorage.setItem('access_token', res.data.access);
+      localStorage.setItem('refresh_token', res.data.refresh);
+      
       navigate('/profile');
-    } catch (error) {
-      if (error.response && error.response.data) {
-        setErrors(error.response.data);
+      
+    } catch (err) {
+      if (err.response?.data) {
+        setErrors(err.response.data);
       } else {
         setErrors({ general: 'Ошибка соединения с сервером. Попробуйте позже.' });
+      }
     } finally {
       setIsSubmitting(false);
     }
