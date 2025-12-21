@@ -38,6 +38,15 @@ class UserRole(models.Model):
     ]
     role = models.CharField(max_length=24, choices=role_choises, default='Проектант')
 
+    class Meta:
+        unique_together = ('user', 'role')
+
+    def save(self, *args, **kwargs):
+        # Если добавляется роль "Организатор", удаляем все другие роли у этого пользователя
+        if self.role == 'Организатор':
+            UserRole.objects.filter(user=self.user).exclude(role='Организатор').delete()
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f'{self.user} - {self.role}'
 
@@ -53,6 +62,9 @@ class Team(models.Model):
 class TeamMember(models.Model):
     team = models.ForeignKey(Team, models.CASCADE, related_name='related_team')
     member = models.ForeignKey(UserProfile, models.CASCADE, related_name='team_member')
+
+    class Meta:
+        unique_together = ('team', 'member')
 
     def __str__(self):
         return f'{self.team} - {self.member}'

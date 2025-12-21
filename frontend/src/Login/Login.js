@@ -13,8 +13,8 @@ function Login() {
   const navigate = useNavigate();
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    const {name, value} = e.target;
+    setFormData(prev => ({...prev, [name]: value}));
     if (error) setError('');
   };
 
@@ -24,17 +24,14 @@ function Login() {
     setIsSubmitting(true);
 
     try {
-      const response = await axios.post('http://localhost:8000/api/login/', {
-        username,
-        password,
-      });
+      const response = await axios.post('/api/login/', {formData});
       navigate('/');
     } catch (error) {
       if (error.response?.status === 401) {
         setError('Неверное имя пользователя или пароль');
-      } else if (err.response?.status === 400) {
+      } else if (error.response?.status === 400) {
         setError('Пожалуйста, заполните все поля правильно');
-      } else if (err.message === 'Network Error') {
+      } else if (error.message === 'Network Error') {
         setError('Ошибка соединения. Проверьте интернет.');
       } else {
         setError('Ошибка при входе. Попробуйте еще раз.');
@@ -49,7 +46,7 @@ function Login() {
     <div className="auth-container">
       <div className="auth-card">
         <h2>Вход</h2>
-        
+
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
             <label htmlFor="username">Имя пользователя</label>
@@ -66,7 +63,7 @@ function Login() {
               autoComplete="username"
             />
           </div>
-          
+
           <div className="form-group">
             <label htmlFor="password">Пароль</label>
             <input
@@ -82,22 +79,22 @@ function Login() {
               autoComplete="current-password"
             />
           </div>
-          
+
           {error && (
             <div className="error-message">
               {error}
             </div>
           )}
-          
-          <button 
-            type="submit" 
+
+          <button
+            type="submit"
             className="auth-submit-button"
             disabled={isSubmitting}
           >
             {isSubmitting ? 'Вход...' : 'Войти'}
           </button>
         </form>
-        
+
         <p className="auth-link">
           Нет аккаунта? <Link to="/register">Зарегистрироваться</Link>
         </p>

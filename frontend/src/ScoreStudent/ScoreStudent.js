@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../api';
 import Header from '../Header/Header';
 import './ScoreStudent.css';
+import axios from "axios";
+import {useAuth} from "../authHook";
 
 const ScoreStudent = () => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const {user, authLoading, handleLogout, isAuthenticated} = useAuth();
   const [selectedStudent, setSelectedStudent] = useState('Студент');
   const [sliderValues, setSliderValues] = useState({
     'Организованность': 1,
@@ -15,8 +15,6 @@ const ScoreStudent = () => {
     'Обучаемость': 1,
   });
 
-  const navigate = useNavigate();
-
   const competences = [
     'Вовлеченность',
     'Работа в команде',
@@ -24,28 +22,6 @@ const ScoreStudent = () => {
     'Организованность',
   ];
 
-  useEffect(() => {
-    fetchUserProfile();
-  }, [navigate]);
-
-  const fetchUserProfile = async () => {
-    try {
-      const res = await api.get('/api/user/');
-      setUser(res.data);
-    } catch (err) {
-      if (err.response?.status === 401) {
-        localStorage.clear();
-        navigate('/');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleLogout = () => {
-    localStorage.clear();
-    navigate('/');
-  };
 
   const handleSliderChange = (competence, value) => {
     setSliderValues(prev => ({
@@ -59,7 +35,7 @@ const ScoreStudent = () => {
     value: sliderValues[c],
   }));
 
-  if (loading) return <div className="loading">Загрузка...</div>;
+  if (authLoading) return <div className="loading">Загрузка...</div>;
 
   return (
     <div className="score-container">

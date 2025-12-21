@@ -28,12 +28,14 @@ class RegisterSerializer(serializers.ModelSerializer):
             password=password
         )
 
-        UserProfile.objects.create(
+        profile = UserProfile.objects.create(
             user=user,
             last_name=last_name,
             first_name=first_name,
             middle_name=middle_name
         )
+
+        UserRole.objects.create(user=profile)
 
         return user
 
@@ -44,8 +46,10 @@ class LoginSerializer(serializers.Serializer):
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
-    photo_url = serializers.SerializerMethodField()
     id = serializers.IntegerField(source='user.id')
+    photo_url = serializers.SerializerMethodField()
+    roles = serializers.SerializerMethodField()
+    team_name = serializers.SerializerMethodField()
 
     class Meta:
         model = UserProfile
@@ -53,7 +57,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'id',
             'last_name', 'first_name', 'middle_name',
             'phone_number', 'telegram', 'email', 'vk',
-            'university', 'year_of_study', 'description', 'photo_url'
+            'university', 'year_of_study', 'description',
+            'photo_url', 'roles', 'team_name'
         ]
 
     def get_photo_url(self, obj):
@@ -61,28 +66,26 @@ class UserProfileSerializer(serializers.ModelSerializer):
             return obj.photo.url
         return '/media/default_avatar.jpeg'
 
+    def get_roles(self, obj):
+        if hasattr(obj, 'role_owner') and obj.role_owner.exists():
+            roles = obj.role_owner.all()
+            return [role.role for role in roles]
+        return []
 
-class StudentEventsSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
-    title = serializers.CharField()
-    datetime = serializers.DateTimeField(
-        # source='datetime',
-        # format='%Y-%m-%d'
-    )
+    def get_team_name(self, obj):
+        if hasattr(obj, 'team_member') and obj.team_member.exists():
+            return obj.team_member.first().team.name
+        return None
 
+
+class StudentEventsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Event
         fields = ['id', 'title', 'datetime']
 
 
-class TutorEventsSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
-    title = serializers.CharField()
+class TutorEventsSerializer(serializers.ModelSerializer):
     team_name = serializers.CharField(source='team.name', read_only=True)
-    datetime = serializers.DateTimeField(
-        # source='datetime',
-        # format='%Y-%m-%d'
-    )
 
     class Meta:
         model = Event

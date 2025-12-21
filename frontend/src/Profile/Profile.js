@@ -16,38 +16,10 @@ const Profile = () => {
   const [editForm, setEditForm] = useState({});
   const navigate = useNavigate();
 
-  useEffect(() => {
-    fetchUserProfile();
-  }, [navigate]);
-
-  const fetchUserProfile = async () => {
-    try {
-      const res = await api.get('/api/user/');
-      setUser(res.data);
-      setEditForm(res.data);
-    } catch (err) {
-      if (err.response?.status === 401) {
-        localStorage.clear();
-        navigate('/');
-      } else {
-        setError('Ошибка при загрузке профиля');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading) return <div className="loading">Загрузка профиля...</div>;
-  if (!user) return <Navigate to="/" replace />;
-
   const renderFieldValue = (value, placeholder = 'Не указано') =>
     value && value.trim()
       ? value
       : <span className="placeholder">{placeholder}</span>;
-
-  return (
-    <div className="profile-container">
-      <Header onLogout={() => { localStorage.clear(); navigate('/'); }} user={user} />
 
   if (authLoading) {
     return <div className="loading">Загрузка профиля...</div>;
@@ -94,12 +66,12 @@ const Profile = () => {
 
                     <div className="lk-text">
                       <h3>{user.first_name} {user.last_name}</h3>
-                      <p>4 курс РИ-410947</p>
-                      <p>Команда: team1</p>
+                      <p>{user.year_of_study ? `${user.year_of_study} курс` : ''}</p>
+                      <p>{user.team_name ? `Команда: "${user.team_name}"` : 'Без команды'}</p>
                     </div>
                   </div>
 
-                  <LineChart />
+                  <LineChart/>
                 </div>
 
                 <div className="lk-right">

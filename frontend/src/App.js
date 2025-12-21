@@ -6,7 +6,7 @@ import Register from './Register/Register';
 import Profile from './Profile/Profile';
 import EventsStudent from './EventsStudent/EventsStudent';
 import EventsTutor from './EventsTutor/EventsTutor';
-import ProfileEdit from './ProfileEdit/ProfileEdit';
+// import ProfileEdit from './ProfileEdit/ProfileEdit';
 import ScoreStudent from './ScoreStudent/ScoreStudent';
 import './App.css';
 import {setupAxiosInterceptors} from "./api";
@@ -18,7 +18,6 @@ setupAxiosInterceptors();
 function Home() {
   const {isAuthenticated, authLoading} = useAuth();
   const navigate = useNavigate();
-  const isAuth = !!localStorage.getItem('access_token');
 
   if (authLoading) {
     return <div className="loading">Загрузка...</div>;
@@ -53,7 +52,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/profile" element={<Profile />} />
-        <Route path="/profile/edit" element={<ProfileEdit />} />
+        {/*<Route path="/profile/edit" element={<ProfileEdit />} />*/}
         <Route path="/score/student" element={<ScoreStudent />} />
         <Route path="/events" element={<EventsStudent />} />
         <Route path="/events/tutor" element={<EventsTutor />} />

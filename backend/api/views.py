@@ -94,7 +94,11 @@ def check_auth(request):
 @permission_classes([IsAuthenticated])
 def get_user(request):
     try:
-        profile = request.user.profile
+        profile = UserProfile.objects.select_related('user').prefetch_related(
+            'role_owner',
+            'team_member__team'
+        ).get(user=request.user)
+
         serializer = UserProfileSerializer(profile)
         return Response(serializer.data, status.HTTP_200_OK)
     except UserProfile.DoesNotExist:
