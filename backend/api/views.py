@@ -66,26 +66,6 @@ def login_view(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# @api_view(['POST'])
-# @permission_classes([AllowAny])
-# def login_view(request):
-#     username = request.data.get('username')
-#     password = request.data.get('password')
-#
-#     user = authenticate(request, username=username, password=password)
-#
-#     if user:
-#         login(request, user)
-#         return Response({
-#             'user_id': user.id,
-#             'username': user.username,
-#             'is_authenticated': request.user.is_authenticated
-#         })
-#     else:
-#         return Response({'error': 'Неверные учетные данные'},
-#                         status=status.HTTP_400_BAD_REQUEST)
-
-
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def logout_view(request):
