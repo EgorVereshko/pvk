@@ -1,3 +1,4 @@
+from django.utils import timezone
 from rest_framework import serializers
 from .models import *
 
@@ -36,6 +37,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         )
 
         UserRole.objects.create(user=profile)
+        QualitiesScore.objects.create(user=profile, datetime=timezone.now())
 
         return user
 

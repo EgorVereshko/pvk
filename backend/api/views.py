@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from django.utils import timezone
 from django.contrib.auth import authenticate, logout, login
 from django.middleware.csrf import get_token
@@ -127,19 +129,48 @@ def update_user(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def get_qualities_data(request, user_id=None):
-    if user_id:
-        profile = get_object_or_404(UserProfile, user__id=user_id)
-    else:
-        profile = request.user.profile
+def get_current_qualities(request, user_id):
+    profile = get_object_or_404(UserProfile, user__id=user_id)
 
-    if len(profile.users_qualities.all()) == 0:
-        QualitiesScore.objects.create(user=profile, datetime=timezone.now())
-
-    qualities_scores = profile.users_qualities.latest('datetime')
+    qualities_scores = profile.users_qualities.latest('created_at')
     serializer = QualitiesScoreSerializer(qualities_scores)
 
     return Response(serializer.data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_qualities_stats(request, user_id=None):
+    profile = get_object_or_404(UserProfile, user__id=user_id)
+    two_months_ago = timezone.now() - timedelta(days=60)
+
+    qualities_stats = QualitiesScore.objects.filter(
+        user=profile,
+        created_at__gte=two_months_ago
+    ).order_by('created_at')
+
+    learning_list = []
+    involvement_list = []
+    organization_list = []
+    teamwork_list = []
+
+    for e in qualities_stats:
+        learning_list.append(e.learning_score)
+        involvement_list.append(e.involvement_score)
+        organization_list.append(e.organization_score)
+        teamwork_list.append(e.teamwork_score)
+
+    result = {
+        'number_of_weeks': len(qualities_stats),
+        'start_date': qualities_stats.first().created_at.date(),
+        'end_date': qualities_stats.last().created_at.date(),
+        'learning_list': learning_list,
+        'involvement_list': involvement_list,
+        'organization_list': organization_list,
+        'teamwork_list': teamwork_list
+    }
+
+    return Response(result)
 
 
 @api_view(['GET'])

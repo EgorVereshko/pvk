@@ -105,7 +105,7 @@ class Competence(models.Model):
 class CompetencesScore(models.Model):
     user = models.ForeignKey(UserProfile, models.CASCADE, related_name='+')
     competence = models.ForeignKey(Competence, models.CASCADE, related_name='+')
-    score = models.DecimalField(default=0.0, max_digits=3, decimal_places=2)
+    score = models.FloatField(default=0.0)
 
     def __str__(self):
         return f'{self.user} {self.competence} {self.score}'
@@ -120,7 +120,7 @@ class QualityCompetenceRatio(models.Model):
     ]
     quality = models.CharField(choices=qualities_choices)
     competence = models.ForeignKey(Competence, models.CASCADE, related_name='quality_competence_related')
-    ratio = models.DecimalField(default=0.0, max_digits=3, decimal_places=2)
+    ratio = models.FloatField(default=0.0)
 
     def __str__(self):
         return f'{self.quality} {self.competence} {self.ratio}'
@@ -129,7 +129,7 @@ class QualityCompetenceRatio(models.Model):
 class CompetenceIndicatorRatio(models.Model):
     competence = models.ForeignKey(Competence, models.CASCADE, related_name='competence_indicator_related')
     indicator = models.ForeignKey(Indicator, models.CASCADE, related_name='indicator')
-    ratio = models.DecimalField(default=0.0, max_digits=3, decimal_places=2)
+    ratio = models.FloatField(default=0.0)
 
     def __str__(self):
         return f'{self.competence} {self.indicator} {self.ratio}'
@@ -137,11 +137,11 @@ class CompetenceIndicatorRatio(models.Model):
 
 class QualitiesScore(models.Model):
     user = models.ForeignKey(UserProfile, models.CASCADE, related_name='users_qualities')
-    datetime = models.DateTimeField()
-    learning_score = models.DecimalField(default=0.0, max_digits=3, decimal_places=2)
-    involvement_score = models.DecimalField(default=0.0, max_digits=3, decimal_places=2)
-    organization_score = models.DecimalField(default=0.0, max_digits=3, decimal_places=2)
-    teamwork_score = models.DecimalField(default=0.0, max_digits=3, decimal_places=2)
+    created_at = models.DateTimeField()
+    learning_score = models.FloatField(default=0.0)
+    involvement_score = models.FloatField(default=0.0)
+    organization_score = models.FloatField(default=0.0)
+    teamwork_score = models.FloatField(default=0.0)
 
     def __str__(self):
         return f'{self.user}: ' \
@@ -154,14 +154,14 @@ class QualitiesScore(models.Model):
 class QualitiesAssessment(models.Model):
     evaluated_student = models.ForeignKey(UserProfile, models.CASCADE, related_name='+')
     evaluator = models.ForeignKey(UserProfile, models.CASCADE, related_name='+')
-    datetime = models.DateTimeField()
-    learning_score = models.DecimalField(default=0.0, max_digits=3, decimal_places=2)
-    involvement_score = models.DecimalField(default=0.0, max_digits=3, decimal_places=2)
-    organization_score = models.DecimalField(default=0.0, max_digits=3, decimal_places=2)
-    teamwork_score = models.DecimalField(default=0.0, max_digits=3, decimal_places=2)
+    created_at = models.DateTimeField()
+    learning_score = models.FloatField(default=0.0)
+    involvement_score = models.FloatField(default=0.0)
+    organization_score = models.FloatField(default=0.0)
+    teamwork_score = models.FloatField(default=0.0)
 
     def __str__(self):
-        return f'Оценка ПВК {self.datetime}. Кто оценил: {self.evaluator}, кого: {self.evaluated_student}'
+        return f'Оценка ПВК {self.created_at}. Кто оценил: {self.evaluator}, кого: {self.evaluated_student}'
 
 
 class Event(models.Model):
@@ -183,4 +183,4 @@ class CheckList(models.Model):
 class CheckListScoresRegister(models.Model):
     checklist = models.ForeignKey(CheckList, models.CASCADE, related_name='+')
     indicator = models.ForeignKey(Indicator, models.CASCADE, related_name='+')
-    score = models.DecimalField(default=0.0, max_digits=3, decimal_places=2)
+    score = models.FloatField(default=0.0)
