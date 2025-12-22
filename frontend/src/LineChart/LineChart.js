@@ -1,29 +1,69 @@
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import './LineChart.css';
+import axios from "axios";
 
-const LineChart = () => {
-  const weeks = [1, 2, 3, 4, 5, 6, 7];
+const LineChart = ({user}) => {
+  const [qualitiesStats, setQualitiesStats] = useState({
+    'number_of_weeks': 0,
+    'start_date': null,
+    'end_date': null,
+    'learning_list': [],
+    'involvement_list': [],
+    'organization_list': [],
+    'teamwork_list': []
+  })
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetchQualitiesStats();
+  }, []);
+
+  const fetchQualitiesStats = async () => {
+    try {
+      const response = await axios.get(`/api/qualities_stats/${user.id}/`);
+      setQualitiesStats(response.data);
+    } catch (err) {
+      console.error('Error fetching qualities stats:', err);
+      setError('Ошибка загрузки статистики качеств');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const {
+    number_of_weeks,
+    start_date,
+    end_date,
+    learning_list,
+    involvement_list,
+    organization_list,
+    teamwork_list
+  } = qualitiesStats;
+
+  const formatted_start_date = new Date(start_date).toLocaleDateString('ru-RU')
+  const formatted_end_date = new Date(end_date).toLocaleDateString('ru-RU')
 
   const series = [
     {
       label: 'Работа в команде',
       color: '#7dd3fc',
-      values: [0.3, 0.4, 0.5, 0.6, 0.5, 0.6, 0.8],
+      values: teamwork_list,
     },
     {
       label: 'Вовлеченность',
       color: '#60a5fa',
-      values: [-0.5, -0.4, -0.2, 0, -0.3, 0, 0.4],
+      values: involvement_list,
     },
     {
       label: 'Организованность',
       color: '#2563eb',
-      values: [1.8, 1.9, 2.0, 2.2, 2.1, 2.3, 2.6],
+      values: organization_list,
     },
     {
       label: 'Обучаемость',
       color: '#1e3a8a',
-      values: [1.1, 1.2, 1.3, 1.5, 1.4, 1.6, 1.9],
+      values: learning_list,
     },
   ];
 
@@ -34,18 +74,18 @@ const LineChart = () => {
   const maxY = 3;
 
   const scaleX = (i) =>
-    padding + (i / (weeks.length - 1)) * (width - padding * 2);
+    padding + (i / (number_of_weeks - 1)) * (width - padding * 2);
 
   const scaleY = (v) =>
     height - padding - ((v - minY) / (maxY - minY)) * (height - padding * 2);
 
   return (
     <div className="line-chart">
-      <h3>Аналитика за 11.11 – 11.12</h3>
+      <h3>Статистика за {formatted_start_date} – {formatted_end_date}</h3>
 
       <svg width={width} height={height}>
-        <line x1={padding} y1={padding} x2={padding} y2={height - padding} stroke="#ccc" />
-        <line x1={padding} y1={height - padding} x2={width - padding} y2={height - padding} stroke="#ccc" />
+        <line x1={padding} y1={padding} x2={padding} y2={height - padding} stroke="#ccc"/>
+        <line x1={padding} y1={height - padding} x2={width - padding} y2={height - padding} stroke="#ccc"/>
 
         {series.map((s, i) => (
           <polyline
@@ -63,7 +103,7 @@ const LineChart = () => {
       <div className="chart-legend">
         {series.map((s, i) => (
           <div key={i} className="legend-item">
-            <span className="legend-color" style={{ background: s.color }} />
+            <span className="legend-color" style={{background: s.color}}/>
             {s.label}
           </div>
         ))}

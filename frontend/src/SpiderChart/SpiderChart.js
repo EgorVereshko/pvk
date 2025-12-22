@@ -18,7 +18,7 @@ const SpiderChart = ({user}) => {
 
   const fetchQualitiesData = async () => {
     try {
-      const response = await axios.get(`/api/qualities/${user.id}/`);
+      const response = await axios.get(`/api/current_qualities/${user.id}/`);
       setQualitiesData(response.data);
     } catch (err) {
       console.error('Error fetching qualities ', err);

@@ -24,7 +24,7 @@ function Login() {
     setIsSubmitting(true);
 
     try {
-      const response = await axios.post('/api/login/', {formData});
+      const response = await axios.post('/api/login/', formData);
       navigate('/');
     } catch (error) {
       if (error.response?.status === 401) {

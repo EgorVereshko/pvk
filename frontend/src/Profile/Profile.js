@@ -71,7 +71,7 @@ const Profile = () => {
                     </div>
                   </div>
 
-                  <LineChart/>
+                  <LineChart user={user}/>
                 </div>
 
                 <div className="lk-right">

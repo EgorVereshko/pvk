@@ -1,16 +1,16 @@
+from datetime import timedelta
 from django.utils import timezone
 from django.contrib.auth import authenticate, logout, login
 from django.middleware.csrf import get_token
 from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import ensure_csrf_cookie
-from rest_framework import generics, status
+from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.views import APIView
 from rest_framework.response import Response
-from django.contrib.auth.models import User
 from .models import *
-from .serializers import *
+from .serializers import RegisterSerializer, LoginSerializer, UserProfileSerializer, StudentEventsSerializer, \
+    TutorEventsSerializer, QualitiesScoreSerializer
 
 
 @api_view(['GET'])
@@ -52,7 +52,6 @@ def login_view(request):
         password = serializer.validated_data['password']
 
         user = authenticate(username=username, password=password)
-
         if user:
             login(request, user)
             return Response({
@@ -67,6 +66,26 @@ def login_view(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+# @api_view(['POST'])
+# @permission_classes([AllowAny])
+# def login_view(request):
+#     username = request.data.get('username')
+#     password = request.data.get('password')
+#
+#     user = authenticate(request, username=username, password=password)
+#
+#     if user:
+#         login(request, user)
+#         return Response({
+#             'user_id': user.id,
+#             'username': user.username,
+#             'is_authenticated': request.user.is_authenticated
+#         })
+#     else:
+#         return Response({'error': 'Неверные учетные данные'},
+#                         status=status.HTTP_400_BAD_REQUEST)
+
+
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def logout_view(request):
@@ -78,7 +97,7 @@ def logout_view(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def check_auth(request):
     if request.user.is_authenticated:
         return Response({
@@ -127,19 +146,48 @@ def update_user(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def get_qualities_data(request, user_id=None):
-    if user_id:
-        profile = get_object_or_404(UserProfile, user__id=user_id)
-    else:
-        profile = request.user.profile
+def get_current_qualities(request, user_id):
+    profile = get_object_or_404(UserProfile, user__id=user_id)
 
-    if len(profile.users_qualities.all()) == 0:
-        QualitiesScore.objects.create(user=profile, datetime=timezone.now())
-
-    qualities_scores = profile.users_qualities.latest('datetime')
+    qualities_scores = profile.users_qualities.latest('created_at')
     serializer = QualitiesScoreSerializer(qualities_scores)
 
     return Response(serializer.data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_qualities_stats(request, user_id=None):
+    profile = get_object_or_404(UserProfile, user__id=user_id)
+    two_months_ago = timezone.now() - timedelta(days=60)
+
+    qualities_stats = QualitiesScore.objects.filter(
+        user=profile,
+        created_at__gte=two_months_ago
+    ).order_by('created_at')
+
+    learning_list = []
+    involvement_list = []
+    organization_list = []
+    teamwork_list = []
+
+    for e in qualities_stats:
+        learning_list.append(e.learning_score)
+        involvement_list.append(e.involvement_score)
+        organization_list.append(e.organization_score)
+        teamwork_list.append(e.teamwork_score)
+
+    result = {
+        'number_of_weeks': len(qualities_stats),
+        'start_date': qualities_stats.first().created_at.date(),
+        'end_date': qualities_stats.last().created_at.date(),
+        'learning_list': learning_list,
+        'involvement_list': involvement_list,
+        'organization_list': organization_list,
+        'teamwork_list': teamwork_list
+    }
+
+    return Response(result)
 
 
 @api_view(['GET'])
