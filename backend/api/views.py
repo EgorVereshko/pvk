@@ -26,12 +26,9 @@ def get_csrf_token(request):
 def register(request):
     serializer = RegisterSerializer(data=request.data)
     if serializer.is_valid():
-        user_profile = serializer.save()
+        user = serializer.save()
+        authenticate(username=user.username, password=request.data.get('password'))
 
-        user = authenticate(
-            username=user_profile.user.username,
-            password=request.data.get('password')
-        )
         if user:
             login(request, user)
             return Response({
@@ -91,12 +88,18 @@ def check_auth(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def get_user(request):
+def get_user(request, user_id=None):
     try:
-        profile = UserProfile.objects.select_related('user').prefetch_related(
-            'role_owner',
-            'team_member__team'
-        ).get(user=request.user)
+        if user_id:
+            profile = UserProfile.objects.select_related('user').prefetch_related(
+                'role_owner',
+                'team_member__team'
+            ).get(user__id=user_id)
+        else:
+            profile = UserProfile.objects.select_related('user').prefetch_related(
+                'role_owner',
+                'team_member__team'
+            ).get(user=request.user)
 
         serializer = UserProfileSerializer(profile)
         return Response(serializer.data, status.HTTP_200_OK)

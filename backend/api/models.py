@@ -41,12 +41,6 @@ class UserRole(models.Model):
     class Meta:
         unique_together = ('user', 'role')
 
-    def save(self, *args, **kwargs):
-        # Если добавляется роль "Организатор", удаляем все другие роли у этого пользователя
-        if self.role == 'Организатор':
-            UserRole.objects.filter(user=self.user).exclude(role='Организатор').delete()
-        super().save(*args, **kwargs)
-
     def __str__(self):
         return f'{self.user} - {self.role}'
 
@@ -148,7 +142,8 @@ class QualitiesScore(models.Model):
                f'Обучаемость:{self.learning_score} ' \
                f'Вовлеченность:{self.involvement_score} ' \
                f'Организованность:{self.organization_score} ' \
-               f'Работа в команде:{self.teamwork_score}'
+               f'Работа в команде:{self.teamwork_score} ' \
+               f'{self.created_at.strftime("%d.%m.%Y %H:%M")}'
 
 
 class QualitiesAssessment(models.Model):

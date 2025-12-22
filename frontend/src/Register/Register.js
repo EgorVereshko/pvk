@@ -44,7 +44,6 @@ const Register = ({onRegister}) => {
 
     try {
       const response = await axios.post('/api/register/', formData);
-      onRegister(response.data)
       navigate('/profile');
     } catch (error) {
       if (error.response && error.response.data) {

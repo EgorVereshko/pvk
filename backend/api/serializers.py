@@ -37,7 +37,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         )
 
         UserRole.objects.create(user=profile)
-        QualitiesScore.objects.create(user=profile, datetime=timezone.now())
+        QualitiesScore.objects.create(user=profile, created_at=timezone.now())
 
         return user
 

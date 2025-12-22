@@ -17,7 +17,7 @@ export const useAuth = () => {
       if (authResponse.data.is_authenticated) {
         setIsAuthenticated(true);
 
-        const profileResponse = await axios.get('/api/user/');
+        const profileResponse = await axios.get('/api/current_user/');
         setUser(profileResponse.data)
       }
     } catch (err) {
