@@ -10,7 +10,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from .models import *
 from .serializers import RegisterSerializer, LoginSerializer, UserProfileSerializer, StudentEventsSerializer, \
-    TutorEventsSerializer, QualitiesScoreSerializer
+    EventSerializer, TutorEventsSerializer, QualitiesScoreSerializer
 
 
 @api_view(['GET'])
@@ -181,6 +181,15 @@ def get_student_events(request):
 
     events = Event.objects.filter(team=team)
     serializer = StudentEventsSerializer(events, many=True)
+
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_event_members(request, event_id):
+    event = get_object_or_404(Event, id=event_id)
+    serializer = EventSerializer(event)
 
     return Response(serializer.data, status=status.HTTP_200_OK)
 

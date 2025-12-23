@@ -86,6 +86,42 @@ class StudentEventsSerializer(serializers.ModelSerializer):
         fields = ['id', 'title', 'datetime']
 
 
+class EventSerializer(serializers.ModelSerializer):
+    team = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Event
+        fields = ['id', 'title', 'team']
+
+    def get_team(self, obj: Event):
+        team = obj.team
+        return TeamSerializer(team).data
+
+
+class TeamSerializer(serializers.ModelSerializer):
+    members = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Team
+        fields = ['id', 'name', 'members']
+
+    def get_members(self, obj):
+        members = UserProfile.objects.filter(team_member__team=obj)
+        return TeamMemberSerializer(members, many=True, context=self.context).data
+
+
+class TeamMemberSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(source='user.id')
+    short_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = UserProfile
+        fields = ['id', 'short_name']
+
+    def get_short_name(self, obj: UserProfile):
+        return f'{obj.last_name} {obj.first_name[0]}.{obj.middle_name[0]}.'
+
+
 class TutorEventsSerializer(serializers.ModelSerializer):
     team_name = serializers.CharField(source='team.name', read_only=True)
 

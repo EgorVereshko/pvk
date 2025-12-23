@@ -1,18 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, {useState, useEffect} from 'react';
+import {Navigate, useNavigate, useParams} from 'react-router-dom';
 import Header from '../Header/Header';
 import './ScoreStudent.css';
 import axios from "axios";
 import {useAuth} from "../authHook";
 
 const ScoreStudent = () => {
-  const {user, authLoading, handleLogout, isAuthenticated} = useAuth();
+  const {user, authLoading, handleLogout} = useAuth();
+  const [loading, setLoading] = useState(true);
   const [selectedStudent, setSelectedStudent] = useState('Студент');
   const [sliderValues, setSliderValues] = useState({
-    'Организованность': 1,
-    'Вовлеченность': -1,
-    'Работа в команде': 1,
-    'Обучаемость': 1,
+    'Организованность': 0,
+    'Вовлеченность': 0,
+    'Работа в команде': 0,
+    'Обучаемость': 0,
   });
 
   const competences = [
@@ -22,6 +23,53 @@ const ScoreStudent = () => {
     'Организованность',
   ];
 
+  const {event_id} = useParams();
+
+  useEffect(() => {
+    if (!authLoading) {
+      fetchEvent();
+    }
+  }, [authLoading, event_id]);
+
+  const [eventData, setEventData] = useState(null);
+  const fetchEvent = async () => {
+    try {
+      const response = await axios.get(`/api/get_event_members/${event_id}/`);
+      setEventData(response.data)
+    } catch (error) {
+      console.error('Ошибка загрузки участников мероприятия:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const [formData, setFormData] = useState([
+    {
+      evaluated_user_id: null, // кого оценили
+      evaluator: null,   // кто оценил
+      learning_score: null,
+      involvement_score: null,
+      organization_score: null,
+      teamwork_score: null
+    }
+  ]);
+
+  const [sumbit_error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setIsSubmitting(true);
+
+    try {
+      await axios.post('', formData);
+    } catch (error) {
+      console.error('Ошибка отправки оценок:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const handleSliderChange = (competence, value) => {
     setSliderValues(prev => ({
@@ -35,11 +83,11 @@ const ScoreStudent = () => {
     value: sliderValues[c],
   }));
 
-  if (authLoading) return <div className="loading">Загрузка...</div>;
+  if (authLoading || loading) return <div className="loading">Загрузка...</div>;
 
   return (
     <div className="score-container">
-      <Header onLogout={handleLogout} user={user} />
+      <Header onLogout={handleLogout} user={user}/>
 
       <div className="score-content">
         <div className="score-card">
@@ -51,7 +99,9 @@ const ScoreStudent = () => {
               value={selectedStudent}
               onChange={(e) => setSelectedStudent(e.target.value)}
             >
-              <option>Студент</option>
+              {eventData.team.members.map((member) =>
+                <option>{member.short_name}</option>
+              )}
             </select>
           </div>
 
@@ -73,7 +123,7 @@ const ScoreStudent = () => {
                   <div className="slider-ticks">
                     {[-1, 0, 1, 2, 3].map((v) => (
                       <div key={v} className="slider-tick">
-                        <span className="tick-line" />
+                        <span className="tick-line"/>
                         <span className="tick-value">{v}</span>
                       </div>
                     ))}

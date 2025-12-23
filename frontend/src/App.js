@@ -53,7 +53,7 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/profile" element={<Profile />} />
         {/*<Route path="/profile/edit" element={<ProfileEdit />} />*/}
-        <Route path="/score/student" element={<ScoreStudent />} />
+        <Route path="/score_teammates/:event_id" element={<ScoreStudent />} />
         <Route path="/events" element={<EventsStudent />} />
         <Route path="/events/tutor" element={<EventsTutor />} />
         <Route path="*" element={<Navigate to="/" />} />

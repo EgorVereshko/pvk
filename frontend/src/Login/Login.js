@@ -24,18 +24,18 @@ function Login() {
     setIsSubmitting(true);
 
     try {
-      const response = await axios.post('/api/login/', formData);
+      await axios.post('/api/login/', formData);
       navigate('/');
-    } catch (error) {
-      if (error.response?.status === 401) {
+    } catch (err) {
+      if (err.response?.status === 401) {
         setError('Неверное имя пользователя или пароль');
-      } else if (error.response?.status === 400) {
+      } else if (err.response?.status === 400) {
         setError('Пожалуйста, заполните все поля правильно');
-      } else if (error.message === 'Network Error') {
+      } else if (err.message === 'Network Error') {
         setError('Ошибка соединения. Проверьте интернет.');
       } else {
         setError('Ошибка при входе. Попробуйте еще раз.');
-        console.error('Ошибка входа:', error)
+        console.error('Ошибка входа:', err)
       }
     } finally {
       setIsSubmitting(false);

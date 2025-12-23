@@ -50,7 +50,11 @@ class Team(models.Model):
     tutor = models.ForeignKey(UserProfile, models.SET_NULL, related_name='teams_tutor', null=True)
 
     def __str__(self):
-        return f'Команда "{self.name}" Куратор: {self.tutor}'
+        return f'Команда "{self.name}" Куратор: {self.tutor} ' \
+               f'Состав: {self.get_members_names()}'
+
+    def get_members_names(self):
+        return ', '.join([member.short_name() for member in UserProfile.objects.filter(team_member__team=self)])
 
 
 class TeamMember(models.Model):
@@ -61,7 +65,7 @@ class TeamMember(models.Model):
         unique_together = ('team', 'member')
 
     def __str__(self):
-        return f'{self.team} - {self.member}'
+        return f'{self.team.name} - {self.member}'
 
 
 class Indicator(models.Model):
@@ -147,8 +151,8 @@ class QualitiesScore(models.Model):
 
 
 class QualitiesAssessment(models.Model):
-    evaluated_student = models.ForeignKey(UserProfile, models.CASCADE, related_name='+')
-    evaluator = models.ForeignKey(UserProfile, models.CASCADE, related_name='+')
+    evaluated_student = models.ForeignKey(UserProfile, models.CASCADE, related_name='evaluated_user')
+    evaluator = models.ForeignKey(UserProfile, models.CASCADE, related_name='evaluator')
     created_at = models.DateTimeField()
     learning_score = models.FloatField(default=0.0)
     involvement_score = models.FloatField(default=0.0)
@@ -170,9 +174,9 @@ class Event(models.Model):
 
 
 class CheckList(models.Model):
-    template = models.ForeignKey(Template, models.CASCADE, related_name='+')
+    template = models.ForeignKey(Template, models.CASCADE, related_name='template')
     evaluated_projectant = models.ForeignKey(UserProfile, models.CASCADE, null=True)
-    event = models.ForeignKey(Event, models.CASCADE, related_name='+')
+    event = models.ForeignKey(Event, models.CASCADE, related_name='events_checklist')
 
 
 class CheckListScoresRegister(models.Model):
