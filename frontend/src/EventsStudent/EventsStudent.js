@@ -113,7 +113,7 @@ const EventsStudent = () => {
 
           <div className="events-list">
             {filteredAndSortedEvents.map(event => (
-              <Link to={`/score_teammates/${event.id}`}>
+              <Link to={`/score_teammates/${event.id}`} style={{ textDecoration: 'none' }}>
                 <div key={event.id} className="event-item">
 
                   <div className="event-name">{event.name}</div>
