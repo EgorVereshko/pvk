@@ -196,12 +196,40 @@ def get_event_members(request, event_id):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def record_assessment(request):
-    serializer = QualitiesAssessmentSerializer(data=request.data)
-    if serializer.is_valid():
-        assessment = serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+def create_qualities_assessments(request):
+    if not isinstance(request.data, list):
+        return Response(
+            {'error': 'Ожидается массив оценок'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    created_assessments = []
+    errors = []
+
+    for i, assessment_data in enumerate(request.data):
+        try:
+            serializer = QualitiesAssessmentSerializer(data=assessment_data)
+            if serializer.is_valid():
+                assessment = serializer.save()
+                created_assessments.append(serializer.data)
+            else:
+                errors.append({
+                    'index': i,
+                    'errors': serializer.errors
+                })
+        except Exception as e:
+            errors.append({
+                'index': i,
+                'error': str(e)
+            })
+
+    if errors:
+        return Response({
+            'created': created_assessments,
+            'errors': errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    return Response(created_assessments, status=status.HTTP_201_CREATED)
 
 
 @api_view(['GET'])

@@ -63,8 +63,10 @@ const ScoreStudent = () => {
     setError('');
     setIsSubmitting(true);
 
+
     try {
-      await axios.post('/api/record_assessment/', formData);
+      const response = await axios.post('/api/record_assessment/', formData);
+      console.log('Оценки созданы:', response.data);
     } catch (error) {
       console.error('Ошибка отправки оценок:', error);
     } finally {
@@ -103,8 +105,8 @@ const ScoreStudent = () => {
               {eventData.team.members
                 .filter(member => member.id !== user.id) // убираем текущего пользователя, чтобы он не оценивал самого себя
                 .map((member) =>
-                <option>{member.short_name}</option>
-              )}
+                  <option>{member.short_name}</option>
+                )}
             </select>
           </div>
 
