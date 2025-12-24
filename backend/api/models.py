@@ -150,19 +150,6 @@ class QualitiesScore(models.Model):
                f'{self.created_at.strftime("%d.%m.%Y %H:%M")}'
 
 
-class QualitiesAssessment(models.Model):
-    evaluated_student = models.ForeignKey(UserProfile, models.CASCADE, related_name='evaluated_user')
-    evaluator = models.ForeignKey(UserProfile, models.CASCADE, related_name='evaluator')
-    created_at = models.DateTimeField()
-    learning_score = models.FloatField(default=0.0)
-    involvement_score = models.FloatField(default=0.0)
-    organization_score = models.FloatField(default=0.0)
-    teamwork_score = models.FloatField(default=0.0)
-
-    def __str__(self):
-        return f'Оценка ПВК {self.created_at}. Кто оценил: {self.evaluator}, кого: {self.evaluated_student}'
-
-
 class Event(models.Model):
     title = models.CharField(max_length=200)
     team = models.ForeignKey(Team, models.CASCADE, related_name='teams_events')
@@ -171,6 +158,20 @@ class Event(models.Model):
 
     def __str__(self):
         return f'{self.title}, {self.team.name}, {self.datetime}'
+
+
+class QualitiesAssessment(models.Model):
+    evaluated_student = models.ForeignKey(UserProfile, models.CASCADE, related_name='evaluated_user')
+    evaluator = models.ForeignKey(UserProfile, models.CASCADE, related_name='evaluator')
+    event = models.ForeignKey(Event, models.SET_NULL, related_name='+', null=True)
+    created_at = models.DateTimeField()
+    learning_score = models.FloatField(default=0.0)
+    involvement_score = models.FloatField(default=0.0)
+    organization_score = models.FloatField(default=0.0)
+    teamwork_score = models.FloatField(default=0.0)
+
+    def __str__(self):
+        return f'Оценка ПВК {self.created_at}. Кто оценил: {self.evaluator}, кого: {self.evaluated_student}'
 
 
 class CheckList(models.Model):

@@ -86,7 +86,7 @@ class StudentEventsSerializer(serializers.ModelSerializer):
         fields = ['id', 'title', 'datetime']
 
 
-class EventSerializer(serializers.ModelSerializer):
+class EventAssessmentSerializer(serializers.ModelSerializer):
     team = serializers.SerializerMethodField()
 
     class Meta:
@@ -120,6 +120,44 @@ class TeamMemberSerializer(serializers.ModelSerializer):
 
     def get_short_name(self, obj: UserProfile):
         return f'{obj.last_name} {obj.first_name[0]}.{obj.middle_name[0]}.'
+
+
+class QualitiesAssessmentSerializer(serializers.ModelSerializer):
+    evaluated_user_id = serializers.IntegerField(write_only=True)
+    evaluator_id = serializers.IntegerField(write_only=True)
+    event_id = serializers.IntegerField(write_only=True)
+
+    class Meta:
+        model = QualitiesAssessment
+        fields = [
+            'id',
+            'evaluated_user_id',
+            'evaluator_id',
+            'event_id',
+            'learning_score',
+            'involvement_score',
+            'organization_score',
+            'teamwork_score',
+            'created_at'
+        ]
+
+    def create(self, validated_data):
+        evaluated_user_id = validated_data.pop('evaluated_user_id')
+        evaluator_id = validated_data.pop('evaluator_id')
+        event_id = validated_data.pop('event_id')
+
+        evaluated_user = UserProfile.objects.get(id=evaluated_user_id)
+        evaluator = UserProfile.objects.get(id=evaluator_id)
+        event = Event.objects.get(id=event_id) if event_id else None
+
+        assessment = QualitiesAssessment.objects.create(
+            evaluated_student=evaluated_user,
+            evaluator=evaluator,
+            event=event,
+            **validated_data
+        )
+
+        return assessment
 
 
 class TutorEventsSerializer(serializers.ModelSerializer):
