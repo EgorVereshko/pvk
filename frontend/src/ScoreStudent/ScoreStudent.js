@@ -46,11 +46,12 @@ const ScoreStudent = () => {
   const [formData, setFormData] = useState([
     {
       evaluated_user_id: null, // кого оценили
-      evaluator: null,   // кто оценил
-      learning_score: null,
-      involvement_score: null,
-      organization_score: null,
-      teamwork_score: null
+      evaluator_id: null,   // кто оценил
+      event_id: null,
+      learning_score: 0,
+      involvement_score: 0,
+      organization_score: 0,
+      teamwork_score: 0
     }
   ]);
 
@@ -63,7 +64,7 @@ const ScoreStudent = () => {
     setIsSubmitting(true);
 
     try {
-      await axios.post('', formData);
+      await axios.post('/api/record_assessment/', formData);
     } catch (error) {
       console.error('Ошибка отправки оценок:', error);
     } finally {

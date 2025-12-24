@@ -10,7 +10,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from .models import *
 from .serializers import RegisterSerializer, LoginSerializer, UserProfileSerializer, StudentEventsSerializer, \
-    EventSerializer, TutorEventsSerializer, QualitiesScoreSerializer
+    EventAssessmentSerializer, TutorEventsSerializer, QualitiesScoreSerializer, QualitiesAssessmentSerializer
 
 
 @api_view(['GET'])
@@ -189,9 +189,19 @@ def get_student_events(request):
 @permission_classes([IsAuthenticated])
 def get_event_members(request, event_id):
     event = get_object_or_404(Event, id=event_id)
-    serializer = EventSerializer(event)
+    serializer = EventAssessmentSerializer(event)
 
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def record_assessment(request):
+    serializer = QualitiesAssessmentSerializer(data=request.data)
+    if serializer.is_valid():
+        assessment = serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET'])
