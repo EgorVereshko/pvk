@@ -8,13 +8,15 @@ import {useAuth} from "../authHook";
 const ScoreStudent = () => {
   const {user, authLoading, handleLogout} = useAuth();
   const [loading, setLoading] = useState(true);
-  const [selectedStudent, setSelectedStudent] = useState('Студент');
+  const [selectedStudent, setSelectedStudent] = useState();
   const [sliderValues, setSliderValues] = useState({
-    'Организованность': 0,
     'Вовлеченность': 0,
     'Работа в команде': 0,
     'Обучаемость': 0,
+    'Организованность': 0,
   });
+  const [saving, setSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState('');
 
   const competences = [
     'Вовлеченность',
@@ -25,11 +27,6 @@ const ScoreStudent = () => {
 
   const {event_id} = useParams();
 
-  useEffect(() => {
-    if (!authLoading) {
-      fetchEvent();
-    }
-  }, [authLoading, event_id]);
 
   const [eventData, setEventData] = useState(null);
   const fetchEvent = async () => {
@@ -43,34 +40,45 @@ const ScoreStudent = () => {
     }
   };
 
-  const [formData, setFormData] = useState([
-    {
-      evaluated_user_id: null, // кого оценили
-      evaluator_id: null,   // кто оценил
-      event_id: null,
-      learning_score: 0,
-      involvement_score: 0,
-      organization_score: 0,
-      teamwork_score: 0
+  useEffect(() => {
+    if (!authLoading) {
+      fetchEvent();
     }
-  ]);
+  }, [authLoading, event_id]);
 
-  const [sumbit_error, setError] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const handleSubmit = async () => {
+    if (!selectedStudent) {
+      setSaveMessage('Выберите студента');
+      return;
+    }
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setIsSubmitting(true);
-
+    setSaving(true);
+    setSaveMessage('');
 
     try {
-      const response = await axios.post('/api/record_assessment/', formData);
-      console.log('Оценки созданы:', response.data);
+      const scoresData =
+        {
+          evaluated_user_id: parseInt(selectedStudent), // кого оценили
+          evaluator_id: user.id,   // кто оценил
+          event_id: eventData.id,
+          involvement_score: sliderValues['Вовлеченность'],
+          teamwork_score: sliderValues['Работа в команде'],
+          learning_score: sliderValues['Обучаемость'],
+          organization_score: sliderValues['Организованность'],
+        };
+      const response = await axios.post('/api/record_assessment/', scoresData);
+
+      setSaveMessage('Оценки успешно сохранены!');
+      console.log('Сохраненные оценки:', response.data);
+
+      setTimeout(() => {
+        setSaveMessage('');
+      }, 3000);
     } catch (error) {
-      console.error('Ошибка отправки оценок:', error);
+      console.error('Ошибка сохранения:', error);
+      setSaveMessage(`Ошибка: ${error.response?.data?.error || 'Неизвестная ошибка'}`);
     } finally {
-      setIsSubmitting(false);
+      setSaving(false);
     }
   };
 
@@ -81,10 +89,6 @@ const ScoreStudent = () => {
     }));
   };
 
-  const spiderChartData = competences.map(c => ({
-    label: c,
-    value: sliderValues[c],
-  }));
 
   if (authLoading || loading) return <div className="loading">Загрузка...</div>;
 
@@ -97,15 +101,18 @@ const ScoreStudent = () => {
           <h1 className="score-title">Оценка студента</h1>
 
           <div className="student-selector">
-            <label>Студент</label>
+            <label>Студент:</label>
             <select
               value={selectedStudent}
               onChange={(e) => setSelectedStudent(e.target.value)}
             >
+              <option value="">Выберите студента</option>
               {eventData.team.members
                 .filter(member => member.id !== user.id) // убираем текущего пользователя, чтобы он не оценивал самого себя
                 .map((member) =>
-                  <option>{member.short_name}</option>
+                  <option key={member.id} value={member.id}>
+                    {member.short_name}
+                  </option>
                 )}
             </select>
           </div>
@@ -136,6 +143,23 @@ const ScoreStudent = () => {
                 </div>
               </div>
             ))}
+          </div>
+
+          <div className="save-section">
+            <div className="save-button-container">
+              <button
+                className="save-button"
+                onClick={handleSubmit}
+                disabled={saving || !selectedStudent}
+              >
+                {saving ? 'Сохранение...' : 'Сохранить оценки'}
+              </button>
+            </div>
+            {saveMessage && (
+              <div className={`save-message ${saveMessage.includes('успешно') ? 'success' : 'error'}`}>
+                {saveMessage}
+              </div>
+            )}
           </div>
         </div>
       </div>

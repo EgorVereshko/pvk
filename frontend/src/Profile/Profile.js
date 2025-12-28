@@ -83,6 +83,30 @@ const Profile = () => {
               </div>
             </div>
           )}
+
+          {activeTab === 'profile' && (
+            <div className="stats-info">
+              <div className="lk-content">
+                <div className="lk-left">
+                  <h1>Личный кабинет</h1>
+
+                  <div className="lk-info">
+                    <img
+                      className="lk-photo"
+                      src={user.photo_url || '/default_avatar.jpeg'}
+                      alt="avatar"
+                    />
+
+                    <div className="lk-text">
+                      <h3>{user.first_name} {user.last_name}</h3>
+                      <p>{user.year_of_study ? `${user.year_of_study} курс` : ''}</p>
+                      <p>{user.team_name ? `Команда: "${user.team_name}"` : 'Без команды'}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

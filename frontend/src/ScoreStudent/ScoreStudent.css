@@ -43,6 +43,7 @@
   border-radius: 8px;
   border: 1px solid #cbd5e1;
   font-size: 15px;
+  width: 100%;
 }
 
 .competence-sliders {
@@ -139,6 +140,60 @@
   color: #1f2937;
 }
 
+/* Секция сохранения */
+.save-section {
+  margin-top: 40px;
+  text-align: center;
+}
+
+.save-button-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 15px;
+}
+
+.save-button {
+  background: #111827;
+  color: white;
+  border: none;
+  padding: 12px 32px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  min-width: 200px;
+}
+
+.save-button:hover:not(:disabled) {
+  background: #374151;
+}
+
+.save-button:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+.save-message {
+  padding: 10px 15px;
+  border-radius: 6px;
+  font-size: 14px;
+  margin-top: 10px;
+  display: inline-block;
+}
+
+.save-message.success {
+  background-color: #d1fae5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.save-message.error {
+  background-color: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
 /* adaptive */
 @media (max-width: 768px) {
   .competence-row {
@@ -148,5 +203,19 @@
 
   .score-card {
     padding: 20px;
+  }
+
+  .save-button {
+    width: 100%;
+    min-width: auto;
+    padding: 14px;
+  }
+
+  .student-selector {
+    max-width: 100%;
+  }
+
+  .save-button-container {
+    width: 100%;
   }
 }

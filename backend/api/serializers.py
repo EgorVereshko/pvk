@@ -137,8 +137,7 @@ class QualitiesAssessmentSerializer(serializers.ModelSerializer):
             'learning_score',
             'involvement_score',
             'organization_score',
-            'teamwork_score',
-            'created_at'
+            'teamwork_score'
         ]
 
     def create(self, validated_data):
@@ -148,12 +147,14 @@ class QualitiesAssessmentSerializer(serializers.ModelSerializer):
 
         evaluated_user = UserProfile.objects.get(id=evaluated_user_id)
         evaluator = UserProfile.objects.get(id=evaluator_id)
-        event = Event.objects.get(id=event_id) if event_id else None
+        event = Event.objects.get(id=event_id)
+        created_at = timezone.now()
 
         assessment = QualitiesAssessment.objects.create(
             evaluated_student=evaluated_user,
             evaluator=evaluator,
             event=event,
+            created_at=created_at,
             **validated_data
         )
 
