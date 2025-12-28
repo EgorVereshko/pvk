@@ -7,13 +7,16 @@ import './ScoreStudent.css';
 const ScoreStudent = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [selectedStudent, setSelectedStudent] = useState('Студент');
+  const [students, setStudents] = useState([]);
+  const [selectedStudent, setSelectedStudent] = useState('');
   const [sliderValues, setSliderValues] = useState({
     'Организованность': 1,
     'Вовлеченность': -1,
     'Работа в команде': 1,
     'Обучаемость': 1,
   });
+  const [saving, setSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState('');
 
   const navigate = useNavigate();
 
@@ -26,6 +29,7 @@ const ScoreStudent = () => {
 
   useEffect(() => {
     fetchUserProfile();
+    fetchStudents();
   }, [navigate]);
 
   const fetchUserProfile = async () => {
@@ -37,6 +41,16 @@ const ScoreStudent = () => {
         localStorage.clear();
         navigate('/');
       }
+    }
+  };
+
+  // Загрузка студентов из БД
+  const fetchStudents = async () => {
+    try {
+      const response = await api.get('/api/students/');
+      setStudents(response.data);
+    } catch (error) {
+      console.error('Ошибка загрузки студентов:', error);
     } finally {
       setLoading(false);
     }
@@ -54,10 +68,37 @@ const ScoreStudent = () => {
     }));
   };
 
-  const spiderChartData = competences.map(c => ({
-    label: c,
-    value: sliderValues[c],
-  }));
+  const handleSaveScores = async () => {
+    if (!selectedStudent) {
+      setSaveMessage('Выберите студента');
+      return;
+    }
+
+    setSaving(true);
+    setSaveMessage('');
+
+    try {
+      const scoresData = Object.entries(sliderValues).map(([competenceName, score]) => ({
+        competence_name: competenceName,
+        score: parseFloat(score),
+        student_profile_id: selectedStudent
+      }));
+
+      const response = await api.post('/api/competences/scores/', scoresData);
+     
+      setSaveMessage('Оценки успешно сохранены!');
+      console.log('Сохраненные оценки:', response.data);
+      
+      setTimeout(() => {
+        setSaveMessage('');
+      }, 3000);
+    } catch (error) {
+      console.error('Ошибка сохранения:', error);
+      setSaveMessage(`Ошибка: ${error.response?.data?.error || 'Неизвестная ошибка'}`);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   if (loading) return <div className="loading">Загрузка...</div>;
 
@@ -70,12 +111,17 @@ const ScoreStudent = () => {
           <h1 className="score-title">Оценка студента</h1>
 
           <div className="student-selector">
-            <label>Студент</label>
+            <label>Студент:</label>
             <select
               value={selectedStudent}
               onChange={(e) => setSelectedStudent(e.target.value)}
             >
-              <option>Студент</option>
+              <option value="">Выберите студента</option>
+              {students.map((student) => (
+                <option key={student.id} value={student.id}>
+                  {student.short_name}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -83,7 +129,6 @@ const ScoreStudent = () => {
             {competences.map(c => (
               <div key={c} className="competence-row">
                 <span className="competence-name">{c}</span>
-
                 <div className="slider-wrapper">
                   <input
                     type="range"
@@ -93,7 +138,6 @@ const ScoreStudent = () => {
                     value={sliderValues[c]}
                     onChange={(e) => handleSliderChange(c, e.target.value)}
                   />
-
                   <div className="slider-ticks">
                     {[-1, 0, 1, 2, 3].map((v) => (
                       <div key={v} className="slider-tick">
@@ -105,6 +149,23 @@ const ScoreStudent = () => {
                 </div>
               </div>
             ))}
+          </div>
+
+          <div className="save-section">
+            <div className="save-button-container">
+              <button
+                className="save-button"
+                onClick={handleSaveScores}
+                disabled={saving || !selectedStudent}
+              >
+                {saving ? 'Сохранение...' : 'Сохранить оценки'}
+              </button>
+            </div>
+            {saveMessage && (
+              <div className={`save-message ${saveMessage.includes('успешно') ? 'success' : 'error'}`}>
+                {saveMessage}
+              </div>
+            )}
           </div>
         </div>
       </div>
