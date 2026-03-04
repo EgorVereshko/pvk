@@ -85,6 +85,8 @@ class IndicatorsListTemplate(models.Model):
     user = models.ForeignKey(UserProfile, models.CASCADE, related_name='template_user')
     name = models.CharField(max_length=100)
     indicators_list = models.ForeignKey(IndicatorsList, models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True) # добавил
+    updated_at = models.DateTimeField(auto_now=True) # добавил
 
     def __str__(self):
         return f'Шаблон "{self.name}" от {self.user}'
@@ -150,6 +152,7 @@ class Event(models.Model):
     team = models.ForeignKey(Team, models.CASCADE, related_name='team_on_event')
     tutor = models.ForeignKey(UserProfile, models.CASCADE, related_name='event_tutor')
     datetime = models.DateTimeField()
+    name = models.CharField(max_length=200, default='Мероприятие') # добавил
 
     def __str__(self):
         return f'{self.team.name}, {self.datetime}'
@@ -159,3 +162,41 @@ class CheckList(models.Model):
     indicators_list = models.ForeignKey(IndicatorsList, models.CASCADE, related_name='indicators_for_checklist')
     evaluated_projectant = models.ForeignKey(UserProfile, models.CASCADE, null=True)
     event = models.ForeignKey(Event, models.CASCADE, related_name='checklist_event')
+
+class ChecklistScore(models.Model):
+    """Индивидуальные оценки студентов в чек-листе"""
+    checklist = models.ForeignKey(CheckList, on_delete=models.CASCADE, related_name='scores')
+    student = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
+    quality = models.CharField(max_length=50)  # Обучаемость, Организованность и т.д.
+    score = models.IntegerField(choices=[(1, '1'), (2, '2'), (3, '3')], null=True, blank=True)
+    
+    class Meta:
+        unique_together = ['checklist', 'student', 'quality']
+    
+    def __str__(self):
+        return f'{self.checklist} - {self.student} - {self.quality}: {self.score}'
+
+class TemplateCompetence(models.Model):
+    """Компетенции в шаблоне чек-листа"""
+    template = models.ForeignKey(IndicatorsListTemplate, on_delete=models.CASCADE, related_name='competences')
+    name = models.CharField(max_length=100)
+    order = models.IntegerField(default=0)
+    
+    class Meta:
+        ordering = ['order']
+    
+    def __str__(self):
+        return f'{self.template.name} - {self.name}'
+
+class ChecklistCompetence(models.Model):
+    """Компетенции в чек-листе"""
+    checklist = models.ForeignKey(CheckList, on_delete=models.CASCADE, related_name='competences')
+    name = models.CharField(max_length=100)
+    order = models.IntegerField(default=0)
+    
+    class Meta:
+        ordering = ['order']
+        unique_together = ['checklist', 'name']
+    
+    def __str__(self):
+        return f'{self.checklist.id} - {self.name}'
