@@ -7,6 +7,8 @@ import EventsStudent from './EventsStudent/EventsStudent';
 import EventsTutor from './EventsTutor/EventsTutor';
 import ProfileEdit from './ProfileEdit/ProfileEdit';
 import ScoreStudent from './ScoreStudent/ScoreStudent';
+import CheckList from './CheckList/CheckList';
+import CheckListView from './CheckList/CheckListView';
 import './App.css';
 
 function Home() {
@@ -46,6 +48,8 @@ function App() {
         <Route path="/score/student" element={<ScoreStudent />} />
         <Route path="/events" element={<EventsStudent />} />
         <Route path="/events/tutor" element={<EventsTutor />} />
+        <Route path="/checklist/create" element={<CheckList />} />
+        <Route path="/checklist/view/:id" element={<CheckListView />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
