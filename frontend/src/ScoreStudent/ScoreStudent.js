@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import Header from '../Header/Header';
@@ -10,13 +10,19 @@ const ScoreStudent = () => {
   const [students, setStudents] = useState([]);
   const [selectedStudent, setSelectedStudent] = useState('');
   const [sliderValues, setSliderValues] = useState({
-    'Организованность': 1,
-    'Вовлеченность': -1,
-    'Работа в команде': 1,
-    'Обучаемость': 1,
+    'Организованность': 1.0,
+    'Вовлеченность': -1.0,
+    'Работа в команде': 1.0,
+    'Обучаемость': 1.0,
   });
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
+  const sliderRefs = {
+    'Организованность': useRef(null),
+    'Вовлеченность': useRef(null),
+    'Работа в команде': useRef(null),
+    'Обучаемость': useRef(null),
+  };
 
   const navigate = useNavigate();
 
@@ -44,11 +50,14 @@ const ScoreStudent = () => {
     }
   };
 
-  // Загрузка студентов из БД
   const fetchStudents = async () => {
     try {
       const response = await api.get('/api/students/');
       setStudents(response.data);
+      // Автоматически выбираем первого студента, если список не пуст
+      if (response.data.length > 0) {
+        setSelectedStudent(response.data[0].id);
+      }
     } catch (error) {
       console.error('Ошибка загрузки студентов:', error);
     } finally {
@@ -64,7 +73,7 @@ const ScoreStudent = () => {
   const handleSliderChange = (competence, value) => {
     setSliderValues(prev => ({
       ...prev,
-      [competence]: parseInt(value, 10),
+      [competence]: parseFloat(value),
     }));
   };
 
@@ -100,6 +109,23 @@ const ScoreStudent = () => {
     }
   };
 
+  const formatValue = (value) => {
+    return value.toFixed(1);
+  };
+
+  const getBubblePosition = (competence) => {
+    const value = sliderValues[competence];
+    // Преобразуем значение -1...3 в проценты 0%...100%
+    const percent = ((value + 1) / 4) * 100;
+    return percent;
+  };
+
+  const handleTabChange = (studentId) => {
+    setSelectedStudent(studentId);
+    // Здесь можно добавить загрузку сохраненных оценок для выбранного студента
+    // loadStudentScores(studentId);
+  };
+
   if (loading) return <div className="loading">Загрузка...</div>;
 
   return (
@@ -110,41 +136,60 @@ const ScoreStudent = () => {
         <div className="score-card">
           <h1 className="score-title">Оценка студента</h1>
 
-          <div className="student-selector">
-            <label>Студент:</label>
-            <select
-              value={selectedStudent}
-              onChange={(e) => setSelectedStudent(e.target.value)}
-            >
-              <option value="">Выберите студента</option>
-              {students.map((student) => (
-                <option key={student.id} value={student.id}>
-                  {student.short_name}
-                </option>
-              ))}
-            </select>
+          {/* Вкладки студентов вместо выпадающего списка */}
+          <div className="students-tabs">
+            {students.map((student) => (
+              <button
+                key={student.id}
+                className={`student-tab ${selectedStudent === student.id ? 'active' : ''}`}
+                onClick={() => handleTabChange(student.id)}
+              >
+                {student.short_name || student.full_name || `Студент ${student.id}`}
+              </button>
+            ))}
           </div>
 
+          {/* Информация о выбранном студенте */}
           <div className="competence-sliders">
             {competences.map(c => (
               <div key={c} className="competence-row">
                 <span className="competence-name">{c}</span>
-                <div className="slider-wrapper">
+                <div className="slider-wrapper" ref={sliderRefs[c]}>
+                  <div 
+                    className="slider-value-bubble"
+                    style={{ left: `${getBubblePosition(c)}%` }}
+                  >
+                    <span className="current-value">
+                      {formatValue(sliderValues[c])}
+                    </span>
+                  </div>
                   <input
                     type="range"
                     min="-1"
                     max="3"
-                    step="1"
+                    step="0.1"
                     value={sliderValues[c]}
                     onChange={(e) => handleSliderChange(c, e.target.value)}
                   />
-                  <div className="slider-ticks">
-                    {[-1, 0, 1, 2, 3].map((v) => (
-                      <div key={v} className="slider-tick">
-                        <span className="tick-line" />
-                        <span className="tick-value">{v}</span>
-                      </div>
+                  <div className="slider-markers">
+                    {[-1, -0.9, -0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.1, 
+                      0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 
+                      1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 
+                      2, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 
+                      3].map((v) => (
+                      <div 
+                        key={v} 
+                        className={`marker ${Number.isInteger(v) ? 'major' : 'minor'}`}
+                        style={{ left: `${((v + 1) / 4) * 100}%` }}
+                      />
                     ))}
+                  </div>
+                  <div className="slider-labels">
+                    <span className="slider-label">-1</span>
+                    <span className="slider-label">0</span>
+                    <span className="slider-label">1</span>
+                    <span className="slider-label">2</span>
+                    <span className="slider-label">3</span>
                   </div>
                 </div>
               </div>
