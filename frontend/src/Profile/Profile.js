@@ -8,22 +8,25 @@ import './Profile.css';
 
 const Profile = () => {
   const [user, setUser] = useState(null);
+  const [userScores, setUserScores] = useState({
+    'Обучаемость': 1.0,
+    'Вовлеченность': 1.0,
+    'Организованность': 1.0,
+    'Работа в команде': 1.0,
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState('profile');
-  const [isEditing, setIsEditing] = useState(false);
-  const [editForm, setEditForm] = useState({});
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchUserProfile();
+    fetchUserScores();
   }, [navigate]);
 
   const fetchUserProfile = async () => {
     try {
       const res = await api.get('/api/user/');
       setUser(res.data);
-      setEditForm(res.data);
     } catch (err) {
       if (err.response?.status === 401) {
         localStorage.clear();
@@ -31,6 +34,15 @@ const Profile = () => {
       } else {
         setError('Ошибка при загрузке профиля');
       }
+    }
+  };
+
+  const fetchUserScores = async () => {
+    try {
+      const res = await api.get('/api/user/scores/');
+      setUserScores(res.data);
+    } catch (err) {
+      console.error('Ошибка загрузки оценок:', err);
     } finally {
       setLoading(false);
     }
@@ -39,65 +51,40 @@ const Profile = () => {
   if (loading) return <div className="loading">Загрузка профиля...</div>;
   if (!user) return <Navigate to="/" replace />;
 
-  const renderFieldValue = (value, placeholder = 'Не указано') =>
-    value && value.trim()
-      ? value
-      : <span className="placeholder">{placeholder}</span>;
-
   return (
     <div className="profile-container">
       <Header onLogout={() => { localStorage.clear(); navigate('/'); }} user={user} />
 
       <div className="profile-content">
-        <div className="tabs">
-          <button
-            className={`tab ${activeTab === 'profile' ? 'active' : ''}`}
-            onClick={() => setActiveTab('profile')}
-          >
-            Профиль пользователя
-          </button>
+        <div className="stats-info">
+          <div className="lk-content">
+            <div className="lk-left">
+              <h1>Профиль</h1>
 
-          <button
-            className={`tab ${activeTab === 'stats' ? 'active' : ''}`}
-            onClick={() => setActiveTab('stats')}
-          >
-            Личный кабинет
-          </button>
-        </div>
+              <div className="lk-info">
+                <img
+                  className="lk-photo"
+                  src={user.photo_url || '/default_avatar.jpeg'}
+                  alt="avatar"
+                />
 
-        <div className="tab-content">
-          {activeTab === 'stats' && (
-            <div className="stats-info">
-              <div className="lk-content">
-                <div className="lk-left">
-                  <h1>Личный кабинет</h1>
-
-                  <div className="lk-info">
-                    <img
-                      className="lk-photo"
-                      src={user.photo_url || '/default_avatar.jpeg'}
-                      alt="avatar"
-                    />
-
-                    <div className="lk-text">
-                      <h3>{user.first_name} {user.last_name}</h3>
-                      <p>4 курс РИ-410947</p>
-                      <p>Команда: team1</p>
-                    </div>
-                  </div>
-
-                  <LineChart />
-                </div>
-
-                <div className="lk-right">
-                  <h2>Статистика</h2>
-                  <div className="stats">
-                    <SpiderChart />
-                  </div>
+                <div className="lk-text">
+                  <h3>{user.first_name} {user.last_name}</h3>
+                  <p>{user.university || '4 курс РИ-420900'}</p>
+                  <p>{user.description || 'Команда ПВК 1'}</p>
                 </div>
               </div>
+
+              <LineChart userScores={userScores} />
             </div>
-          )}
+
+            <div className="lk-right">
+              <h2>Статистика</h2>
+              <div className="stats">
+                <SpiderChart userScores={userScores} />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
