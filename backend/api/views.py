@@ -146,6 +146,10 @@ from datetime import datetime
 from .models import *
 from .serializers import *
 
+import uuid
+from datetime import datetime
+from django.utils import timezone
+
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -1012,5 +1016,511 @@ def delete_checklist(request, checklist_id):
         return Response({'message': 'Чек-лист удален'}, status=status.HTTP_200_OK)
     except CheckList.DoesNotExist:
         return Response({'error': 'Чек-лист не найден'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_user_scores(request):
+    """Получение всех оценок текущего пользователя"""
+    try:
+        # Получаем оценки из CompetencesScore
+        competence_scores = CompetencesScore.objects.filter(
+            user=request.user.profile
+        ).select_related('competence')
+        
+        scores_data = {}
+        for cs in competence_scores:
+            scores_data[cs.competence.name] = float(cs.score)
+        
+        # Базовая структура с дефолтными значениями
+        result = {
+            'Обучаемость': scores_data.get('Обучаемость', 1.0),
+            'Вовлеченность': scores_data.get('Вовлеченность', 1.0),
+            'Организованность': scores_data.get('Организованность', 1.0),
+            'Работа в команде': scores_data.get('Работа в команде', 1.0),
+        }
+        
+        return Response(result, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_poll_templates(request):
+    """Получение всех шаблонов опросников текущего пользователя"""
+    try:
+        templates = PollTemplate.objects.filter(created_by=request.user.profile).order_by('-created_at')
+        data = []
+        for template in templates:
+            questions = template.questions.all().order_by('order')
+            questions_data = []
+            for q in questions:
+                q_data = {
+                    'id': q.id,
+                    'text': q.text,
+                    'question_type': q.question_type,
+                    'order': q.order,
+                    'required': q.required,
+                }
+                if q.question_type == 'choice':
+                    options = q.options.all().order_by('order')
+                    q_data['options'] = [{'id': opt.id, 'text': opt.text, 'value': opt.value} for opt in options]
+                questions_data.append(q_data)
+            
+            data.append({
+                'id': template.id,
+                'name': template.name,
+                'description': template.description,
+                'created_at': template.created_at,
+                'questions': questions_data
+            })
+        return Response(data, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_poll_template(request):
+    """Создание нового шаблона опросника"""
+    try:
+        data = request.data
+        name = data.get('name')
+        description = data.get('description', '')
+        questions = data.get('questions', [])
+        
+        if not name:
+            return Response({'error': 'Необходимо указать название шаблона'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Создаем шаблон
+        template = PollTemplate.objects.create(
+            name=name,
+            description=description,
+            created_by=request.user.profile
+        )
+        
+        # Создаем вопросы
+        for idx, q_data in enumerate(questions):
+            question = PollQuestion.objects.create(
+                template=template,
+                text=q_data.get('text'),
+                question_type=q_data.get('question_type', 'rating'),
+                order=idx,
+                required=q_data.get('required', True)
+            )
+            
+            # Если тип вопроса - выбор, создаем варианты
+            if question.question_type == 'choice' and 'options' in q_data:
+                for opt_idx, opt_text in enumerate(q_data['options']):
+                    PollOption.objects.create(
+                        question=question,
+                        text=opt_text,
+                        order=opt_idx
+                    )
+        
+        return Response({
+            'id': template.id,
+            'message': 'Шаблон успешно создан'
+        }, status=status.HTTP_201_CREATED)
+        
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_poll_template_detail(request, template_id):
+    """Получение деталей шаблона опросника"""
+    try:
+        template = PollTemplate.objects.get(id=template_id, created_by=request.user.profile)
+        
+        questions_data = []
+        for q in template.questions.all().order_by('order'):
+            q_data = {
+                'id': q.id,
+                'text': q.text,
+                'question_type': q.question_type,
+                'order': q.order,
+                'required': q.required,
+            }
+            if q.question_type == 'choice':
+                options = q.options.all().order_by('order')
+                q_data['options'] = [{'id': opt.id, 'text': opt.text} for opt in options]
+            questions_data.append(q_data)
+        
+        return Response({
+            'id': template.id,
+            'name': template.name,
+            'description': template.description,
+            'created_at': template.created_at,
+            'questions': questions_data
+        }, status=status.HTTP_200_OK)
+        
+    except PollTemplate.DoesNotExist:
+        return Response({'error': 'Шаблон не найден'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['PUT', 'PATCH'])
+@permission_classes([IsAuthenticated])
+def update_poll_template(request, template_id):
+    """Обновление шаблона опросника"""
+    try:
+        template = PollTemplate.objects.get(id=template_id, created_by=request.user.profile)
+        data = request.data
+        
+        template.name = data.get('name', template.name)
+        template.description = data.get('description', template.description)
+        template.save()
+        
+        # Обновляем вопросы (удаляем старые и создаем новые)
+        if 'questions' in data:
+            template.questions.all().delete()
+            for idx, q_data in enumerate(data['questions']):
+                question = PollQuestion.objects.create(
+                    template=template,
+                    text=q_data.get('text'),
+                    question_type=q_data.get('question_type', 'rating'),
+                    order=idx,
+                    required=q_data.get('required', True)
+                )
+                
+                if question.question_type == 'choice' and 'options' in q_data:
+                    for opt_idx, opt_text in enumerate(q_data['options']):
+                        PollOption.objects.create(
+                            question=question,
+                            text=opt_text,
+                            order=opt_idx
+                        )
+        
+        return Response({'message': 'Шаблон обновлен'}, status=status.HTTP_200_OK)
+        
+    except PollTemplate.DoesNotExist:
+        return Response({'error': 'Шаблон не найден'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_poll_template(request, template_id):
+    """Удаление шаблона опросника"""
+    try:
+        template = PollTemplate.objects.get(id=template_id, created_by=request.user.profile)
+        template.delete()
+        return Response({'message': 'Шаблон удален'}, status=status.HTTP_200_OK)
+    except PollTemplate.DoesNotExist:
+        return Response({'error': 'Шаблон не найден'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+# ========== ОПРОСНИКИ ==========
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_polls(request):
+    """Получение всех опросников"""
+    try:
+        polls = Poll.objects.filter(created_by=request.user.profile).order_by('-created_at')
+        data = []
+        for poll in polls:
+            assignments_count = poll.assignments.count()
+            completed_count = poll.assignments.filter(completed=True).count()
+            
+            data.append({
+                'id': poll.id,
+                'name': poll.name,
+                'description': poll.description,
+                'template_name': poll.template.name if poll.template else None,
+                'teams': [{'id': t.id, 'name': t.name} for t in poll.teams.all()],
+                'start_date': poll.start_date,
+                'end_date': poll.end_date,
+                'status': poll.status,
+                'assignments_count': assignments_count,
+                'completed_count': completed_count,
+                'created_at': poll.created_at,
+            })
+        return Response(data, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_poll(request):
+    """Создание нового опросника"""
+    try:
+        data = request.data
+        name = data.get('name')
+        description = data.get('description', '')
+        template_id = data.get('template_id')
+        team_ids = data.get('team_ids', [])
+        start_date = data.get('start_date')
+        end_date = data.get('end_date')
+        
+        if not name or not team_ids or not start_date or not end_date:
+            return Response({'error': 'Необходимо указать название, команды и даты'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Получаем шаблон, если указан
+        template = None
+        if template_id:
+            try:
+                template = PollTemplate.objects.get(id=template_id)
+            except PollTemplate.DoesNotExist:
+                return Response({'error': 'Шаблон не найден'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Парсим даты
+        try:
+            start = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
+            end = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+        except:
+            return Response({'error': 'Неверный формат даты'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Создаем опросник
+        poll = Poll.objects.create(
+            name=name,
+            description=description,
+            template=template,
+            created_by=request.user.profile,
+            start_date=start,
+            end_date=end,
+            status='active'
+        )
+        
+        # Добавляем команды
+        teams = Team.objects.filter(id__in=team_ids)
+        poll.teams.set(teams)
+        
+        # Создаем назначения для всех студентов из команд
+        assignments = []
+        for team in teams:
+            members = TeamMember.objects.filter(team=team).select_related('member')
+            for tm in members:
+                unique_link = str(uuid.uuid4())[:8]
+                assignment = PollAssignment(
+                    poll=poll,
+                    student=tm.member,
+                    unique_link=unique_link
+                )
+                assignments.append(assignment)
+        
+        PollAssignment.objects.bulk_create(assignments)
+        
+        return Response({
+            'id': poll.id,
+            'message': 'Опросник успешно создан'
+        }, status=status.HTTP_201_CREATED)
+        
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_poll_detail(request, poll_id):
+    """Получение деталей опросника"""
+    try:
+        poll = Poll.objects.get(id=poll_id, created_by=request.user.profile)
+        
+        assignments = poll.assignments.all().select_related('student')
+        assignments_data = []
+        for a in assignments:
+            assignments_data.append({
+                'id': a.id,
+                'student_name': a.student.short_name(),
+                'unique_link': a.unique_link,
+                'completed': a.completed,
+                'completed_at': a.completed_at,
+            })
+        
+        return Response({
+            'id': poll.id,
+            'name': poll.name,
+            'description': poll.description,
+            'template': {
+                'id': poll.template.id,
+                'name': poll.template.name
+            } if poll.template else None,
+            'teams': [{'id': t.id, 'name': t.name} for t in poll.teams.all()],
+            'start_date': poll.start_date,
+            'end_date': poll.end_date,
+            'status': poll.status,
+            'assignments': assignments_data,
+            'created_at': poll.created_at,
+        }, status=status.HTTP_200_OK)
+        
+    except Poll.DoesNotExist:
+        return Response({'error': 'Опросник не найден'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['PUT', 'PATCH'])
+@permission_classes([IsAuthenticated])
+def update_poll(request, poll_id):
+    """Обновление опросника"""
+    try:
+        poll = Poll.objects.get(id=poll_id, created_by=request.user.profile)
+        data = request.data
+        
+        poll.name = data.get('name', poll.name)
+        poll.description = data.get('description', poll.description)
+        poll.status = data.get('status', poll.status)
+        
+        if 'start_date' in data:
+            poll.start_date = datetime.fromisoformat(data['start_date'].replace('Z', '+00:00'))
+        if 'end_date' in data:
+            poll.end_date = datetime.fromisoformat(data['end_date'].replace('Z', '+00:00'))
+        
+        poll.save()
+        
+        return Response({'message': 'Опросник обновлен'}, status=status.HTTP_200_OK)
+        
+    except Poll.DoesNotExist:
+        return Response({'error': 'Опросник не найден'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_poll(request, poll_id):
+    """Удаление опросника"""
+    try:
+        poll = Poll.objects.get(id=poll_id, created_by=request.user.profile)
+        poll.delete()
+        return Response({'message': 'Опросник удален'}, status=status.HTTP_200_OK)
+    except Poll.DoesNotExist:
+        return Response({'error': 'Опросник не найден'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+# ========== ССЫЛКИ И ОТВЕТЫ ==========
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_poll_assignments(request):
+    """Получение назначений для текущего пользователя"""
+    try:
+        assignments = PollAssignment.objects.filter(
+            student=request.user.profile
+        ).select_related('poll').order_by('-poll__created_at')
+        
+        data = []
+        for a in assignments:
+            data.append({
+                'id': a.id,
+                'poll_name': a.poll.name,
+                'unique_link': a.unique_link,
+                'completed': a.completed,
+                'completed_at': a.completed_at,
+                'start_date': a.poll.start_date,
+                'end_date': a.poll.end_date,
+                'poll_status': a.poll.status,
+            })
+        return Response(data, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])  # Доступ по ссылке без авторизации
+def get_poll_by_link(request, unique_link):
+    """Получение опросника по уникальной ссылке"""
+    try:
+        assignment = PollAssignment.objects.select_related(
+            'poll', 'poll__template', 'student'
+        ).get(unique_link=unique_link)
+        
+        # Проверяем, не истек ли срок
+        now = timezone.now()
+        if now > assignment.poll.end_date:
+            return Response({'error': 'Срок прохождения опросника истек'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if assignment.completed:
+            return Response({'error': 'Опросник уже пройден'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Получаем вопросы из шаблона
+        questions = []
+        if assignment.poll.template:
+            for q in assignment.poll.template.questions.all().order_by('order'):
+                q_data = {
+                    'id': q.id,
+                    'text': q.text,
+                    'question_type': q.question_type,
+                    'required': q.required,
+                }
+                if q.question_type == 'choice':
+                    options = q.options.all().order_by('order')
+                    q_data['options'] = [{'id': opt.id, 'text': opt.text} for opt in options]
+                questions.append(q_data)
+        
+        return Response({
+            'assignment_id': assignment.id,
+            'poll_name': assignment.poll.name,
+            'poll_description': assignment.poll.description,
+            'student_name': assignment.student.short_name(),
+            'questions': questions,
+            'end_date': assignment.poll.end_date,
+        }, status=status.HTTP_200_OK)
+        
+    except PollAssignment.DoesNotExist:
+        return Response({'error': 'Ссылка недействительна'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def submit_poll_response(request):
+    """Сохранение ответов на опросник"""
+    try:
+        data = request.data
+        assignment_id = data.get('assignment_id')
+        answers = data.get('answers', [])
+        
+        assignment = PollAssignment.objects.get(id=assignment_id)
+        
+        if assignment.completed:
+            return Response({'error': 'Опросник уже пройден'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Сохраняем ответы
+        for ans in answers:
+            question_id = ans.get('question_id')
+            question = PollQuestion.objects.get(id=question_id)
+            
+            response_data = {
+                'assignment': assignment,
+                'question': question,
+            }
+            
+            if question.question_type == 'rating':
+                response_data['answer_value'] = ans.get('value')
+            elif question.question_type == 'text':
+                response_data['answer_text'] = ans.get('text')
+            elif question.question_type == 'choice':
+                option_id = ans.get('option_id')
+                if option_id:
+                    option = PollOption.objects.get(id=option_id)
+                    response_data['answer_option'] = option
+                    response_data['answer_value'] = option.value
+        
+            PollResponse.objects.create(**response_data)
+        
+        # Отмечаем как пройденный
+        assignment.completed = True
+        assignment.completed_at = timezone.now()
+        assignment.save()
+        
+        return Response({'message': 'Ответы сохранены'}, status=status.HTTP_201_CREATED)
+        
+    except PollAssignment.DoesNotExist:
+        return Response({'error': 'Назначение не найдено'}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)

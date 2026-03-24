@@ -200,3 +200,99 @@ class ChecklistCompetence(models.Model):
     
     def __str__(self):
         return f'{self.checklist.id} - {self.name}'
+
+class PollTemplate(models.Model):
+    """Шаблон опросника"""
+    name = models.CharField(max_length=200)
+    description = models.TextField(max_length=1000, blank=True)
+    created_by = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name='poll_templates')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return self.name
+
+
+class PollQuestion(models.Model):
+    """Вопросы в шаблоне опросника"""
+    QUESTION_TYPES = [
+        ('rating', 'Оценка (1-5)'),
+        ('text', 'Текстовый ответ'),
+        ('choice', 'Выбор варианта'),
+    ]
+    
+    template = models.ForeignKey(PollTemplate, on_delete=models.CASCADE, related_name='questions')
+    text = models.CharField(max_length=500)
+    question_type = models.CharField(max_length=20, choices=QUESTION_TYPES, default='rating')
+    order = models.IntegerField(default=0)
+    required = models.BooleanField(default=True)
+    
+    class Meta:
+        ordering = ['order']
+    
+    def __str__(self):
+        return f"{self.template.name} - {self.text[:50]}"
+
+
+class PollOption(models.Model):
+    """Варианты ответов для вопросов с выбором"""
+    question = models.ForeignKey(PollQuestion, on_delete=models.CASCADE, related_name='options')
+    text = models.CharField(max_length=200)
+    value = models.IntegerField(null=True, blank=True)
+    order = models.IntegerField(default=0)
+    
+    class Meta:
+        ordering = ['order']
+    
+    def __str__(self):
+        return self.text
+
+
+class Poll(models.Model):
+    """Функциональный опросник"""
+    STATUS_CHOICES = [
+        ('draft', 'Черновик'),
+        ('active', 'Активен'),
+        ('closed', 'Закрыт'),
+    ]
+    
+    name = models.CharField(max_length=200)
+    description = models.TextField(max_length=1000, blank=True)
+    template = models.ForeignKey(PollTemplate, on_delete=models.SET_NULL, null=True, blank=True, related_name='polls')
+    created_by = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name='created_polls')
+    teams = models.ManyToManyField(Team, related_name='polls')
+    start_date = models.DateTimeField()
+    end_date = models.DateTimeField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return self.name
+
+
+class PollAssignment(models.Model):
+    """Назначение опросника конкретному студенту"""
+    poll = models.ForeignKey(Poll, on_delete=models.CASCADE, related_name='assignments')
+    student = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name='poll_assignments')
+    unique_link = models.CharField(max_length=100, unique=True)
+    completed = models.BooleanField(default=False)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    
+    def __str__(self):
+        return f"{self.poll.name} - {self.student.short_name()}"
+
+
+class PollResponse(models.Model):
+    """Ответы на опросник"""
+    assignment = models.ForeignKey(PollAssignment, on_delete=models.CASCADE, related_name='responses')
+    question = models.ForeignKey(PollQuestion, on_delete=models.CASCADE)
+    answer_text = models.TextField(blank=True, null=True)
+    answer_value = models.IntegerField(null=True, blank=True)
+    answer_option = models.ForeignKey(PollOption, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ['assignment', 'question']
+    
+    def __str__(self):
+        return f"Ответ на {self.question.text[:30]}"

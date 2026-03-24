@@ -25,7 +25,11 @@ from .views import (
     RegisterView, get_profile, update_user, get_students, save_competences_scores,
     get_teams, get_templates, save_template, delete_template, save_checklist,
     get_checklists, create_event, create_indicators_list, get_indicators,
-    update_template, get_events, get_checklist_detail, update_checklist, delete_checklist
+    update_template, get_events, get_checklist_detail, update_checklist, delete_checklist, get_user_scores,
+    get_poll_templates, create_poll_template, get_poll_template_detail,
+    update_poll_template, delete_poll_template,
+    get_polls, create_poll, get_poll_detail, update_poll, delete_poll,
+    get_poll_assignments, get_poll_by_link, submit_poll_response
 )
 
 urlpatterns = [
@@ -38,6 +42,7 @@ urlpatterns = [
     path('api/user/', get_profile, name='current_user'),
     path('api/user/update/', update_user, name='update_user'),
     path('api/students/', get_students, name='get_students'),
+    path('api/user/scores/', get_user_scores, name='get_user_scores'),
     
     # Оценки компетенций
     path('api/competences/scores/', save_competences_scores, name='save_competences_scores'),
@@ -67,6 +72,25 @@ urlpatterns = [
     path('api/checklist/<int:checklist_id>/', get_checklist_detail, name='get_checklist_detail'),
     path('api/checklist/<int:checklist_id>/update/', update_checklist, name='update_checklist'),
     path('api/checklist/<int:checklist_id>/delete/', delete_checklist, name='delete_checklist'),
+
+    # Шаблоны опросников
+    path('api/poll-templates/', get_poll_templates, name='poll_templates'),
+    path('api/poll-templates/create/', create_poll_template, name='create_poll_template'),
+    path('api/poll-templates/<int:template_id>/', get_poll_template_detail, name='poll_template_detail'),
+    path('api/poll-templates/<int:template_id>/update/', update_poll_template, name='update_poll_template'),
+    path('api/poll-templates/<int:template_id>/delete/', delete_poll_template, name='delete_poll_template'),
+    
+    # Опросники
+    path('api/polls/', get_polls, name='polls'),
+    path('api/polls/create/', create_poll, name='create_poll'),
+    path('api/polls/<int:poll_id>/', get_poll_detail, name='poll_detail'),
+    path('api/polls/<int:poll_id>/update/', update_poll, name='update_poll'),
+    path('api/polls/<int:poll_id>/delete/', delete_poll, name='delete_poll'),
+    
+    # Ссылки и ответы
+    path('api/poll/assignments/', get_poll_assignments, name='poll_assignments'),
+    path('api/poll/link/<str:unique_link>/', get_poll_by_link, name='poll_by_link'),
+    path('api/poll/submit/', submit_poll_response, name='submit_poll'),
 ]
 
 if settings.DEBUG:
