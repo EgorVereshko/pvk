@@ -7,13 +7,8 @@ class UserProfile(models.Model):
     last_name = models.CharField(max_length=50)  # Фамилия
     first_name = models.CharField(max_length=50)  # Имя
     middle_name = models.CharField(max_length=50)  # Отчество
-    phone_number = models.CharField(max_length=11, null=True, blank=True)
-    telegram = models.CharField(max_length=50, null=True, blank=True)
     email = models.CharField(null=True, blank=True)
-    vk = models.CharField(max_length=100, null=True, blank=True)
-    university = models.CharField(max_length=200, null=True, blank=True)
-    year_of_study = models.CharField(max_length=4, null=True, blank=True)
-    description = models.TextField(max_length=2000, blank=True)
+
     photo = models.ImageField(upload_to='users_photo/', blank=True, default='default_avatar.jpeg')
 
     def __str__(self):
@@ -68,20 +63,64 @@ class TeamMember(models.Model):
         return f'{self.team.name} - {self.member}'
 
 
-class Indicator(models.Model):
-    name = models.CharField(max_length=50)
+class Quality(models.Model):
+    name = models.CharField(max_length=100)
     description = models.TextField(max_length=1000)
 
     def __str__(self):
         return f'{self.name}'
 
 
+class Indicator(models.Model):
+    name = models.CharField(max_length=100)
+    description = models.TextField(max_length=1000)
+
+    def __str__(self):
+        return f'{self.name}'
+
+
+class IndicatorQuestion(models.Model):
+    indicator = models.ForeignKey(Indicator, models.CASCADE, related_name='question')
+    question = models.TextField(max_length=500)
+    answer_positive = models.TextField(max_length=500)
+    answer_neutral = models.TextField(max_length=500)
+    answer_negative = models.TextField(max_length=500)
+
+
 class Template(models.Model):
-    user = models.ForeignKey(UserProfile, models.CASCADE, related_name='template_user')
+    creator = models.ForeignKey(UserProfile, models.CASCADE, related_name='creators_templates')
     name = models.CharField(max_length=100)
 
     def __str__(self):
-        return f'Шаблон "{self.name}" пользователя:{self.user}'
+        return f'Шаблон "{self.name}" ({self.creator.short_name()})'
+
+
+class AssessmentModel(models.Model):
+    name = models.CharField(max_length=100)
+    status_choices = [
+        ('Активная', 'Активная'),
+        ('Неактивная', 'Неактивная')
+    ]
+    status = models.CharField(default=status_choices[0], max_length=10)
+
+
+class AssessmentForm(models.Model):
+    template = models.ForeignKey(Template, models.CASCADE, related_name='forms', null=True, blank=True)
+    title = models.CharField(max_length=200)
+    type_choices = [
+        ('Оценка 360', 'Оценка 360'),
+        ('Чеклист', 'Чеклист'),
+        ('Опросник', 'Опросник')
+    ]
+    type = models.CharField(choices=type_choices, max_length=10)
+    status_choices = [
+        ('Запланирована', 'Запланирована'),
+        ('Активна', 'Активна'),
+        ('Завершена', 'Завершена')
+    ]
+    status = models.CharField(choices=status_choices, max_length=13)
+    start_datetime = models.DateTimeField()
+    end_datetime = models.DateTimeField()
 
 
 class IndicatorTemplate(models.Model):
@@ -89,98 +128,57 @@ class IndicatorTemplate(models.Model):
     template = models.ForeignKey(Template, models.CASCADE)
 
     def __str__(self):
-        return f''
+        return f'{self.template} - {self.indicator}'
 
 
-class Competence(models.Model):
-    name = models.CharField(max_length=50)
-    description = models.TextField(max_length=1000)
-
-    def __str__(self):
-        return f'{self.name}'
-
-
-class CompetencesScore(models.Model):
-    user = models.ForeignKey(UserProfile, models.CASCADE, related_name='+')
-    competence = models.ForeignKey(Competence, models.CASCADE, related_name='+')
-    score = models.FloatField(default=0.0)
-
-    def __str__(self):
-        return f'{self.user} {self.competence} {self.score}'
-
-
-class QualityCompetenceRatio(models.Model):
-    qualities_choices = [
-        ('Обучаемость', 'Обучаемость'),
-        ('Вовлеченность', 'Вовлеченность'),
-        ('Организованность', 'Организованность'),
-        ('Работа в команде', 'Работа в команде')
-    ]
-    quality = models.CharField(choices=qualities_choices)
-    competence = models.ForeignKey(Competence, models.CASCADE, related_name='quality_competence_related')
+class QualityIndicatorRatio(models.Model):
+    quality = models.ForeignKey(Quality, models.CASCADE, related_name='ratios_to_indicators')
+    indicator = models.ForeignKey(Indicator, models.CASCADE, related_name='ratios_to_quailities')
+    model = models.ForeignKey(AssessmentModel, models.CASCADE, related_name='qualities_ratios')
     ratio = models.FloatField(default=0.0)
 
     def __str__(self):
-        return f'{self.quality} {self.competence} {self.ratio}'
+        return f'{self.quality} {self.indicator} {self.ratio}'
 
 
-class CompetenceIndicatorRatio(models.Model):
-    competence = models.ForeignKey(Competence, models.CASCADE, related_name='competence_indicator_related')
-    indicator = models.ForeignKey(Indicator, models.CASCADE, related_name='indicator')
-    ratio = models.FloatField(default=0.0)
-
-    def __str__(self):
-        return f'{self.competence} {self.indicator} {self.ratio}'
-
-
-class QualitiesScore(models.Model):
-    user = models.ForeignKey(UserProfile, models.CASCADE, related_name='users_qualities')
+class QualitiesScoreRegister(models.Model):
+    user = models.ForeignKey(UserProfile, models.CASCADE, related_name='qualities_scores')
+    quality = models.ForeignKey(Quality, models.CASCADE, related_name='users_scores')
+    model = models.ForeignKey(AssessmentModel, models.CASCADE, related_name='qualities')
     created_at = models.DateTimeField()
-    learning_score = models.FloatField(default=0.0)
-    involvement_score = models.FloatField(default=0.0)
-    organization_score = models.FloatField(default=0.0)
-    teamwork_score = models.FloatField(default=0.0)
-
-    def __str__(self):
-        return f'{self.user}: ' \
-               f'Обучаемость:{self.learning_score} ' \
-               f'Вовлеченность:{self.involvement_score} ' \
-               f'Организованность:{self.organization_score} ' \
-               f'Работа в команде:{self.teamwork_score} ' \
-               f'{self.created_at.strftime("%d.%m.%Y %H:%M")}'
-
-
-class Event(models.Model):
-    title = models.CharField(max_length=200)
-    team = models.ForeignKey(Team, models.CASCADE, related_name='teams_events')
-    tutor = models.ForeignKey(UserProfile, models.CASCADE, related_name='tutors_events')
-    datetime = models.DateTimeField()
-
-    def __str__(self):
-        return f'{self.title}, {self.team.name}, {self.datetime}'
-
-
-class QualitiesAssessment(models.Model):
-    evaluated_student = models.ForeignKey(UserProfile, models.CASCADE, related_name='evaluated_user')
-    evaluator = models.ForeignKey(UserProfile, models.CASCADE, related_name='evaluator')
-    event = models.ForeignKey(Event, models.SET_NULL, related_name='+', null=True)
-    created_at = models.DateTimeField()
-    learning_score = models.FloatField(default=0.0)
-    involvement_score = models.FloatField(default=0.0)
-    organization_score = models.FloatField(default=0.0)
-    teamwork_score = models.FloatField(default=0.0)
-
-    def __str__(self):
-        return f'Оценка ПВК {self.created_at}. Кто оценил: {self.evaluator}, кого: {self.evaluated_student}'
-
-
-class CheckList(models.Model):
-    template = models.ForeignKey(Template, models.CASCADE, related_name='template')
-    evaluated_projectant = models.ForeignKey(UserProfile, models.CASCADE, null=True)
-    event = models.ForeignKey(Event, models.CASCADE, related_name='events_checklist')
-
-
-class CheckListScoresRegister(models.Model):
-    checklist = models.ForeignKey(CheckList, models.CASCADE, related_name='+')
-    indicator = models.ForeignKey(Indicator, models.CASCADE, related_name='+')
+    scores_count = models.IntegerField(default=1)
     score = models.FloatField(default=0.0)
+
+    def __str__(self):
+        return f'{self.user}: {self.quality} №{self.scores_count} - {self.score}' \
+               f' {self.created_at.strftime("%d.%m.%Y %H:%M")}'
+
+
+class Scores360Register(models.Model):
+    evaluated_student = models.ForeignKey(UserProfile, models.CASCADE, related_name='recieved_360_scores')
+    evaluator = models.ForeignKey(UserProfile, models.CASCADE, related_name='evaluated_360_scores')
+    form = models.ForeignKey(AssessmentForm, models.CASCADE, related_name='scores', null=True)
+    created_at = models.DateTimeField()
+    quality = models.ForeignKey(Quality, models.CASCADE, related_name='scores_360')
+    score = models.FloatField(default=0.0)
+
+    def __str__(self):
+        return f'Оценка 360 {self.created_at}.  Кто оценил: {self.evaluator}, кого: {self.evaluated_student},' \
+               f'качество: {self.quality}, оценка: {self.score}'
+
+
+class IndicatorScoresRegister(models.Model):
+    evaluated_projectant = models.ForeignKey(UserProfile, models.CASCADE, related_name='recieved_indicators_scores')
+    evaluator = models.ForeignKey(UserProfile, models.CASCADE, related_name='evaluated_indicators_scores')
+    form = models.ForeignKey(AssessmentForm, models.CASCADE, related_name='indicators_scores')
+    indicator = models.ForeignKey(Indicator, models.CASCADE, related_name='scores')
+    score = models.FloatField(default=0.0)
+
+
+class AverageIndicatorScoresRegister(models.Model):
+    user = models.ForeignKey(UserProfile, models.CASCADE, related_name='average_indicator_scores')
+    indicator = models.ForeignKey(Indicator, models.CASCADE, related_name='average_scores')
+    average_score = models.FloatField(default=0.0)
+    scores_count = models.IntegerField(default=1)
+    period_start = models.DateField()
+    period_end = models.DateField()
