@@ -168,7 +168,7 @@ class ChecklistScore(models.Model):
     checklist = models.ForeignKey(CheckList, on_delete=models.CASCADE, related_name='scores')
     student = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
     quality = models.CharField(max_length=50)  # Обучаемость, Организованность и т.д.
-    score = models.IntegerField(choices=[(1, '1'), (2, '2'), (3, '3')], null=True, blank=True)
+    score = models.IntegerField(choices=[(-1, '-1'), (0, '0'), (1, '1')], null=True, blank=True)
     
     class Meta:
         unique_together = ['checklist', 'student', 'quality']
