@@ -1,0 +1,172 @@
+/* Стили для страницы прохождения опросника */
+.poll-pass-container {
+  min-height: 100vh;
+  background-color: #f8fafc;
+}
+
+.poll-pass-content {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.poll-pass-card {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  border: 1px solid #f1f5f9;
+}
+
+.poll-pass-card h1 {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 1rem;
+}
+
+.poll-pass-description {
+  color: #64748b;
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
+
+.poll-pass-info {
+  display: flex;
+  gap: 2rem;
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+}
+
+.poll-pass-info p {
+  color: #475569;
+}
+
+.poll-pass-questions {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.poll-pass-question {
+  padding: 1.5rem;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.question-header {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.question-number {
+  font-weight: 600;
+  color: #64748b;
+  min-width: 30px;
+}
+
+.question-text {
+  flex: 1;
+  color: #0f172a;
+  font-weight: 500;
+}
+
+.required-star {
+  color: #ef4444;
+  margin-left: 4px;
+}
+
+.question-options {
+  display: flex;
+  gap: 1rem;
+  margin-left: 2.5rem;
+  flex-wrap: wrap;
+}
+
+.option-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.option-label input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.option-badge {
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.option-badge.negative {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.option-badge.neutral {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.option-badge.positive {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.poll-pass-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 2rem;
+}
+
+.submit-button {
+  padding: 1rem 3rem;
+  background: #0f172a;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.submit-button:hover {
+  background: #1e293b;
+}
+
+.submit-button:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .poll-pass-info {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .question-options {
+    flex-direction: column;
+    margin-left: 0;
+  }
+  
+  .option-label {
+    width: 100%;
+  }
+  
+  .option-badge {
+    flex: 1;
+    text-align: center;
+  }
+}

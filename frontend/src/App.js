@@ -1,62 +1,26 @@
-import React, {useState, useEffect} from 'react';
-import {BrowserRouter as Router, Routes, Route, Navigate, useNavigate} from 'react-router-dom';
-import axios from 'axios';
-import Login from './Login/Login';
-import Register from './Register/Register';
-import Profile from './Profile/Profile';
-import EventsStudent from './EventsStudent/EventsStudent';
-import EventsTutor from './EventsTutor/EventsTutor';
-import './App.css';
-import {setupAxiosInterceptors} from "./api";
-
-axios.defaults.withCredentials = true;
-setupAxiosInterceptors();
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import Login from './pages/Auth/Login/Login';
+import Register from './pages/Auth/Register/Register';
+import Profile from './pages/Profile/Profile';
+import EventsStudent from './pages/Events/EventsStudent/EventsStudent';
+import EventsTutor from './pages/Events/EventsTutor/EventsTutor';
+import ProfileEdit from './pages/Profile/ProfileEdit/ProfileEdit';
+import ScoreStudent from './pages/ScoreStudent/ScoreStudent';
+import CheckList from './pages/CheckList/CheckList';
+import CheckListView from './pages/CheckList/CheckListView';
+import Poll from './pages/Poll/Poll';
+import PollPass from './pages/Poll/PollPass';
+import ListStudent from './pages/ListStudent/ListStudent';
+import './styles/App.css';
+import Qualities from './pages/Qualities/Qualities';
 
 function Home() {
-  const [user, setUser] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const isAuth = !!localStorage.getItem('access_token');
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const authResponse = await axios.get('/api/check_auth/');
-        if (authResponse.data.is_authenticated) {
-          setIsAuthenticated(true);
-
-          const profileResponse = await axios.get('/api/user/');
-          setUser(profileResponse.data)
-        }
-      } catch (err) {
-        console.log('Error', err.message);
-        setIsAuthenticated(false);
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUser();
-  }, [navigate]);
-
-  const handleLogout = async () => {
-    try {
-      await axios.post('/api/logout/');
-      setIsAuthenticated(false);
-      setUser(null);
-    } catch (error) {
-      console.error('Ошибка при выходе:', error);
-    }
-  };
-
-
-  if (loading) {
-    return <div className="loading">Загрузка...</div>;
-  }
-
-  if (user) {
-    return <Navigate to="/profile" replace/>;
+  if (isAuth) {
+    return <Navigate to="/profile" replace />;
   }
 
   return (
@@ -64,16 +28,10 @@ function Home() {
       <div className="home-container">
         <h1>Сервис оценки профессионально важных качеств</h1>
         <div className="auth-buttons">
-          <button
-            onClick={() => navigate('/login')}
-            className="auth-button login-button"
-          >
+          <button onClick={() => navigate('/login')} className="auth-button login-button">
             Войти
           </button>
-          <button
-            onClick={() => navigate('/register')}
-            className="auth-button register-button"
-          >
+          <button onClick={() => navigate('/register')} className="auth-button register-button">
             Зарегистрироваться
           </button>
         </div>
@@ -86,13 +44,21 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Home/>}/>
-        <Route path="/login" element={<Login/>}/>
-        <Route path="/register" element={<Register/>}/>
-        <Route path="/profile" element={<Profile/>}/>
-        <Route path="/events" element={<EventsStudent/>}/>
-        <Route path="/events/tutor" element={<EventsTutor/>}/>
-        <Route path="*" element={<Navigate to="/"/>}/>
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/profile/edit" element={<ProfileEdit />} />
+        <Route path="/score/student" element={<ScoreStudent />} />
+        <Route path="/events" element={<EventsStudent />} />
+        <Route path="/events/tutor" element={<EventsTutor />} />
+        <Route path="/polls" element={<Poll />} />
+        <Route path="/poll/:link" element={<PollPass />} />
+        <Route path="/students" element={<ListStudent />} />
+        <Route path="/checklist/create" element={<CheckList />} />
+        <Route path="/checklist/view/:id" element={<CheckListView />} />
+        <Route path="/qualities" element={<Qualities />} />
+        <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
   );

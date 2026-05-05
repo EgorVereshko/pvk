@@ -35,6 +35,10 @@
 }
 
 .header__item:nth-child(3) {
+    margin-right: 50px;
+}
+
+.header__item:nth-child(4) {
     margin-right: auto;
 }
 

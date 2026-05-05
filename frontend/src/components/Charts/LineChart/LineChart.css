@@ -1,0 +1,74 @@
+.line-chart {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 20px;
+  border: 1px solid #f1f5f9;
+}
+
+.line-chart h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 20px;
+}
+
+.chart-container {
+  overflow-x: auto;
+  overflow-y: visible;
+  margin: 0 -10px;
+  padding: 0 10px;
+}
+
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #475569;
+}
+
+.legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.chart-note {
+  margin-top: 15px;
+  font-size: 11px;
+  color: #94a3b8;
+  font-style: italic;
+}
+
+.chart-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 250px;
+  color: #94a3b8;
+  font-size: 14px;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #f1f5f9;
+}
+
+/* Для скролла */
+.chart-container svg {
+  min-width: 450px;
+}
+
+@media (max-width: 768px) {
+  .chart-container svg {
+    min-width: 500px;
+  }
+}

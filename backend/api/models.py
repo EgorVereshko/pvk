@@ -1,5 +1,8 @@
+from enum import member
+
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone
 
 
 class UserProfile(models.Model):
@@ -7,13 +10,8 @@ class UserProfile(models.Model):
     last_name = models.CharField(max_length=50)  # Фамилия
     first_name = models.CharField(max_length=50)  # Имя
     middle_name = models.CharField(max_length=50)  # Отчество
-    phone_number = models.CharField(max_length=11, null=True, blank=True)
-    telegram = models.CharField(max_length=50, null=True, blank=True)
     email = models.CharField(null=True, blank=True)
-    vk = models.CharField(max_length=100, null=True, blank=True)
-    university = models.CharField(max_length=200, null=True, blank=True)
-    year_of_study = models.CharField(max_length=4, null=True, blank=True)
-    description = models.TextField(max_length=2000, blank=True)
+
     photo = models.ImageField(upload_to='users_photo/', blank=True, default='default_avatar.jpeg')
 
     def __str__(self):
@@ -31,132 +29,239 @@ class UserProfile(models.Model):
 
 class UserRole(models.Model):
     user = models.ForeignKey(UserProfile, models.CASCADE, related_name='role_owner')
-    role_choises = [
+    role_choices = [
         ('Проектант', 'Проектант'),
         ('Куратор', 'Куратор'),
         ('Организатор', 'Организатор')
     ]
-    role = models.CharField(max_length=24, choices=role_choises, default='Проектант')
+    role = models.CharField(max_length=24, choices=role_choices, default='Проектант')
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['user', 'role'], name='unique_user_role')
+        ]
 
     def __str__(self):
         return f'{self.user} - {self.role}'
 
 
+# class Event(models.Model):
+#     name = models.CharField(max_length=100)
+#     status_choices = [
+#         ('Запланировано', 'Запланировано'),
+#         ('Идёт', 'Идёт'),
+#         ('Завершено', 'Завершено')
+#     ]
+#     status = models.CharField(choices=status_choices, max_length=13)
+#     start_datetime = models.DateTimeField()
+#     end_datetime = models.DateTimeField()
+#
+#     def __str__(self):
+#         return f'{self.name}, {self.status},' \
+#                f' {self.start_datetime.strftime("%d.%m.%Y %H:%M")}-' \
+#                f'{self.end_datetime.strftime("%d.%m.%Y %H:%M")}'
+
+
 class Team(models.Model):
     name = models.CharField(max_length=100)
-    tutor = models.ForeignKey(UserProfile, models.SET_NULL, related_name='teams_tutor', null=True)
+    # event = models.ForeignKey(Event, models.CASCADE, related_name='teams', null=True, blank=True)
+    tutor = models.ForeignKey(UserProfile, models.SET_NULL, related_name='teams', null=True)
 
     def __str__(self):
-        return f'Команда "{self.name}" Куратор: {self.tutor}'
+        return f'Команда "{self.name}" Мероприятие: {self.event} Куратор: {self.tutor} ' \
+               f'Состав: {self.get_members_names()}'
+
+    def get_members_names(self):
+        return ', '.join(
+            [team_member.short_name()
+             for team_member in
+             UserProfile.objects.filter(team_member__team=self)]
+        )
+
+    def get_members(self):
+        return [record.member for record in TeamMember.objects.filter(team=self).select_related('team', 'member')]
 
 
 class TeamMember(models.Model):
     team = models.ForeignKey(Team, models.CASCADE, related_name='related_team')
     member = models.ForeignKey(UserProfile, models.CASCADE, related_name='team_member')
 
+    class Meta:
+        unique_together = ('team', 'member')
+
     def __str__(self):
-        return f'{self.team} - {self.member}'
+        return f'{self.team.name} - {self.member}'
+
+
+class Quality(models.Model):
+    name = models.CharField(max_length=100)
+    description = models.TextField(max_length=1000)
+
+    def __str__(self):
+        return f'{self.name}'
 
 
 class Indicator(models.Model):
-    name = models.CharField(max_length=50)
-    description = models.TextField(max_length=1000)
-
-    def __str__(self):
-        return f'{self.name}'
-
-
-class IndicatorsList(models.Model):
-    indicator1 = models.ForeignKey(Indicator, models.CASCADE, related_name='indicator_1')
-    indicator2 = models.ForeignKey(Indicator, models.CASCADE, related_name='indicator_2')
-    indicator3 = models.ForeignKey(Indicator, models.CASCADE, related_name='indicator_3')
-    indicator4 = models.ForeignKey(Indicator, models.CASCADE, related_name='indicator_4')
-    indicator5 = models.ForeignKey(Indicator, models.CASCADE, related_name='indicator_5')
-
-    def __str__(self):
-        return f'{self.indicator1} ' \
-               f'{self.indicator2} ' \
-               f'{self.indicator3} ' \
-               f'{self.indicator4} ' \
-               f'{self.indicator5}'
-
-
-class IndicatorsListTemplate(models.Model):
-    user = models.ForeignKey(UserProfile, models.CASCADE, related_name='template_user')
     name = models.CharField(max_length=100)
-    indicators_list = models.ForeignKey(IndicatorsList, models.CASCADE)
-
-    def __str__(self):
-        return f'Шаблон "{self.name}" от {self.user}'
-
-
-class Competence(models.Model):
-    name = models.CharField(max_length=50)
     description = models.TextField(max_length=1000)
 
     def __str__(self):
         return f'{self.name}'
 
 
-class CompetencesScore(models.Model):
-    user = models.ForeignKey(UserProfile, models.CASCADE, related_name='compentences_score_related_user')
-    competence = models.ForeignKey(Competence, models.CASCADE, related_name='compentences_score_related_competence')
-    score = models.DecimalField(default=0.0, max_digits=3, decimal_places=2)
+class IndicatorQuestion(models.Model):
+    indicator = models.ForeignKey(Indicator, models.CASCADE, related_name='question')
+    question = models.TextField(max_length=500)
+    answer_positive = models.TextField(max_length=500)
+    answer_neutral = models.TextField(max_length=500)
+    answer_negative = models.TextField(max_length=500)
+
+
+class Template(models.Model):
+    creator = models.ForeignKey(UserProfile, models.CASCADE, related_name='created_templates')
+    name = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f'{self.user} {self.competence} {self.score}'
+        return f'Шаблон "{self.name}" ({self.creator.short_name()})'
+
+    def get_indicators(self):
+        return [record.indicator
+                for record in
+                IndicatorTemplate.objects.filter(template=self).select_related('indicator', 'template')]
 
 
-class QualityCompetenceRatio(models.Model):
-    qualities_choices = [
-        ('Обучаемость', 'Обучаемость'),
-        ('Вовлеченность', 'Вовлеченность'),
-        ('Организованность', 'Организованность'),
-        ('Работа в команде', 'Работа в команде')
+class IndicatorTemplate(models.Model):
+    indicator = models.ForeignKey(Indicator, models.CASCADE, related_name='+')
+    template = models.ForeignKey(Template, models.CASCADE)
+
+    def __str__(self):
+        return f'{self.template} - {self.indicator}'
+
+
+class AssessmentModel(models.Model):
+    name = models.CharField(max_length=100, default='По умолчанию')
+    status_choices = [
+        ('Активная', 'Активная'),
+        ('Неактивная', 'Неактивная')
     ]
-    quality = models.CharField(choices=qualities_choices)
-    competence = models.ForeignKey(Competence, models.CASCADE, related_name='quality_competence_related')
-    ratio = models.DecimalField(default=0.0, max_digits=3, decimal_places=2)
+    status = models.CharField(default=status_choices[0], max_length=10)
 
     def __str__(self):
-        return f'{self.quality} {self.competence} {self.ratio}'
+        return f'{self.name}: {self.status}'
 
 
-class CompetenceIndicatorRatio(models.Model):
-    competence = models.ForeignKey(Competence, models.CASCADE, related_name='competence_indicator_related')
-    indicator = models.ForeignKey(Indicator, models.CASCADE, related_name='indicator')
-    ratio = models.DecimalField(default=0.0, max_digits=3, decimal_places=2)
-
-    def __str__(self):
-        return f'{self.competence} {self.indicator} {self.ratio}'
-
-
-class QualitiesScore(models.Model):
-    user = models.ForeignKey(UserProfile, models.CASCADE, related_name='qualities_related_user')
-    learning_score = models.DecimalField(default=0.0, max_digits=3, decimal_places=2)
-    involvement_score = models.DecimalField(default=0.0, max_digits=3, decimal_places=2)
-    organization_score = models.DecimalField(default=0.0, max_digits=3, decimal_places=2)
-    teamwork_score = models.DecimalField(default=0.0, max_digits=3, decimal_places=2)
-
-    def __str__(self):
-        return f'{self.user}: ' \
-               f'Обучаемость:{self.learning_score} ' \
-               f'Вовлеченность:{self.involvement_score} ' \
-               f'Организованность:{self.organization_score} ' \
-               f'Работа в команде:{self.teamwork_score}'
-
-
-class Event(models.Model):
-    title = models.CharField(max_length=200)
-    team = models.ForeignKey(Team, models.CASCADE, related_name='team_on_event')
-    tutor = models.ForeignKey(UserProfile, models.CASCADE, related_name='event_tutor')
-    datetime = models.DateTimeField()
+class AssessmentForm(models.Model):
+    name = models.CharField(max_length=200)
+    template = models.ForeignKey(Template, models.CASCADE, related_name='forms', null=True, blank=True)
+    # event = models.ForeignKey(Event, models.CASCADE, related_name='forms', null=True, blank=True)
+    type_choices = [
+        ('Оценка 360', 'Оценка 360'),
+        ('Чек-лист', 'Чек-лист'),
+        ('Опросник', 'Опросник')
+    ]
+    type = models.CharField(choices=type_choices, max_length=10)
+    status_choices = [
+        ('Запланирована', 'Запланирована'),
+        ('Активна', 'Активна'),
+        ('Завершена', 'Завершена')
+    ]
+    status = models.CharField(choices=status_choices, max_length=13)
+    start_datetime = models.DateTimeField()
+    end_datetime = models.DateTimeField()
 
     def __str__(self):
-        return f'{self.title}, {self.team.name}, {self.datetime}'
+        return f'{self.name}, {self.type}, {self.status},' \
+               f' {self.start_datetime.strftime("%d.%m.%Y %H:%M")}-' \
+               f'{self.end_datetime.strftime("%d.%m.%Y %H:%M")}'
+
+    def get_teams_names(self):
+        return [record.team.name for record in
+                AssessmentFormTeam.objects.filter(assessment_form=self).select_related('team', 'assessment_form')]
+
+    def get_teams(self):
+        return [record.team for record in
+                AssessmentFormTeam.objects.filter(assessment_form=self).select_related('team', 'assessment_form')]
+
+    def update_status(self):
+        if self.status == 'Запланирована' and self.start_datetime < timezone.now() < self.end_datetime:
+            self.status = 'Активна'
+            self.save()
+
+        elif self.status == 'Активна' and timezone.now() > self.end_datetime:
+            self.status = 'Завершена'
+            self.save()
 
 
-class CheckList(models.Model):
-    indicators_list = models.ForeignKey(IndicatorsList, models.CASCADE, related_name='indicators_for_checklist')
-    evaluated_projectant = models.ForeignKey(UserProfile, models.CASCADE, null=True)
-    event = models.ForeignKey(Event, models.CASCADE, related_name='checklist_event')
+class AssessmentFormTeam(models.Model):
+    assessment_form = models.ForeignKey(AssessmentForm, models.CASCADE, related_name='teams')
+    team = models.ForeignKey(Team, models.CASCADE, related_name='assessments')
+
+    def __str__(self):
+        return f'{self.assessment_form.name} - {self.team.name}'
+
+
+class QualityIndicatorRatio(models.Model):
+    quality = models.ForeignKey(Quality, models.CASCADE, related_name='ratios_to_indicators')
+    indicator = models.ForeignKey(Indicator, models.CASCADE, related_name='ratios_to_qualities')
+    model = models.ForeignKey(AssessmentModel, models.CASCADE, related_name='qualities_ratios')
+    ratio = models.FloatField(default=0.0)
+
+    def __str__(self):
+        return f'{self.quality} {self.indicator} {self.ratio} модель: {self.model.name}'
+
+
+class QualitiesScoreRegister(models.Model):
+    user = models.ForeignKey(UserProfile, models.CASCADE, related_name='qualities_scores')
+    quality = models.ForeignKey(Quality, models.CASCADE, related_name='users_scores')
+    model = models.ForeignKey(AssessmentModel, models.CASCADE, related_name='qualities')
+    created_at = models.DateTimeField(auto_now_add=True)
+    scores_count = models.IntegerField(default=1)
+    score = models.FloatField(default=0.0)
+
+    def __str__(self):
+        return f'{self.user}: {self.quality} №{self.scores_count} - {self.score}' \
+               f' {self.created_at.strftime("%d.%m.%Y %H:%M")}'
+
+
+class Scores360Register(models.Model):
+    evaluated_projectant = models.ForeignKey(UserProfile, models.CASCADE, related_name='received_360_scores')
+    evaluator = models.ForeignKey(UserProfile, models.CASCADE, related_name='evaluated_360_scores')
+    form = models.ForeignKey(AssessmentForm, models.CASCADE, related_name='scores', null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    quality = models.ForeignKey(Quality, models.CASCADE, related_name='scores_360')
+    score = models.FloatField(default=0.0)
+
+    def __str__(self):
+        return f'Оценка 360.  Кто оценил: {self.evaluator}, ' \
+               f'кого: {self.evaluated_projectant},' \
+               f'качество: {self.quality}, оценка: {self.score}, {self.created_at.strftime("%d.%m.%Y %H:%M")}'
+
+
+class IndicatorScoresRegister(models.Model):
+    evaluated_projectant = models.ForeignKey(UserProfile, models.CASCADE, related_name='received_indicators_scores')
+    evaluator = models.ForeignKey(UserProfile, models.CASCADE, related_name='evaluated_indicators_scores')
+    form = models.ForeignKey(AssessmentForm, models.CASCADE, related_name='indicators_scores')
+    indicator = models.ForeignKey(Indicator, models.CASCADE, related_name='scores')
+    score = models.FloatField(default=0.0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f'Оценка индикатора.  Кто оценил: {self.evaluator}, ' \
+               f'кого: {self.evaluated_projectant},' \
+               f'индикатор: {self.indicator}, оценка: {self.score}, {self.created_at.strftime("%d.%m.%Y %H:%M")}'
+
+
+class AverageIndicatorScoresRegister(models.Model):
+    projectant = models.ForeignKey(UserProfile, models.CASCADE, related_name='average_indicator_scores')
+    indicator = models.ForeignKey(Indicator, models.CASCADE, related_name='average_scores')
+    average_score = models.FloatField(default=0.0)
+    scores_count = models.IntegerField(default=1)
+    period_start = models.DateField()
+    period_end = models.DateField()
+
+    def __str__(self):
+        return f'Средняя оценка {self.projectant} за индикатор {self.indicator}. ' \
+               f'оценка: {self.average_score}, ' \
+               f'{self.period_start.strftime("%d.%m.%Y")}-{self.period_end.strftime("%d.%m.%Y")}'
