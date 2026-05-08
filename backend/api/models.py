@@ -6,13 +6,18 @@ from django.utils import timezone
 
 
 class UserProfile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    user = (models.OneToOneField
+            (User,
+             on_delete=models.CASCADE,
+             related_name='profile'))
     last_name = models.CharField(max_length=50)  # Фамилия
     first_name = models.CharField(max_length=50)  # Имя
     middle_name = models.CharField(max_length=50)  # Отчество
     email = models.CharField(null=True, blank=True)
-
-    photo = models.ImageField(upload_to='users_photo/', blank=True, default='default_avatar.jpeg')
+    photo = (models.ImageField
+             (upload_to='users_photo/',
+              blank=True,
+              default='default_avatar.jpeg'))
 
     def __str__(self):
         return f'{self.short_name()}'
@@ -28,13 +33,19 @@ class UserProfile(models.Model):
 
 
 class UserRole(models.Model):
-    user = models.ForeignKey(UserProfile, models.CASCADE, related_name='role_owner')
+    user = models.ForeignKey(
+        UserProfile,
+        models.CASCADE,
+        related_name='role_owner')
     role_choices = [
         ('Проектант', 'Проектант'),
         ('Куратор', 'Куратор'),
         ('Организатор', 'Организатор')
     ]
-    role = models.CharField(max_length=24, choices=role_choices, default='Проектант')
+    role = models.CharField(
+        max_length=24,
+        choices=role_choices,
+        default='Проектант')
 
     class Meta:
         constraints = [
@@ -65,10 +76,13 @@ class UserRole(models.Model):
 class Team(models.Model):
     name = models.CharField(max_length=100)
     # event = models.ForeignKey(Event, models.CASCADE, related_name='teams', null=True, blank=True)
-    tutor = models.ForeignKey(UserProfile, models.SET_NULL, related_name='teams', null=True)
+    tutor = models.ForeignKey(
+        UserProfile,
+        models.SET_NULL,
+        related_name='teams', null=True)
 
     def __str__(self):
-        return f'Команда "{self.name}" Мероприятие: {self.event} Куратор: {self.tutor} ' \
+        return f'Команда "{self.name}" Куратор: {self.tutor} ' \
                f'Состав: {self.get_members_names()}'
 
     def get_members_names(self):
@@ -83,8 +97,14 @@ class Team(models.Model):
 
 
 class TeamMember(models.Model):
-    team = models.ForeignKey(Team, models.CASCADE, related_name='related_team')
-    member = models.ForeignKey(UserProfile, models.CASCADE, related_name='team_member')
+    team = models.ForeignKey(
+        Team,
+        models.CASCADE,
+        related_name='related_team')
+    member = models.ForeignKey(
+        UserProfile,
+        models.CASCADE,
+        related_name='team_member')
 
     class Meta:
         unique_together = ('team', 'member')
@@ -117,8 +137,40 @@ class IndicatorQuestion(models.Model):
     answer_negative = models.TextField(max_length=500)
 
 
+class AssessmentModel(models.Model):
+    name = models.CharField(max_length=100,
+                            default='По умолчанию')
+    status_choices = [('Активная', 'Активная'), ('Неактивная', 'Неактивная')]
+    status = models.CharField(default=status_choices[0], max_length=10)
+
+    def __str__(self):
+        return f'{self.name}: {self.status}'
+
+
+class QualityIndicatorRatio(models.Model):
+    quality = models.ForeignKey(
+        Quality,
+        models.CASCADE,
+        related_name='ratios_to_indicators')
+    indicator = models.ForeignKey(
+        Indicator,
+        models.CASCADE,
+        related_name='ratios_to_qualities')
+    model = models.ForeignKey(
+        AssessmentModel,
+        models.CASCADE,
+        related_name='qualities_ratios')
+    ratio = models.FloatField(default=0.0)
+
+    def __str__(self):
+        return f'{self.quality} {self.indicator} {self.ratio} модель: {self.model.name}'
+
+
 class Template(models.Model):
-    creator = models.ForeignKey(UserProfile, models.CASCADE, related_name='created_templates')
+    creator = models.ForeignKey(
+        UserProfile,
+        models.CASCADE,
+        related_name='created_templates')
     name = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -140,21 +192,14 @@ class IndicatorTemplate(models.Model):
         return f'{self.template} - {self.indicator}'
 
 
-class AssessmentModel(models.Model):
-    name = models.CharField(max_length=100, default='По умолчанию')
-    status_choices = [
-        ('Активная', 'Активная'),
-        ('Неактивная', 'Неактивная')
-    ]
-    status = models.CharField(default=status_choices[0], max_length=10)
-
-    def __str__(self):
-        return f'{self.name}: {self.status}'
-
-
 class AssessmentForm(models.Model):
     name = models.CharField(max_length=200)
-    template = models.ForeignKey(Template, models.CASCADE, related_name='forms', null=True, blank=True)
+    template = models.ForeignKey(
+        Template,
+        models.CASCADE,
+        related_name='forms',
+        null=True,
+        blank=True)
     # event = models.ForeignKey(Event, models.CASCADE, related_name='forms', null=True, blank=True)
     type_choices = [
         ('Оценка 360', 'Оценка 360'),
@@ -195,21 +240,17 @@ class AssessmentForm(models.Model):
 
 
 class AssessmentFormTeam(models.Model):
-    assessment_form = models.ForeignKey(AssessmentForm, models.CASCADE, related_name='teams')
-    team = models.ForeignKey(Team, models.CASCADE, related_name='assessments')
+    assessment_form = models.ForeignKey(
+        AssessmentForm,
+        models.CASCADE,
+        related_name='teams')
+    team = models.ForeignKey(
+        Team,
+        models.CASCADE,
+        related_name='assessments')
 
     def __str__(self):
         return f'{self.assessment_form.name} - {self.team.name}'
-
-
-class QualityIndicatorRatio(models.Model):
-    quality = models.ForeignKey(Quality, models.CASCADE, related_name='ratios_to_indicators')
-    indicator = models.ForeignKey(Indicator, models.CASCADE, related_name='ratios_to_qualities')
-    model = models.ForeignKey(AssessmentModel, models.CASCADE, related_name='qualities_ratios')
-    ratio = models.FloatField(default=0.0)
-
-    def __str__(self):
-        return f'{self.quality} {self.indicator} {self.ratio} модель: {self.model.name}'
 
 
 class QualitiesScoreRegister(models.Model):
@@ -226,11 +267,24 @@ class QualitiesScoreRegister(models.Model):
 
 
 class Scores360Register(models.Model):
-    evaluated_projectant = models.ForeignKey(UserProfile, models.CASCADE, related_name='received_360_scores')
-    evaluator = models.ForeignKey(UserProfile, models.CASCADE, related_name='evaluated_360_scores')
-    form = models.ForeignKey(AssessmentForm, models.CASCADE, related_name='scores', null=True)
+    evaluated_projectant = models.ForeignKey(
+        UserProfile,
+        models.CASCADE,
+        related_name='received_360_scores')
+    evaluator = models.ForeignKey(
+        UserProfile,
+        models.CASCADE,
+        related_name='evaluated_360_scores')
+    form = models.ForeignKey(
+        AssessmentForm,
+        models.CASCADE,
+        related_name='scores',
+        null=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    quality = models.ForeignKey(Quality, models.CASCADE, related_name='scores_360')
+    quality = models.ForeignKey(
+        Quality,
+        models.CASCADE,
+        related_name='scores_360')
     score = models.FloatField(default=0.0)
 
     def __str__(self):

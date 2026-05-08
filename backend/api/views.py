@@ -1,5 +1,7 @@
 from datetime import datetime, tzinfo, timedelta
 from collections import defaultdict
+from http.cookiejar import month
+
 from django.utils import timezone
 from django.contrib.auth import authenticate, logout, login
 from django.middleware.csrf import get_token
@@ -143,23 +145,31 @@ def get_qualities_stats(request, user_id):
         Возвращает оценки за качества за последние 2 месяца
         по возрастанию даты получения (от самых старых до самых новых)
         в формате:
-        [{
-        'quality_name': 'Вовлеченность',
-         'scores': [1.7, 2.1, 2.4, 2.6, ...]},
-         ...]
-        """
+        [
+            {
+                'quality_name': 'Вовлеченность',
+                'scores': [1.7, 2.1, 2.4, 2.6, ...]
+            },
+        ]
+    """
     try:
         profile = UserProfile.objects.get(user__id=user_id)
 
         two_months_ago = timezone.now() - timedelta(days=60)
-        quality_scores = QualitiesScoreRegister.objects.filter(
-            user=profile,
-            created_at__gte=two_months_ago
-        ).select_related('quality').order_by('quality__name', 'created_at')
+        quality_scores = (QualitiesScoreRegister
+                          .objects
+                          .filter
+                              (
+                              user=profile,
+                              created_at__gte=two_months_ago
+                          )
+                          .select_related('quality')
+                          .order_by('quality__name', 'created_at'))
 
         qualities_data = defaultdict(list)
         for score in quality_scores:
-            qualities_data[score.quality.name].append(score.score)
+            (qualities_data[score.quality.name]
+             .append(score.score))
 
         result = [
             {'quality_name': name, 'scores': scores}
@@ -170,7 +180,9 @@ def get_qualities_stats(request, user_id):
         return Response(serializer.data)
 
     except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            {'error': str(e)},
+            status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET'])
@@ -429,14 +441,12 @@ def update_form(request, form_id):
         else:
             template_id = None
 
-        assessment_form = AssessmentForm.objects.update(
-            name=name,
-            template_id=template_id,
-            type=form_type,
-            start_datetime=start_datetime,
-            end_datetime=end_datetime
-        )
-
+        form.name = name
+        form.type = form_type
+        form.template_id = template_id
+        form.start_datetime = start_datetime
+        form.end_datetime = end_datetime
+        form.save()
         form.update_status()
 
         teams_id = data.get('teams_id')
@@ -481,15 +491,66 @@ def delete_form(request, form_id):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated, IsProjectant])
 def get_projectant_forms(request):
+    """
+    Возвращает формы 360 и опросники для проектанта.
+    Формат:
+    {
+        'forms_360': [{
+            'id': 1,
+            'name': 'форма 360 №2',
+            'status': 'Активна',
+            'start_datetime': 2026-01-01 12:00:00.000000,
+            'end_datetime': 2026-01-02 12:00:00.000000
+        },...],
+        'forms_polls': [{
+            'id': 5,
+            'name': 'опросник №6',
+            'status': 'Активна',
+            'start_datetime': 2026-01-01 12:00:00.000000,
+            'end_datetime': 2026-01-02 12:00:00.000000
+        },...]
+    }
+    """
     profile = UserProfile.objects.get(user=request.user)
-    team = TeamMember.objects.get(member=profile).team
+    team = TeamMember.objects.select_related('team').get(member=profile).team
 
-    forms = [record.assessment_form
-             for record in
-             AssessmentFormTeam.objects.filter(team=team).select_related('team', 'assessment_form__template')]
+    forms_360 = []
+    forms_polls = []
 
-    serializer = AssessmentFormSerializer(forms, many=True)
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    for a in (AssessmentFormTeam
+            .objects
+            .filter(team=team)
+            .select_related('team', 'assessment_form')):
+        form = a.assessment_form
+        if form.type == 'Оценка 360':
+            forms_360.append(
+                {
+                    'id': form.id,
+                    'name': form.name,
+                    'status': form.status,
+                    'start_datetime': form.start_datetime,
+                    'end_datetime': form.end_datetime
+                }
+            )
+        elif form.type == 'Опросник':
+            forms_polls.append(
+                {
+                    'id': form.id,
+                    'name': form.name,
+                    'status': form.status,
+                    'start_datetime': form.start_datetime,
+                    'end_datetime': form.end_datetime
+                }
+            )
+        else:
+            continue
+
+    result = {
+        'forms_360': forms_360,
+        'forms_polls': forms_polls
+    }
+
+    return Response(result, status=status.HTTP_200_OK)
 
 
 def get_form_data(form: AssessmentForm, detailed: bool = False, evaluator: UserProfile = None):
@@ -867,7 +928,7 @@ def get_form_to_fill(request, form_id):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated, IsProjectant])
-def submit_360_assessment(request):
+def submit_360_form(request):
     """
     Принимает и сохраняет оценки формы 360 градусов.
 
@@ -908,6 +969,18 @@ def submit_360_assessment(request):
         return Response({'error': f'Ошибка сохранения: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated, IsTutorOrOrganizer])
+def submit_check_list_form(request):
+    pass
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated, IsTutorOrOrganizer])
+def submit_poll_form(request):
+    pass
+
+
 # def calculate_quality_scores(profile, event_scores):
 #     assessment_model = AssessmentModel.objects.get(status='Активная')
 #     qualities = Quality.objects.all()
@@ -940,3 +1013,26 @@ def submit_360_assessment(request):
 #
 #     evaluated_projectants = [record.evaluated_projectant for record in scores]
 #     qualities = [record.quality for record in scores]
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated, IsOrganizer])
+def get_assessment_models(request):
+    pass
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated, IsOrganizer])
+def create_assessment_model(request):
+    pass
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated, IsOrganizer])
+def update_assessment_model(request, model_id):
+    pass
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated, IsOrganizer])
+def delete_assessment_model(request, model_id):
+    pass

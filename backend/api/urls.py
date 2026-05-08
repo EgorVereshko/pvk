@@ -34,7 +34,9 @@ urlpatterns = [
     path('api/teams/', get_teams, name='get_teams'),
 
     # Индикаторы
-    path('api/indicators/', get_indicators, name='get_indicators'),
+    # path('api/indicators/', get_indicators, name='get_indicators'),
+
+    path('api/assessment_models/', get_assessment_models, name='get_assessment_models'),
 
     # Шаблоны индикаторов
     path('api/templates/', get_templates, name='get_templates'),
@@ -61,6 +63,10 @@ urlpatterns = [
 
     # для заполнения формы (подстраивается под тип формы)
     path('api/forms/fill/<int:form_id>/', get_form_to_fill, name='get_360'),
+
+    path('api/forms/submit/360', submit_360_form, name='submit_360'),
+    path('api/forms/submit/check_list', submit_check_list_form, name='submit_360'),
+    path('api/forms/submit/poll', submit_poll_form, name='submit_360'),
 ]
 
 if settings.DEBUG:
