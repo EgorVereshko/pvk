@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../api';
-import Header from '../Header/Header';
+import api from '../../api';
+import Header from '../../components/Header/Header';
 import './ScoreStudent.css';
 
 const ScoreStudent = () => {
@@ -10,10 +10,10 @@ const ScoreStudent = () => {
   const [students, setStudents] = useState([]);
   const [selectedStudent, setSelectedStudent] = useState('');
   const [sliderValues, setSliderValues] = useState({
-    'Организованность': 1.0,
-    'Вовлеченность': -1.0,
-    'Работа в команде': 1.0,
-    'Обучаемость': 1.0,
+    'Организованность': 0.0,
+    'Вовлеченность': 0.0,
+    'Работа в команде': 0.0,
+    'Обучаемость': 0.0,
   });
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');

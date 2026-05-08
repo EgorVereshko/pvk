@@ -1,30 +1,26 @@
-import React, {useState, useEffect} from 'react';
-import {BrowserRouter as Router, Routes, Route, Navigate, useNavigate} from 'react-router-dom';
-import axios from 'axios';
-import Login from './Login/Login';
-import Register from './Register/Register';
-import Profile from './Profile/Profile';
-import EventsStudent from './EventsStudent/EventsStudent';
-import EventsTutor from './EventsTutor/EventsTutor';
-// import ProfileEdit from './ProfileEdit/ProfileEdit';
-import ScoreStudent from './ScoreStudent/ScoreStudent';
-import './App.css';
-import {setupAxiosInterceptors} from "./api";
-import {useAuth} from "./authHook";
-
-axios.defaults.withCredentials = true;
-setupAxiosInterceptors();
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import Login from './pages/Auth/Login/Login';
+import Register from './pages/Auth/Register/Register';
+import Profile from './pages/Profile/Profile';
+import EventsStudent from './pages/Events/EventsStudent/EventsStudent';
+import EventsTutor from './pages/Events/EventsTutor/EventsTutor';
+import ProfileEdit from './pages/Profile/ProfileEdit/ProfileEdit';
+import ScoreStudent from './pages/ScoreStudent/ScoreStudent';
+import CheckList from './pages/CheckList/CheckList';
+import CheckListView from './pages/CheckList/CheckListView';
+import Poll from './pages/Poll/Poll';
+import PollPass from './pages/Poll/PollPass';
+import ListStudent from './pages/ListStudent/ListStudent';
+import './styles/App.css';
+import Qualities from './pages/Qualities/Qualities';
 
 function Home() {
-  const {isAuthenticated, authLoading} = useAuth();
   const navigate = useNavigate();
+  const isAuth = !!localStorage.getItem('access_token');
 
-  if (authLoading) {
-    return <div className="loading">Загрузка...</div>;
-  }
-
-  if (isAuthenticated) {
-    return <Navigate to="/profile" replace/>;
+  if (isAuth) {
+    return <Navigate to="/profile" replace />;
   }
 
   return (
@@ -52,10 +48,16 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/profile" element={<Profile />} />
-        {/*<Route path="/profile/edit" element={<ProfileEdit />} />*/}
-        <Route path="/score_teammates/:event_id" element={<ScoreStudent />} />
+        <Route path="/profile/edit" element={<ProfileEdit />} />
+        <Route path="/score/student" element={<ScoreStudent />} />
         <Route path="/events" element={<EventsStudent />} />
         <Route path="/events/tutor" element={<EventsTutor />} />
+        <Route path="/polls" element={<Poll />} />
+        <Route path="/poll/:link" element={<PollPass />} />
+        <Route path="/students" element={<ListStudent />} />
+        <Route path="/checklist/create" element={<CheckList />} />
+        <Route path="/checklist/view/:id" element={<CheckListView />} />
+        <Route path="/qualities" element={<Qualities />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>

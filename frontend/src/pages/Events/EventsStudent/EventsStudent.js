@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import axios from 'axios';
-import Header from '../Header/Header';
+import Header from '../../../components/Header/Header';
 import './EventsStudent.css';
 
 const EventsStudent = () => {
@@ -14,11 +14,11 @@ const EventsStudent = () => {
   const navigate = useNavigate();
 
   const [events] = useState([
-    { id: 1, name: 'Техническое собеседование', date: '2025-11-29' },
-    { id: 2, name: 'Оценка soft skills', date: '2025-12-05' },
-    { id: 3, name: 'Групповая дискуссия', date: '2025-12-25' },
-    { id: 4, name: 'Вводное собрание', date: '2023-11-24' },
-    { id: 5, name: 'Тестирование навыков', date: '2023-11-22' }
+    { id: 1, name: 'Техническое собеседование', date: '2026-03-25' },
+    { id: 2, name: 'Оценка soft skills', date: '2026-03-30' },
+    { id: 3, name: 'Групповая дискуссия', date: '2026-04-12' },
+    { id: 4, name: 'Вводное собрание', date: '2026-04-11' },
+    { id: 5, name: 'Тестирование навыков', date: '2026-04-22' }
   ]);
 
   const getEventType = (eventDate) => {

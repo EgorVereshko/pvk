@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
-import api from '../api';
-import Header from '../Header/Header';
-import SpiderChart from '../SpiderChart/SpiderChart';
-import LineChart from '../LineChart/LineChart';
+import api from '../../api';
+import Header from '../../components/Header/Header';
+import SpiderChart from '../../components/Charts/SpiderChart/SpiderChart';
+import LineChart from '../../components/Charts/LineChart/LineChart';
 import './Profile.css';
 
 const Profile = () => {

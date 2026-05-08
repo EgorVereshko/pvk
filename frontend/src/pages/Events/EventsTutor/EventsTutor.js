@@ -276,8 +276,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import axios from 'axios';
-import api from '../api';
-import Header from '../Header/Header';
+import api from '../../../api';
+import Header from '../../../components/Header/Header';
 import './EventsTutor.css';
 
 const EventsTutor = () => {

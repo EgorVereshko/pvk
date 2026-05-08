@@ -8,6 +8,27 @@ const Header = ({ onLogout, user }) => {
   const avatarRef = useRef(null);
   const navigate = useNavigate();
 
+  // Функция для получения статуса на основе роли пользователя
+  const getUserStatus = () => {
+    if (!user) return 'Проектант';
+    
+    const role = user.role?.toLowerCase();
+    
+    switch (role) {
+      case 'organizer':
+      case 'организатор':
+        return 'Организатор';
+      case 'curator':
+      case 'куратор':
+        return 'Куратор';
+      case 'projectant':
+      case 'проектант':
+        return 'Проектант';
+      default:
+        return 'Проектант'; // значение по умолчанию
+    }
+  };
+
   const handleExitClick = (e) => {
     e.preventDefault();
     if (onLogout) {
@@ -45,6 +66,7 @@ const Header = ({ onLogout, user }) => {
       <a href='/score/student' className='header__item'>Форма 360</a>
       <a href='/events' className='header__item'>Оценочные мероприятия</a>
       <a href='/polls' className='header__item'>Опросники</a>
+      <a href='/qualities' className='header__item'>Качества</a>
       
       <div className="header__avatar-wrapper">
         <button 
@@ -73,6 +95,10 @@ const Header = ({ onLogout, user }) => {
                 </div>
                 <div className="dropdown-menu__email">
                   {user?.email || user?.username || 'user@example.com'}
+                </div>
+                {/* НОВЫЙ БЛОК СО СТАТУСОМ */}
+                <div className="dropdown-menu__status">
+                  {getUserStatus()}
                 </div>
               </div>
             </div>

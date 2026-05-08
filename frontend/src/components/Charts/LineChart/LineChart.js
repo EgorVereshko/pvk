@@ -1,11 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import api from '../api';
+import React from 'react';
 import './LineChart.css';
 
-const LineChart = () => {
-  const [historyData, setHistoryData] = useState([]);
-  const [loading, setLoading] = useState(true);
-  
+const LineChart = ({ userScores = {} }) => {
   const weeks = [1, 2, 3, 4, 5, 6, 7];
   const colors = {
     'Работа в команде': '#7dd3fc',
@@ -14,48 +10,46 @@ const LineChart = () => {
     'Обучаемость': '#1e3a8a',
   };
 
-  useEffect(() => {
-    fetchScoreHistory();
-  }, []);
-
-  const fetchScoreHistory = async () => {
-    try {
-      const response = await api.get('/api/user/scores/history/');
-      
-      // Преобразуем данные в нужный формат
-      let formattedData = [];
-      
-      if (Array.isArray(response.data)) {
-        // Если данные уже в формате массива
-        formattedData = response.data;
-      } else if (typeof response.data === 'object') {
-        // Если данные в формате объекта { компетенция: [значения] }
-        formattedData = Object.entries(response.data).map(([label, values]) => ({
-          label,
-          color: colors[label] || '#94a3b8',
-          values: Array.isArray(values) ? values : [1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 2.2],
-        }));
-      }
-      
-      setHistoryData(formattedData);
-    } catch (error) {
-      console.error('Ошибка загрузки истории:', error);
-      // Дефолтные данные на случай ошибки
-      setHistoryData([
-        { label: 'Работа в команде', color: '#7dd3fc', values: [1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 2.2] },
-        { label: 'Вовлеченность', color: '#60a5fa', values: [1.0, 1.1, 1.3, 1.5, 1.7, 1.9, 2.1] },
-        { label: 'Организованность', color: '#2563eb', values: [1.0, 1.3, 1.6, 1.9, 2.2, 2.5, 2.8] },
-        { label: 'Обучаемость', color: '#1e3a8a', values: [1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 2.2] },
-      ]);
-    } finally {
-      setLoading(false);
-    }
+  // Получаем текущие оценки из userScores
+  const currentScores = {
+    'Работа в команде': userScores['Работа в команде'] ?? 1.0,
+    'Вовлеченность': userScores['Вовлеченность'] ?? 1.0,
+    'Организованность': userScores['Организованность'] ?? 1.0,
+    'Обучаемость': userScores['Обучаемость'] ?? 1.0,
   };
 
-  const width = 450; // Увеличил ширину для лучшей читаемости
+  // Генерируем горизонтальные данные (одинаковое значение на всех неделях)
+  const generateConstantData = (currentValue) => {
+    return weeks.map(() => currentValue);
+  };
+
+  const seriesData = [
+    {
+      label: 'Работа в команде',
+      color: colors['Работа в команде'],
+      values: generateConstantData(currentScores['Работа в команде']),
+    },
+    {
+      label: 'Вовлеченность',
+      color: colors['Вовлеченность'],
+      values: generateConstantData(currentScores['Вовлеченность']),
+    },
+    {
+      label: 'Организованность',
+      color: colors['Организованность'],
+      values: generateConstantData(currentScores['Организованность']),
+    },
+    {
+      label: 'Обучаемость',
+      color: colors['Обучаемость'],
+      values: generateConstantData(currentScores['Обучаемость']),
+    },
+  ];
+
+  const width = 450;
   const height = 250;
   const padding = 40;
-  const minY = -1.5; // Немного расширил для отступов
+  const minY = -1.5;
   const maxY = 3.5;
 
   const scaleX = (i) =>
@@ -63,10 +57,6 @@ const LineChart = () => {
 
   const scaleY = (v) =>
     height - padding - ((v - minY) / (maxY - minY)) * (height - padding * 2);
-
-  if (loading) {
-    return <div className="chart-loading">Загрузка графика...</div>;
-  }
 
   return (
     <div className="line-chart">
@@ -129,8 +119,8 @@ const LineChart = () => {
             );
           })}
 
-          {/* Линии графика */}
-          {historyData.map((s, i) => (
+          {/* Линии графика (горизонтальные) */}
+          {seriesData.map((s, i) => (
             <polyline
               key={i}
               fill="none"
@@ -143,7 +133,7 @@ const LineChart = () => {
           ))}
 
           {/* Точки на графике */}
-          {historyData.map((s, seriesIdx) => 
+          {seriesData.map((s, seriesIdx) => 
             s.values.map((v, pointIdx) => {
               if (v === null || v === undefined) return null;
               const [x, y] = [scaleX(pointIdx), scaleY(v)];
@@ -164,7 +154,7 @@ const LineChart = () => {
       </div>
 
       <div className="chart-legend">
-        {historyData.map((s, i) => (
+        {seriesData.map((s, i) => (
           <div key={i} className="legend-item">
             <span className="legend-color" style={{ background: s.color }} />
             {s.label}
@@ -173,7 +163,7 @@ const LineChart = () => {
       </div>
 
       <div className="chart-note">
-        * Каждая точка соответствует проставленной оценке. График показывает изменение оценок во времени.
+        * График показывает текущие оценки по всем неделям
       </div>
     </div>
   );
