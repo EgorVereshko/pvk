@@ -37,14 +37,16 @@ class RegisterSerializer(serializers.ModelSerializer):
         )
 
         UserRole.objects.create(user=profile)
-        QualitiesScore.objects.create(user=profile, created_at=timezone.now())
+
+        qualities = Quality.objects.all()
+        for quality in qualities:
+            QualitiesScoreRegister.objects.create(
+                user=profile,
+                quality=quality,
+                model=AssessmentModel.objects.get_or_create(status='Активная')
+            )
 
         return user
-
-
-class LoginSerializer(serializers.Serializer):
-    username = serializers.CharField()
-    password = serializers.CharField()
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
@@ -58,9 +60,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'last_name', 'first_name', 'middle_name',
-            'phone_number', 'telegram', 'email', 'vk',
-            'university', 'year_of_study', 'description',
-            'photo_url', 'roles', 'team_name'
+            'email', 'photo_url', 'roles', 'team_name'
         ]
 
     def get_photo_url(self, obj):
@@ -80,22 +80,10 @@ class UserProfileSerializer(serializers.ModelSerializer):
         return None
 
 
-class StudentEventsSerializer(serializers.ModelSerializer):
+class AssessmentFormSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Event
-        fields = ['id', 'title', 'datetime']
-
-
-class EventAssessmentSerializer(serializers.ModelSerializer):
-    team = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Event
-        fields = ['id', 'title', 'team']
-
-    def get_team(self, obj: Event):
-        team = obj.team
-        return TeamSerializer(team).data
+        model = AssessmentForm
+        fields = ['id', 'name', 'type', 'status', 'start_datetime', 'end_datetime']
 
 
 class TeamSerializer(serializers.ModelSerializer):
@@ -122,59 +110,85 @@ class TeamMemberSerializer(serializers.ModelSerializer):
         return f'{obj.last_name} {obj.first_name[0]}.{obj.middle_name[0]}.'
 
 
-class QualitiesAssessmentSerializer(serializers.ModelSerializer):
-    evaluated_user_id = serializers.IntegerField(write_only=True)
-    evaluator_id = serializers.IntegerField(write_only=True)
-    event_id = serializers.IntegerField(write_only=True)
-
-    class Meta:
-        model = QualitiesAssessment
-        fields = [
-            'id',
-            'evaluated_user_id',
-            'evaluator_id',
-            'event_id',
-            'learning_score',
-            'involvement_score',
-            'organization_score',
-            'teamwork_score'
-        ]
-
-    def create(self, validated_data):
-        evaluated_user_id = validated_data.pop('evaluated_user_id')
-        evaluator_id = validated_data.pop('evaluator_id')
-        event_id = validated_data.pop('event_id')
-
-        evaluated_user = UserProfile.objects.get(id=evaluated_user_id)
-        evaluator = UserProfile.objects.get(id=evaluator_id)
-        event = Event.objects.get(id=event_id)
-        created_at = timezone.now()
-
-        assessment = QualitiesAssessment.objects.create(
-            evaluated_student=evaluated_user,
-            evaluator=evaluator,
-            event=event,
-            created_at=created_at,
-            **validated_data
-        )
-
-        return assessment
-
-
-class TutorEventsSerializer(serializers.ModelSerializer):
-    team_name = serializers.CharField(source='team.name', read_only=True)
-
-    class Meta:
-        model = Event
-        fields = ['id', 'title', 'datetime', 'team_name']
+# class QualitiesAssessmentSerializer(serializers.ModelSerializer):
+#     evaluated_user_id = serializers.IntegerField(write_only=True)
+#     evaluator_id = serializers.IntegerField(write_only=True)
+#     event_id = serializers.IntegerField(write_only=True)
+#
+#     class Meta:
+#         # model = QualitiesAssessment
+#         fields = [
+#             'id',
+#             'evaluated_user_id',
+#             'evaluator_id',
+#             'event_id',
+#             'learning_score',
+#             'involvement_score',
+#             'organization_score',
+#             'teamwork_score'
+#         ]
+#
+#     def create(self, validated_data):
+#         evaluated_user_id = validated_data.pop('evaluated_user_id')
+#         evaluator_id = validated_data.pop('evaluator_id')
+#         event_id = validated_data.pop('event_id')
+#
+#         evaluated_user = UserProfile.objects.get(id=evaluated_user_id)
+#         evaluator = UserProfile.objects.get(id=evaluator_id)
+#         # event = Event.objects.get(id=event_id)
+#         # created_at = timezone.now()
+#         #
+#         # assessment = QualitiesAssessment.objects.create(
+#         #     evaluated_student=evaluated_user,
+#         #     evaluator=evaluator,
+#         #     event=event,
+#         #     created_at=created_at,
+#         #     **validated_data
+#         # )
+#
+#         # return assessment
 
 
-class QualitiesScoreSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = QualitiesScore
-        fields = [
-            'learning_score',
-            'involvement_score',
-            'organization_score',
-            'teamwork_score'
-        ]
+# class TutorEventsSerializer(serializers.ModelSerializer):
+#     team_name = serializers.CharField(source='team.name', read_only=True)
+#
+#     class Meta:
+#         # model = Event
+#         fields = ['id', 'title', 'datetime', 'team_name']
+
+
+class QualityScoreItemSerializer(serializers.Serializer):
+    quality_name = serializers.CharField()
+    score = serializers.FloatField()
+
+
+class ProjectantItemSerializer(serializers.Serializer):
+    full_name = serializers.CharField()
+    scores = QualityScoreItemSerializer(many=True)
+
+
+class ProjectantsListSerializer(serializers.Serializer):
+    full_name = serializers.CharField()
+    scores = QualityScoreItemSerializer(many=True)
+
+
+class QualitiesScoreSerializer(serializers.Serializer):
+    quality_name = serializers.CharField()
+    score = serializers.FloatField()
+
+
+class QualityStatsSerializer(serializers.Serializer):
+    quality_name = serializers.CharField()
+    scores = serializers.ListField(child=serializers.FloatField())
+
+class QualityScoreSerializer(serializers.Serializer):
+    quality_id = serializers.IntegerField()
+    score = serializers.FloatField()
+
+class ProjectantScoresSerializer(serializers.Serializer):
+    evaluated_projectant_id = serializers.IntegerField()
+    scores = QualityScoreSerializer(many=True)
+
+class Assessment360SubmissionSerializer(serializers.Serializer):
+    form_id = serializers.IntegerField()
+    evaluated_projectants = ProjectantScoresSerializer(many=True)
