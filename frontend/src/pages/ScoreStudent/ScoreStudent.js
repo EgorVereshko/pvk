@@ -136,6 +136,12 @@ const ScoreStudent = () => {
         <div className="score-card">
           <h1 className="score-title">Оценка студента</h1>
 
+          {/* Информация о команде и сроке */}
+          <div className="team-info">
+            <span className="team-name">Команда ПВК</span>
+            <span className="team-deadline">Срок: 18.05.2026</span>
+          </div>
+
           {/* Вкладки студентов вместо выпадающего списка */}
           <div className="students-tabs">
             {students.map((student) => (

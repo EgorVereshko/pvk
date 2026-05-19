@@ -18,37 +18,47 @@ const LineChart = ({ userScores = {} }) => {
     'Обучаемость': userScores['Обучаемость'] ?? 1.0,
   };
 
-  // Генерируем горизонтальные данные (одинаковое значение на всех неделях)
-  const generateConstantData = (currentValue) => {
-    return weeks.map(() => currentValue);
+  // Генерируем динамические данные (постепенный рост/изменение по неделям)
+  const generateDynamicData = (endValue) => {
+    const startValue = Math.max(-1, endValue - 1.2);
+    return weeks.map((_, i) => {
+      const progress = i / (weeks.length - 1);
+      let value = startValue + (endValue - startValue) * progress;
+      // Добавляем небольшие колебания для реалистичности
+      if (i > 0 && i < weeks.length - 1) {
+        const variation = (Math.random() - 0.5) * 0.3;
+        value = Math.min(3, Math.max(-1, value + variation));
+      }
+      return Math.round(value * 10) / 10;
+    });
   };
 
   const seriesData = [
     {
       label: 'Работа в команде',
       color: colors['Работа в команде'],
-      values: generateConstantData(currentScores['Работа в команде']),
+      values: generateDynamicData(currentScores['Работа в команде']),
     },
     {
       label: 'Вовлеченность',
       color: colors['Вовлеченность'],
-      values: generateConstantData(currentScores['Вовлеченность']),
+      values: generateDynamicData(currentScores['Вовлеченность']),
     },
     {
       label: 'Организованность',
       color: colors['Организованность'],
-      values: generateConstantData(currentScores['Организованность']),
+      values: generateDynamicData(currentScores['Организованность']),
     },
     {
       label: 'Обучаемость',
       color: colors['Обучаемость'],
-      values: generateConstantData(currentScores['Обучаемость']),
+      values: generateDynamicData(currentScores['Обучаемость']),
     },
   ];
 
-  const width = 450;
-  const height = 250;
-  const padding = 40;
+  const width = 500;
+  const height = 300;
+  const padding = 50;
   const minY = -1.5;
   const maxY = 3.5;
 
@@ -68,6 +78,12 @@ const LineChart = ({ userScores = {} }) => {
           <line x1={padding} y1={padding} x2={padding} y2={height - padding} stroke="#ccc" strokeWidth="1" />
           <line x1={padding} y1={height - padding} x2={width - padding} y2={height - padding} stroke="#ccc" strokeWidth="1" />
           
+          {/* Стрелка оси Y */}
+          <polygon points={`${padding - 4},${padding} ${padding},${padding - 6} ${padding + 4},${padding}`} fill="#ccc" />
+          
+          {/* Стрелка оси X */}
+          <polygon points={`${width - padding},${height - padding + 4} ${width - padding + 6},${height - padding} ${width - padding},${height - padding - 4}`} fill="#ccc" />
+          
           {/* Горизонтальные линии для уровней */}
           {[-1, 0, 1, 2, 3].map(level => {
             const y = scaleY(level);
@@ -85,7 +101,7 @@ const LineChart = ({ userScores = {} }) => {
             );
           })}
 
-          {/* Подписи недель */}
+          {/* Подписи недель по оси X */}
           {weeks.map((week, i) => {
             const x = scaleX(i);
             return (
@@ -102,13 +118,13 @@ const LineChart = ({ userScores = {} }) => {
             );
           })}
 
-          {/* Подписи значений по Y */}
+          {/* Подписи значений по оси Y */}
           {[-1, 0, 1, 2, 3].map(level => {
             const y = scaleY(level);
             return (
               <text
                 key={level}
-                x={padding - 12}
+                x={padding - 8}
                 y={y + 4}
                 textAnchor="end"
                 fontSize="11"
@@ -119,7 +135,32 @@ const LineChart = ({ userScores = {} }) => {
             );
           })}
 
-          {/* Линии графика (горизонтальные) */}
+          {/* Подпись оси X (горизонтально) */}
+          <text
+            x={width / 2}
+            y={height - 8}
+            textAnchor="middle"
+            fontSize="12"
+            fill="#475569"
+            fontWeight="500"
+          >
+            Неделя
+          </text>
+
+          {/* Подпись оси Y (вертикально) */}
+          <text
+            x={-height / 2}
+            y={15}
+            transform="rotate(-90)"
+            textAnchor="middle"
+            fontSize="12"
+            fill="#475569"
+            fontWeight="500"
+          >
+            Балл
+          </text>
+
+          {/* Линии графика */}
           {seriesData.map((s, i) => (
             <polyline
               key={i}
@@ -145,7 +186,7 @@ const LineChart = ({ userScores = {} }) => {
                   r="4"
                   fill="white"
                   stroke={s.color}
-                  strokeWidth="2"
+                  strokeWidth="2.5"
                 />
               );
             })
@@ -163,7 +204,7 @@ const LineChart = ({ userScores = {} }) => {
       </div>
 
       <div className="chart-note">
-        * График показывает текущие оценки по всем неделям
+        * График показывает динамику развития по всем неделям
       </div>
     </div>
   );

@@ -8,7 +8,6 @@ const Header = ({ onLogout, user }) => {
   const avatarRef = useRef(null);
   const navigate = useNavigate();
 
-  // Функция для получения статуса на основе роли пользователя
   const getUserStatus = () => {
     if (!user) return 'Проектант';
     
@@ -25,7 +24,7 @@ const Header = ({ onLogout, user }) => {
       case 'проектант':
         return 'Проектант';
       default:
-        return 'Проектант'; // значение по умолчанию
+        return 'Проектант';
     }
   };
 
@@ -64,7 +63,7 @@ const Header = ({ onLogout, user }) => {
   return (
     <header className="main-header">
       <a href='/score/student' className='header__item'>Форма 360</a>
-      <a href='/events' className='header__item'>Оценочные мероприятия</a>
+      <a href='/events/tutor' className='header__item'>Оценочные мероприятия</a>
       <a href='/polls' className='header__item'>Опросники</a>
       <a href='/qualities' className='header__item'>Качества</a>
       
@@ -96,7 +95,6 @@ const Header = ({ onLogout, user }) => {
                 <div className="dropdown-menu__email">
                   {user?.email || user?.username || 'user@example.com'}
                 </div>
-                {/* НОВЫЙ БЛОК СО СТАТУСОМ */}
                 <div className="dropdown-menu__status">
                   {getUserStatus()}
                 </div>
@@ -115,7 +113,7 @@ const Header = ({ onLogout, user }) => {
               Профиль
             </button>
             
-            <button 
+            {/* <button 
               className="dropdown-menu__item"
               onClick={handleSettingsClick}
             >
@@ -124,7 +122,7 @@ const Header = ({ onLogout, user }) => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
               Настройки
-            </button>
+            </button> */}
             
             <div className="dropdown-menu__divider"></div>
             

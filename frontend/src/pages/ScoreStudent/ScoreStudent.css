@@ -416,3 +416,38 @@
     min-width: auto;
   }
 }
+
+/* Информация о команде и сроке */
+.team-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  margin-bottom: 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  color: white;
+}
+
+.team-name {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.team-deadline {
+  font-size: 14px;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+/* Адаптив для мобильных */
+@media (max-width: 480px) {
+  .team-info {
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
+  }
+}
