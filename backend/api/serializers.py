@@ -41,19 +41,30 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 class UserProfileSerializer(serializers.ModelSerializer):
     photo_url = serializers.SerializerMethodField()
+    role = serializers.SerializerMethodField()
 
     class Meta:
         model = UserProfile
         fields = [
             'last_name', 'first_name', 'middle_name',
             'phone_number', 'telegram', 'email', 'vk',
-            'university', 'year_of_study', 'description', 'photo_url'
+            'university', 'year_of_study', 'description', 'photo_url', 'role'
         ]
 
     def get_photo_url(self, obj):
         if obj.photo and hasattr(obj.photo, 'url'):
             return obj.photo.url
         return '/media/default_avatar.jpeg'
+    
+    def get_role(self, obj):
+        """Получаем роль пользователя"""
+        try:
+            user_role = UserRole.objects.filter(user=obj).first()
+            if user_role:
+                return user_role.role
+            return 'Проектант'
+        except:
+            return 'Проектант'
 
 
 class LoginSerializer(serializers.Serializer):
