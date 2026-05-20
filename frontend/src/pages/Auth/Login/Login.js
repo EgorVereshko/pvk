@@ -8,19 +8,44 @@ function Login() {
     username: '',
     password: ''
   });
-  const [error, setError] = useState('');
+  const [errors, setErrors] = useState({});
+  const [apiError, setApiError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
+
+  const validate = () => {
+    const newErrors = {};
+    
+    if (!formData.username.trim()) {
+      newErrors.username = 'Введите имя пользователя';
+    } else if (formData.username.length < 3) {
+      newErrors.username = 'Имя пользователя должно содержать не менее 3 символов';
+    }
+    
+    if (!formData.password) {
+      newErrors.password = 'Введите пароль';
+    } else if (formData.password.length < 4) {
+      newErrors.password = 'Пароль должен содержать не менее 4 символов';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    if (error) setError('');
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+    if (apiError) setApiError('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    if (!validate()) return;
+    
+    setApiError('');
     setIsSubmitting(true);
 
     try {
@@ -35,13 +60,13 @@ function Login() {
       console.error('Ошибка входа:', err);
       
       if (err.response?.status === 401) {
-        setError('Неверное имя пользователя или пароль');
+        setApiError('Неверное имя пользователя или пароль');
       } else if (err.response?.status === 400) {
-        setError('Пожалуйста, заполните все поля правильно');
+        setApiError('Пожалуйста, заполните все поля правильно');
       } else if (err.message === 'Network Error') {
-        setError('Ошибка соединения. Проверьте интернет.');
+        setApiError('Ошибка соединения. Проверьте интернет.');
       } else {
-        setError('Ошибка при входе. Попробуйте еще раз.');
+        setApiError('Ошибка при входе. Попробуйте еще раз.');
       }
     } finally {
       setIsSubmitting(false);
@@ -62,12 +87,12 @@ function Login() {
               name="username"
               value={formData.username}
               onChange={handleChange}
-              required
-              className="auth-input"
+              className={`auth-input ${errors.username ? 'error' : ''}`}
               placeholder="Введите логин"
               disabled={isSubmitting}
               autoComplete="username"
             />
+            {errors.username && <span className="error-text">{errors.username}</span>}
           </div>
           
           <div className="form-group">
@@ -78,17 +103,17 @@ function Login() {
               name="password"
               value={formData.password}
               onChange={handleChange}
-              required
-              className="auth-input"
+              className={`auth-input ${errors.password ? 'error' : ''}`}
               placeholder="Введите пароль"
               disabled={isSubmitting}
               autoComplete="current-password"
             />
+            {errors.password && <span className="error-text">{errors.password}</span>}
           </div>
           
-          {error && (
+          {apiError && (
             <div className="error-message">
-              {error}
+              {apiError}
             </div>
           )}
           

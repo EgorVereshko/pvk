@@ -17,6 +17,16 @@ const ScoreStudent = () => {
   });
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
+  
+  const [currentForm360, setCurrentForm360] = useState(null);
+  const [availableQualities, setAvailableQualities] = useState([
+    'Организованность',
+    'Вовлеченность',
+    'Работа в команде',
+    'Обучаемость'
+  ]);
+  const [teamInfo, setTeamInfo] = useState(null);
+  
   const sliderRefs = {
     'Организованность': useRef(null),
     'Вовлеченность': useRef(null),
@@ -26,14 +36,28 @@ const ScoreStudent = () => {
 
   const navigate = useNavigate();
 
-  const competences = [
-    'Вовлеченность',
-    'Работа в команде',
-    'Обучаемость',
-    'Организованность',
-  ];
-
   useEffect(() => {
+    const savedForm360 = localStorage.getItem('current_form360');
+    if (savedForm360) {
+      const form360 = JSON.parse(savedForm360);
+      setCurrentForm360(form360);
+      
+      if (form360.qualities && form360.qualities.length > 0) {
+        setAvailableQualities(form360.qualities);
+        
+        const initialValues = {};
+        form360.qualities.forEach(quality => {
+          initialValues[quality] = 0.0;
+        });
+        setSliderValues(initialValues);
+      }
+      
+      setTeamInfo({
+        name: form360.team_name,
+        deadline: form360.deadline
+      });
+    }
+    
     fetchUserProfile();
     fetchStudents();
   }, [navigate]);
@@ -52,16 +76,49 @@ const ScoreStudent = () => {
 
   const fetchStudents = async () => {
     try {
-      const response = await api.get('/api/students/');
-      setStudents(response.data);
-      // Автоматически выбираем первого студента, если список не пуст
-      if (response.data.length > 0) {
-        setSelectedStudent(response.data[0].id);
+      let studentsData = [];
+      
+      if (currentForm360 && currentForm360.team_id) {
+        const response = await api.get(`/api/team/${currentForm360.team_id}/students/`);
+        studentsData = response.data;
+      } else {
+        const response = await api.get('/api/students/');
+        studentsData = response.data;
+      }
+      
+      setStudents(studentsData);
+      if (studentsData.length > 0) {
+        setSelectedStudent(studentsData[0].id);
+        loadStudentScores(studentsData[0].id);
       }
     } catch (error) {
       console.error('Ошибка загрузки студентов:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadStudentScores = async (studentId) => {
+    if (currentForm360) {
+      try {
+        const response = await api.get(`/api/form360/${currentForm360.id}/student/${studentId}/scores/`);
+        if (response.data && response.data.scores) {
+          setSliderValues(response.data.scores);
+        } else {
+          const resetValues = {};
+          availableQualities.forEach(quality => {
+            resetValues[quality] = 0.0;
+          });
+          setSliderValues(resetValues);
+        }
+      } catch (error) {
+        console.log('Нет сохранённых оценок для этого студента');
+        const resetValues = {};
+        availableQualities.forEach(quality => {
+          resetValues[quality] = 0.0;
+        });
+        setSliderValues(resetValues);
+      }
     }
   };
 
@@ -77,6 +134,11 @@ const ScoreStudent = () => {
     }));
   };
 
+  const handleTabChange = async (studentId) => {
+    setSelectedStudent(studentId);
+    await loadStudentScores(studentId);
+  };
+
   const handleSaveScores = async () => {
     if (!selectedStudent) {
       setSaveMessage('Выберите студента');
@@ -87,16 +149,30 @@ const ScoreStudent = () => {
     setSaveMessage('');
 
     try {
-      const scoresData = Object.entries(sliderValues).map(([competenceName, score]) => ({
-        competence_name: competenceName,
-        score: parseFloat(score),
-        student_profile_id: selectedStudent
-      }));
+      if (currentForm360) {
+        const scoresData = Object.entries(sliderValues).map(([competenceName, score]) => ({
+          competence_name: competenceName,
+          score: parseFloat(score),
+          student_profile_id: selectedStudent
+        }));
 
-      const response = await api.post('/api/competences/scores/', scoresData);
-     
-      setSaveMessage('Оценки успешно сохранены!');
-      console.log('Сохраненные оценки:', response.data);
+        await api.post(`/api/form360/${currentForm360.id}/submit/`, {
+          student_id: selectedStudent,
+          scores: sliderValues,
+          qualities_scores: scoresData
+        });
+        
+        setSaveMessage('Оценки успешно сохранены в форму 360!');
+      } else {
+        const scoresData = Object.entries(sliderValues).map(([competenceName, score]) => ({
+          competence_name: competenceName,
+          score: parseFloat(score),
+          student_profile_id: selectedStudent
+        }));
+
+        await api.post('/api/competences/scores/', scoresData);
+        setSaveMessage('Оценки успешно сохранены!');
+      }
       
       setTimeout(() => {
         setSaveMessage('');
@@ -114,16 +190,9 @@ const ScoreStudent = () => {
   };
 
   const getBubblePosition = (competence) => {
-    const value = sliderValues[competence];
-    // Преобразуем значение -1...3 в проценты 0%...100%
+    const value = sliderValues[competence] || 0;
     const percent = ((value + 1) / 4) * 100;
     return percent;
-  };
-
-  const handleTabChange = (studentId) => {
-    setSelectedStudent(studentId);
-    // Здесь можно добавить загрузку сохраненных оценок для выбранного студента
-    // loadStudentScores(studentId);
   };
 
   if (loading) return <div className="loading">Загрузка...</div>;
@@ -134,15 +203,21 @@ const ScoreStudent = () => {
 
       <div className="score-content">
         <div className="score-card">
-          <h1 className="score-title">Оценка студента</h1>
+          <h1 className="score-title">
+            {currentForm360 ? `Форма 360: ${currentForm360.name}` : 'Оценка студента'}
+          </h1>
 
-          {/* Информация о команде и сроке */}
           <div className="team-info">
-            <span className="team-name">Команда ПВК</span>
-            <span className="team-deadline">Срок: 18.05.2026</span>
+            <span className="team-name">
+              {currentForm360 ? `Команда: ${currentForm360.team_name}` : 'Команда ПВК'}
+            </span>
+            {currentForm360 && (
+              <span className="team-deadline">
+                Дедлайн: {new Date(currentForm360.deadline).toLocaleDateString('ru-RU')}
+              </span>
+            )}
           </div>
 
-          {/* Вкладки студентов вместо выпадающего списка */}
           <div className="students-tabs">
             {students.map((student) => (
               <button
@@ -155,18 +230,17 @@ const ScoreStudent = () => {
             ))}
           </div>
 
-          {/* Информация о выбранном студенте */}
           <div className="competence-sliders">
-            {competences.map(c => (
-              <div key={c} className="competence-row">
-                <span className="competence-name">{c}</span>
-                <div className="slider-wrapper" ref={sliderRefs[c]}>
+            {availableQualities.map(quality => (
+              <div key={quality} className="competence-row">
+                <span className="competence-name">{quality}</span>
+                <div className="slider-wrapper" ref={sliderRefs[quality]}>
                   <div 
                     className="slider-value-bubble"
-                    style={{ left: `${getBubblePosition(c)}%` }}
+                    style={{ left: `${getBubblePosition(quality)}%` }}
                   >
                     <span className="current-value">
-                      {formatValue(sliderValues[c])}
+                      {formatValue(sliderValues[quality] || 0)}
                     </span>
                   </div>
                   <input
@@ -174,8 +248,8 @@ const ScoreStudent = () => {
                     min="-1"
                     max="3"
                     step="0.1"
-                    value={sliderValues[c]}
-                    onChange={(e) => handleSliderChange(c, e.target.value)}
+                    value={sliderValues[quality] || 0}
+                    onChange={(e) => handleSliderChange(quality, e.target.value)}
                   />
                   <div className="slider-markers">
                     {[-1, -0.9, -0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.1, 
@@ -218,6 +292,17 @@ const ScoreStudent = () => {
               </div>
             )}
           </div>
+          
+          {currentForm360 && (
+            <div className="back-to-forms">
+              <button onClick={() => {
+                localStorage.removeItem('current_form360');
+                navigate('/form360');
+              }} className="back-button">
+                ← Вернуться к списку форм
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

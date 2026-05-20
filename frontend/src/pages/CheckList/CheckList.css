@@ -1,3 +1,7 @@
+/* ============================================ */
+/* CHECKLIST PAGE - Create and Manage Checklists */
+/* ============================================ */
+
 .checklist-container {
   min-height: 100vh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -21,6 +25,10 @@
   color: #333;
   margin-bottom: 30px;
 }
+
+/* ============================================ */
+/* FORM STEP - Step 1 (Create Form) */
+/* ============================================ */
 
 .form-step {
   max-width: 500px;
@@ -53,6 +61,22 @@
   border-color: #667eea;
 }
 
+/* Required field asterisk */
+.required {
+  color: #e53e3e;
+  font-weight: bold;
+}
+
+/* Hint text */
+.hint {
+  display: block;
+  color: #718096;
+  font-size: 12px;
+  margin-top: 5px;
+  font-style: italic;
+}
+
+/* Next button */
 .next-button {
   width: 100%;
   padding: 12px;
@@ -70,6 +94,10 @@
   background: #5a67d8;
 }
 
+/* ============================================ */
+/* TABLE STEP - Step 2 (Scores Entry) */
+/* ============================================ */
+
 .table-header {
   display: flex;
   justify-content: space-between;
@@ -77,6 +105,7 @@
   margin-bottom: 20px;
 }
 
+/* Edit template button */
 .edit-template-button {
   padding: 8px 16px;
   background: #48bb78;
@@ -91,11 +120,13 @@
   cursor: not-allowed;
 }
 
+/* Table wrapper with horizontal scroll */
 .checklist-table-wrapper {
   overflow-x: auto;
   margin-bottom: 20px;
 }
 
+/* Main table styles */
 .checklist-table {
   width: 100%;
   border-collapse: collapse;
@@ -123,12 +154,14 @@
   text-align: center;
 }
 
+/* Quality cell styles */
 .quality-cell {
   background: #f7fafc;
   font-weight: 500;
   color: #2d3748;
 }
 
+/* Select dropdown in table */
 .checklist-table select {
   width: 100%;
   padding: 5px;
@@ -137,16 +170,44 @@
   background: white;
 }
 
+/* Disabled select state */
+select:disabled {
+  background-color: #e2e8f0;
+  cursor: not-allowed;
+}
+
+/* Student select dropdown */
+.student-select {
+  width: 100%;
+  padding: 5px;
+  border: 1px solid #cbd5e0;
+  border-radius: 3px;
+  background: white;
+  font-size: 14px;
+}
+
+.student-select:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+/* ============================================ */
+/* TABLE ACTIONS - Bottom Buttons */
+/* ============================================ */
+
 .table-actions {
   display: flex;
   gap: 20px;
   justify-content: center;
   margin-top: 20px;
+  flex-wrap: wrap;
 }
 
-.template-button,
-.save-button {
+/* Save as template button */
+.template-button {
   padding: 12px 30px;
+  background: #ed8936;
+  color: white;
   border: none;
   border-radius: 5px;
   font-size: 16px;
@@ -155,25 +216,194 @@
   transition: all 0.3s;
 }
 
-.template-button {
-  background: #ed8936;
-  color: white;
-}
-
 .template-button:hover {
   background: #dd6b20;
 }
 
+/* Save checklist button */
 .save-button {
+  padding: 12px 30px;
   background: #48bb78;
   color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
 }
 
 .save-button:hover {
   background: #38a169;
 }
 
-/* Модальное окно */
+/* Back button */
+.back-button {
+  padding: 12px 30px;
+  background: #a0aec0;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.back-button:hover {
+  background: #718096;
+}
+
+/* ============================================ */
+/* COMPETENCE MANAGEMENT */
+/* ============================================ */
+
+/* Quality cell with remove button */
+.quality-with-remove {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
+}
+
+.remove-competence {
+  background: none;
+  border: none;
+  color: #f56565;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0 5px;
+  border-radius: 3px;
+}
+
+.remove-competence:hover {
+  background: #fff5f5;
+  color: #e53e3e;
+}
+
+/* Add competence section */
+.add-competence-section {
+  display: flex;
+  gap: 10px;
+  margin: 20px 0;
+  padding: 15px;
+  background: #f7fafc;
+  border-radius: 5px;
+  align-items: center;
+}
+
+.competence-input {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #cbd5e0;
+  border-radius: 5px;
+  font-size: 14px;
+}
+
+.competence-input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.add-competence-button {
+  padding: 10px 20px;
+  background: #48bb78;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.add-competence-button:hover {
+  background: #38a169;
+}
+
+/* ============================================ */
+/* CHECKLIST VIEW MODE */
+/* ============================================ */
+
+.checklist-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+}
+
+/* Action buttons for view mode */
+.edit-button {
+  padding: 8px 16px;
+  background: #4299e1;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.delete-button {
+  padding: 8px 16px;
+  background: #f56565;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.cancel-button {
+  padding: 8px 16px;
+  background: #a0aec0;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+/* Event info block */
+.event-info {
+  background: #f7fafc;
+  padding: 15px;
+  border-radius: 5px;
+  margin-bottom: 20px;
+}
+
+.event-info p {
+  margin: 5px 0;
+}
+
+/* Score value display */
+.score-value {
+  display: inline-block;
+  padding: 5px 10px;
+  background: #ebf4ff;
+  border-radius: 3px;
+  font-weight: 600;
+  color: #2c5282;
+}
+
+/* Evaluated student info */
+.evaluated-student {
+  margin-top: 20px;
+  padding: 15px;
+  background: #f0fff4;
+  border-radius: 5px;
+  color: #276749;
+}
+
+/* ============================================ */
+/* MODAL WINDOW */
+/* ============================================ */
+
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -232,6 +462,10 @@
   color: #4a5568;
 }
 
+/* ============================================ */
+/* RESPONSIVE DESIGN */
+/* ============================================ */
+
 @media (max-width: 768px) {
   .checklist-card {
     padding: 20px;
@@ -242,181 +476,11 @@
   }
   
   .template-button,
-  .save-button {
+  .save-button,
+  .back-button {
     width: 100%;
   }
-}
-
-.student-select {
-  width: 100%;
-  padding: 5px;
-  border: 1px solid #cbd5e0;
-  border-radius: 3px;
-  background: white;
-  font-size: 14px;
-}
-
-.student-select:focus {
-  outline: none;
-  border-color: #667eea;
-}
-
-.back-button {
-  padding: 12px 30px;
-  background: #a0aec0;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.3s;
-}
-
-.back-button:hover {
-  background: #718096;
-}
-
-select:disabled {
-  background-color: #e2e8f0;
-  cursor: not-allowed;
-}
-
-.table-actions {
-  display: flex;
-  gap: 20px;
-  justify-content: center;
-  margin-top: 20px;
-  flex-wrap: wrap;
-}
-
-.checklist-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-}
-
-.header-actions {
-  display: flex;
-  gap: 10px;
-}
-
-.edit-button, .delete-button, .cancel-button {
-  padding: 8px 16px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.edit-button {
-  background: #4299e1;
-  color: white;
-}
-
-.delete-button {
-  background: #f56565;
-  color: white;
-}
-
-.cancel-button {
-  background: #a0aec0;
-  color: white;
-}
-
-.event-info {
-  background: #f7fafc;
-  padding: 15px;
-  border-radius: 5px;
-  margin-bottom: 20px;
-}
-
-.event-info p {
-  margin: 5px 0;
-}
-
-.score-value {
-  display: inline-block;
-  padding: 5px 10px;
-  background: #ebf4ff;
-  border-radius: 3px;
-  font-weight: 600;
-  color: #2c5282;
-}
-
-.evaluated-student {
-  margin-top: 20px;
-  padding: 15px;
-  background: #f0fff4;
-  border-radius: 5px;
-  color: #276749;
-}
-
-.quality-with-remove {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 5px;
-}
-
-.remove-competence {
-  background: none;
-  border: none;
-  color: #f56565;
-  font-size: 20px;
-  cursor: pointer;
-  padding: 0 5px;
-  border-radius: 3px;
-}
-
-.remove-competence:hover {
-  background: #fff5f5;
-  color: #e53e3e;
-}
-
-.add-competence-section {
-  display: flex;
-  gap: 10px;
-  margin: 20px 0;
-  padding: 15px;
-  background: #f7fafc;
-  border-radius: 5px;
-  align-items: center;
-}
-
-.competence-input {
-  flex: 1;
-  padding: 10px;
-  border: 1px solid #cbd5e0;
-  border-radius: 5px;
-  font-size: 14px;
-}
-
-.competence-input:focus {
-  outline: none;
-  border-color: #667eea;
-}
-
-.add-competence-button {
-  padding: 10px 20px;
-  background: #48bb78;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.add-competence-button:hover {
-  background: #38a169;
-}
-
-/* Адаптивность для мобильных устройств */
-@media (max-width: 768px) {
+  
   .add-competence-section {
     flex-direction: column;
   }
@@ -424,19 +488,6 @@ select:disabled {
   .add-competence-button {
     width: 100%;
   }
-}
-
-.required {
-  color: #e53e3e;
-  font-weight: bold;
-}
-
-.hint {
-  display: block;
-  color: #718096;
-  font-size: 12px;
-  margin-top: 5px;
-  font-style: italic;
 }
 
 .form-group small {

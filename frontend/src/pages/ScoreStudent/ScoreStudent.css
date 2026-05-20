@@ -1,3 +1,7 @@
+/* ============================================ */
+/* SCORE STUDENT PAGE - Evaluation Form */
+/* ============================================ */
+
 .score-container {
   min-height: 100vh;
   background: #f6f7fb;
@@ -14,7 +18,7 @@
   background: #fff;
   border-radius: 14px;
   padding: 30px 40px;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.05);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
 }
 
 .score-title {
@@ -25,26 +29,88 @@
   color: #1f2937;
 }
 
-.student-selector {
+/* ============================================ */
+/* TEAM INFO SECTION */
+/* ============================================ */
+
+.team-info {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-  max-width: 260px;
-  margin-bottom: 30px;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  margin-bottom: 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  color: white;
 }
 
-.student-selector label {
+.team-name {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.team-deadline {
+  font-size: 14px;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+/* ============================================ */
+/* STUDENT TABS */
+/* ============================================ */
+
+.students-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+  padding: 5px;
+  background: #f3f4f6;
+  border-radius: 10px;
+}
+
+.student-tab {
+  padding: 10px 20px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #4b5563;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex: 1 1 auto;
+  min-width: 120px;
+  text-align: center;
+}
+
+.student-tab:hover {
+  background: #e5e7eb;
+  color: #1f2937;
+}
+
+.student-tab.active {
+  background: #111827;
+  color: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.selected-student-info {
+  margin-bottom: 25px;
+  padding: 12px 16px;
+  background: #f9fafb;
+  border-radius: 8px;
   font-size: 14px;
   color: #374151;
+  border-left: 4px solid #111827;
 }
 
-.student-selector select {
-  padding: 10px 14px;
-  border-radius: 8px;
-  border: 1px solid #cbd5e1;
-  font-size: 15px;
-  width: 100%;
-}
+/* ============================================ */
+/* COMPETENCE SLIDERS */
+/* ============================================ */
 
 .competence-sliders {
   display: flex;
@@ -65,12 +131,17 @@
   color: #111827;
 }
 
+/* ============================================ */
+/* SLIDER STYLES */
+/* ============================================ */
+
 .slider-wrapper {
   position: relative;
   padding-top: 40px;
   padding-bottom: 40px;
 }
 
+/* Value bubble above slider */
 .slider-value-bubble {
   position: absolute;
   top: 5px;
@@ -83,7 +154,7 @@
   font-weight: 600;
   min-width: 50px;
   text-align: center;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   transition: left 0.05s ease;
   z-index: 20;
   pointer-events: none;
@@ -107,6 +178,7 @@
   line-height: 1;
 }
 
+/* Range input */
 .slider-wrapper input[type="range"] {
   width: 100%;
   height: 6px;
@@ -125,7 +197,7 @@
   background: #111827;
   border-radius: 50%;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   transition: transform 0.1s ease, background 0.1s ease;
   z-index: 15;
   position: relative;
@@ -138,7 +210,7 @@
   background: #111827;
   border-radius: 50%;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   transition: transform 0.1s ease, background 0.1s ease;
   z-index: 15;
   border: none;
@@ -168,6 +240,7 @@
   border-radius: 3px;
 }
 
+/* Slider tick marks */
 .slider-markers {
   position: absolute;
   top: 45px;
@@ -185,6 +258,7 @@
   bottom: 0;
 }
 
+/* Major ticks (whole numbers) */
 .marker.major {
   height: 16px;
   background: #1f2937;
@@ -192,6 +266,7 @@
   bottom: 10px;
 }
 
+/* Minor ticks (decimal values) */
 .marker.minor {
   height: 8px;
   background: #9ca3af;
@@ -199,6 +274,7 @@
   bottom: 14px;
 }
 
+/* Slider value labels */
 .slider-labels {
   position: absolute;
   bottom: 0;
@@ -230,26 +306,24 @@
   transform: translateX(-100%);
 }
 
+/* ============================================ */
+/* CHART DIAGRAM SECTION */
+/* ============================================ */
+
 .score-diagram {
   margin-top: 40px;
   background: white;
   border-radius: 14px;
   padding: 30px;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.05);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
   display: flex;
   justify-content: center;
 }
 
-.loading {
-  height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #6b7280;
-  font-size: 16px;
-}
+/* ============================================ */
+/* SAVE SECTION */
+/* ============================================ */
 
-/* Секция сохранения */
 .save-section {
   margin-top: 40px;
   text-align: center;
@@ -303,7 +377,48 @@
   border: 1px solid #fecaca;
 }
 
-/* adaptive */
+/* ============================================ */
+/* BACK BUTTON */
+/* ============================================ */
+
+.back-to-forms {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.back-button {
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 8px 16px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.back-button:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+/* ============================================ */
+/* LOADING STATE */
+/* ============================================ */
+
+.loading {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  font-size: 16px;
+}
+
+/* ============================================ */
+/* RESPONSIVE DESIGN */
+/* ============================================ */
+
 @media (max-width: 768px) {
   .competence-row {
     grid-template-columns: 1fr;
@@ -337,57 +452,7 @@
     padding: 4px 8px;
     min-width: 40px;
   }
-}
-
-/* Вкладки студентов */
-.students-tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 20px;
-  padding: 5px;
-  background: #f3f4f6;
-  border-radius: 10px;
-}
-
-.student-tab {
-  padding: 10px 20px;
-  background: transparent;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  color: #4b5563;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  flex: 1 1 auto;
-  min-width: 120px;
-  text-align: center;
-}
-
-.student-tab:hover {
-  background: #e5e7eb;
-  color: #1f2937;
-}
-
-.student-tab.active {
-  background: #111827;
-  color: white;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.selected-student-info {
-  margin-bottom: 25px;
-  padding: 12px 16px;
-  background: #f9fafb;
-  border-radius: 8px;
-  font-size: 14px;
-  color: #374151;
-  border-left: 4px solid #111827;
-}
-
-/* Адаптив для мобильных устройств */
-@media (max-width: 768px) {
+  
   .students-tabs {
     flex-direction: column;
     gap: 5px;
@@ -406,6 +471,12 @@
 }
 
 @media (max-width: 480px) {
+  .team-info {
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
+  }
+  
   .students-tabs {
     padding: 4px;
   }
@@ -417,37 +488,24 @@
   }
 }
 
-/* Информация о команде и сроке */
-.team-info {
+/* Student selector (fallback) */
+.student-selector {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 20px;
-  margin-bottom: 24px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 12px;
-  color: white;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 260px;
+  margin-bottom: 30px;
 }
 
-.team-name {
-  font-size: 16px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-}
-
-.team-deadline {
+.student-selector label {
   font-size: 14px;
-  font-weight: 500;
-  background: rgba(255, 255, 255, 0.2);
-  padding: 4px 12px;
-  border-radius: 20px;
+  color: #374151;
 }
 
-/* Адаптив для мобильных */
-@media (max-width: 480px) {
-  .team-info {
-    flex-direction: column;
-    gap: 8px;
-    text-align: center;
-  }
+.student-selector select {
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  font-size: 15px;
+  width: 100%;
 }
