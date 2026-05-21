@@ -16,7 +16,7 @@ urlpatterns = [
     path('api/user/<int:user_id>/', get_user, name='get_user_by_id'),
     path('api/user/update/', update_user, name='update_user'),
     # Текущие оценки (для лепестковой диаграммы)
-    path('api/user/scores/', get_latest_qualities_scores, name='get_latest_qualities_scores'),
+    path('api/latest_qualities_scores/', get_latest_qualities_scores, name='get_latest_qualities_scores'),
     path('api/latest_qualities_scores/<int:user_id>/', get_latest_qualities_scores,
          name='get_latest_qualities_scores_by_id'),
     # Оценки за 2 месяца (для динамики)

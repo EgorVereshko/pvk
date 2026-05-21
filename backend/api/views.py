@@ -113,7 +113,7 @@ def get_projectants(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def get_latest_qualities_scores(request, user_id):
+def get_latest_qualities_scores(request, user_id=None):
     """
     Возвращает последние оценки за качества в формате:
     [{'quality_name': 'Вовлеченность', 'score': 1.7}, ...]
