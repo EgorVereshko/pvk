@@ -13,16 +13,48 @@ function Register() {
   });
   
   const [errors, setErrors] = useState({});
+  const [apiError, setApiError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
-  const fieldConfig = [
-    { name: 'username', label: 'Логин', type: 'text' },
-    { name: 'password', label: 'Пароль (минимум 8 символов)', type: 'password' },
-    { name: 'last_name', label: 'Фамилия', type: 'text' },
-    { name: 'first_name', label: 'Имя', type: 'text' },
-    { name: 'middle_name', label: 'Отчество', type: 'text' }
-  ];
+  const validate = () => {
+    const newErrors = {};
+    
+    if (!formData.username.trim()) {
+      newErrors.username = 'Введите логин';
+    } else if (formData.username.length < 3) {
+      newErrors.username = 'Логин должен содержать не менее 3 символов';
+    } else if (!/^[a-zA-Z0-9_]+$/.test(formData.username)) {
+      newErrors.username = 'Логин может содержать только буквы, цифры и подчеркивание';
+    }
+    
+    if (!formData.password) {
+      newErrors.password = 'Введите пароль';
+    } else if (formData.password.length < 8) {
+      newErrors.password = 'Пароль должен содержать не менее 8 символов';
+    } else if (!/(?=.*[a-z])(?=.*[A-Z])/.test(formData.password)) {
+      newErrors.password = 'Пароль должен содержать хотя бы одну заглавную и одну строчную букву';
+    }
+    
+    if (!formData.last_name.trim()) {
+      newErrors.last_name = 'Введите фамилию';
+    } else if (formData.last_name.length < 2) {
+      newErrors.last_name = 'Фамилия должна содержать не менее 2 символов';
+    }
+    
+    if (!formData.first_name.trim()) {
+      newErrors.first_name = 'Введите имя';
+    } else if (formData.first_name.length < 2) {
+      newErrors.first_name = 'Имя должно содержать не менее 2 символов';
+    }
+    
+    if (formData.middle_name.trim() && formData.middle_name.length < 2) {
+      newErrors.middle_name = 'Отчество должно содержать не менее 2 символов';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -34,12 +66,15 @@ function Register() {
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
+    if (apiError) setApiError('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!validate()) return;
+    
     setIsSubmitting(true);
-    setErrors({});
+    setApiError('');
     
     try {
       const res = await api.post('/api/register/', formData);
@@ -51,23 +86,36 @@ function Register() {
       
     } catch (err) {
       if (err.response?.data) {
-        setErrors(err.response.data);
+        if (typeof err.response.data === 'object') {
+          setErrors(err.response.data);
+          setApiError(err.response.data.general || 'Ошибка при регистрации');
+        } else {
+          setApiError('Ошибка при регистрации');
+        }
       } else {
-        setErrors({ general: 'Ошибка соединения с сервером. Попробуйте позже.' });
+        setApiError('Ошибка соединения с сервером. Попробуйте позже.');
       }
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const fieldConfig = [
+    { name: 'username', label: 'Логин', type: 'text', placeholder: 'Введите логин' },
+    { name: 'password', label: 'Пароль', type: 'password', placeholder: 'Введите пароль (минимум 8 символов)' },
+    { name: 'last_name', label: 'Фамилия', type: 'text', placeholder: 'Введите фамилию' },
+    { name: 'first_name', label: 'Имя', type: 'text', placeholder: 'Введите имя' },
+    { name: 'middle_name', label: 'Отчество', type: 'text', placeholder: 'Введите отчество (необязательно)' }
+  ];
+
   return (
     <div className="auth-container">
       <div className="auth-card">
         <h2>Регистрация</h2>
 
-        {errors.general && (
+        {apiError && !Object.keys(errors).length && (
           <div className="error-message general-error">
-            {errors.general}
+            {apiError}
           </div>
         )}
 
@@ -81,9 +129,8 @@ function Register() {
                 name={field.name}
                 value={formData[field.name]}
                 onChange={handleChange}
-                required
                 className={`auth-input ${errors[field.name] ? 'error' : ''}`}
-                minLength={field.name === 'password' ? 8 : undefined}
+                placeholder={field.placeholder}
                 disabled={isSubmitting}
                 autoComplete={
                   field.name === 'password' ? 'new-password' : 
@@ -92,9 +139,7 @@ function Register() {
               />
               {errors[field.name] && (
                 <span className="error-text">
-                  {Array.isArray(errors[field.name]) 
-                    ? errors[field.name].join(', ') 
-                    : errors[field.name]}
+                  {errors[field.name]}
                 </span>
               )}
             </div>

@@ -15,4 +15,4 @@ venv/
 # Logs
 *.log
 
-backend/passwords.py
+/api/migrations/

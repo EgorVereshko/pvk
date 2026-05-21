@@ -12,7 +12,6 @@ const CheckList = () => {
   const [students, setStudents] = useState([]);
   const [step, setStep] = useState(1);
   
-  // Данные формы
   const [formData, setFormData] = useState({
     date: '',
     team: '',
@@ -20,15 +19,13 @@ const CheckList = () => {
     template: ''
   });
   
-  // Данные таблицы - теперь качества могут динамически добавляться
   const [tableData, setTableData] = useState({
     students: ['', '', '', '', ''],
     studentNames: ['', '', '', '', ''],
-    qualities: ['Обучаемость', 'Организованность', 'Работа в команде', 'Вовлеченность'], // базовые
-    scores: [] // будет динамически заполняться
+    qualities: ['Обучаемость', 'Организованность', 'Работа в команде', 'Вовлеченность'],
+    scores: []
   });
   
-  // Состояние для сохранения шаблона
   const [showSaveTemplate, setShowSaveTemplate] = useState(false);
   const [newTemplateName, setNewTemplateName] = useState('');
   const [editingTemplate, setEditingTemplate] = useState(null);
@@ -43,7 +40,6 @@ const CheckList = () => {
     fetchStudents();
   }, []);
 
-  // Инициализация scores при изменении qualities
   useEffect(() => {
     const newScores = tableData.qualities.map(() => Array(5).fill(null));
     setTableData(prev => ({ ...prev, scores: newScores }));
@@ -102,7 +98,6 @@ const CheckList = () => {
     if (templateId) {
       const selectedTemplate = templates.find(t => t.id === parseInt(templateId));
       if (selectedTemplate && selectedTemplate.indicators) {
-        // Загружаем данные шаблона
         const templateQualities = selectedTemplate.competences || tableData.qualities;
         const newScores = templateQualities.map((quality, index) => {
           if (index < selectedTemplate.indicators.length) {
@@ -154,7 +149,6 @@ const CheckList = () => {
     setTableData(prev => ({ ...prev, scores: newScores }));
   };
 
-  // Добавление новой компетенции
   const handleAddCompetence = () => {
     if (!newCompetenceName.trim()) {
       alert('Введите название компетенции');
@@ -170,7 +164,6 @@ const CheckList = () => {
     setNewCompetenceName('');
   };
 
-  // Удаление компетенции
   const handleRemoveCompetence = (index) => {
     if (index < 4) {
       alert('Нельзя удалить базовые компетенции');
@@ -194,7 +187,6 @@ const CheckList = () => {
     }
 
     try {
-      // Проверяем, что все оценки заполнены
       let allFilled = true;
       for (let q = 0; q < tableData.qualities.length; q++) {
         for (let s = 0; s < 5; s++) {
@@ -225,7 +217,6 @@ const CheckList = () => {
         });
       }
       
-      // Добавляем общую оценку как 5-й индикатор, если компетенций больше 4
       if (indicators.length >= 4) {
         const allValues = [];
         for (let q = 0; q < tableData.qualities.length; q++) {
@@ -235,7 +226,6 @@ const CheckList = () => {
           ? Math.round(allValues.reduce((a, b) => a + b, 0) / allValues.length)
           : 0;
         
-        // Ограничиваем до 5 индикаторов
         while (indicators.length < 5) {
           indicators.push({
             name: totalAvg.toString(),
@@ -246,8 +236,8 @@ const CheckList = () => {
 
       await api.post('/api/templates/save/', {
         name: newTemplateName,
-        indicators: indicators.slice(0, 5), // Берем только первые 5
-        competences: tableData.qualities // Сохраняем все компетенции
+        indicators: indicators.slice(0, 5),
+        competences: tableData.qualities
       });
 
       alert('Шаблон успешно сохранен');
@@ -329,7 +319,6 @@ const CheckList = () => {
           
           {step === 1 ? (
             <div className="form-step">
-              {/* Форма как была ранее */}
               <div className="form-group">
                 <label>Дата <span className="required">*</span>:</label>
                 <input

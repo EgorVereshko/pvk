@@ -1,5 +1,3 @@
-from enum import member
-
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
@@ -115,7 +113,7 @@ class TeamMember(models.Model):
 
 class Quality(models.Model):
     name = models.CharField(max_length=100)
-    description = models.TextField(max_length=1000)
+    description = models.TextField(max_length=1000, null=True, blank=True)
 
     def __str__(self):
         return f'{self.name}'
@@ -123,7 +121,7 @@ class Quality(models.Model):
 
 class Indicator(models.Model):
     name = models.CharField(max_length=100)
-    description = models.TextField(max_length=1000)
+    description = models.TextField(max_length=1000, null=True, blank=True)
 
     def __str__(self):
         return f'{self.name}'
@@ -141,7 +139,7 @@ class AssessmentModel(models.Model):
     name = models.CharField(max_length=100,
                             default='По умолчанию')
     status_choices = [('Активная', 'Активная'), ('Неактивная', 'Неактивная')]
-    status = models.CharField(default=status_choices[0], max_length=10)
+    status = models.CharField(choices=status_choices, max_length=10)
 
     def __str__(self):
         return f'{self.name}: {self.status}'

@@ -11,12 +11,12 @@ urlpatterns = [
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     # получить профиль текущего пользователя
-    path('api/current_user/', get_user, name='get_current_user'),
+    path('api/user/', get_user, name='get_current_user'),
     # получить профиль по id (чтобы организатор мог получить профиль конкретного проектанта)
     path('api/user/<int:user_id>/', get_user, name='get_user_by_id'),
     path('api/user/update/', update_user, name='update_user'),
     # Текущие оценки (для лепестковой диаграммы)
-    path('api/latest_qualities_scores/', get_latest_qualities_scores, name='get_latest_qualities_scores'),
+    path('api/user/scores/', get_latest_qualities_scores, name='get_latest_qualities_scores'),
     path('api/latest_qualities_scores/<int:user_id>/', get_latest_qualities_scores,
          name='get_latest_qualities_scores_by_id'),
     # Оценки за 2 месяца (для динамики)

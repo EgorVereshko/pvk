@@ -13,7 +13,6 @@ const Qualities = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedQuality, setSelectedQuality] = useState(null);
   
-  // Форма создания/редактирования
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -82,7 +81,6 @@ const Qualities = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  // Добавление индикатора
   const addIndicator = () => {
     if (!currentIndicator.name) {
       alert('Введите название индикатора');
@@ -105,7 +103,6 @@ const Qualities = () => {
     });
   };
 
-  // Удаление индикатора
   const removeIndicator = (index) => {
     setFormData(prev => ({
       ...prev,
@@ -113,7 +110,6 @@ const Qualities = () => {
     }));
   };
 
-  // Добавление компетенции
   const addCompetence = () => {
     if (!currentCompetence.id) {
       alert('Выберите компетенцию');
@@ -140,7 +136,6 @@ const Qualities = () => {
     setCurrentCompetence({ id: '', coefficient: 1.0 });
   };
 
-  // Удаление компетенции
   const removeCompetence = (index) => {
     setFormData(prev => ({
       ...prev,
@@ -418,7 +413,6 @@ const Qualities = () => {
           <div className="modal-content large">
             <h2>Редактирование качества</h2>
             
-            {/* Аналогичная форма, но с данными из selectedQuality */}
             <div className="form-group">
               <label>Название качества *</label>
               <input

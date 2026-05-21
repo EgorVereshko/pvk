@@ -8,24 +8,20 @@ const Header = ({ onLogout, user }) => {
   const avatarRef = useRef(null);
   const navigate = useNavigate();
 
-  // Функция для получения статуса на основе роли пользователя
   const getUserStatus = () => {
     if (!user) return 'Проектант';
     
     const role = user.role?.toLowerCase();
     
     switch (role) {
-      case 'organizer':
       case 'организатор':
         return 'Организатор';
-      case 'curator':
       case 'куратор':
         return 'Куратор';
-      case 'projectant':
       case 'проектант':
         return 'Проектант';
       default:
-        return 'Проектант'; // значение по умолчанию
+        return 'Проектант';
     }
   };
 
@@ -63,8 +59,8 @@ const Header = ({ onLogout, user }) => {
 
   return (
     <header className="main-header">
-      <a href='/score/student' className='header__item'>Форма 360</a>
-      <a href='/events' className='header__item'>Оценочные мероприятия</a>
+      <a href='/form360' className='header__item'>Форма 360</a>
+      <a href='/events/tutor' className='header__item'>Оценочные мероприятия</a>
       <a href='/polls' className='header__item'>Опросники</a>
       <a href='/qualities' className='header__item'>Качества</a>
       
@@ -96,7 +92,6 @@ const Header = ({ onLogout, user }) => {
                 <div className="dropdown-menu__email">
                   {user?.email || user?.username || 'user@example.com'}
                 </div>
-                {/* НОВЫЙ БЛОК СО СТАТУСОМ */}
                 <div className="dropdown-menu__status">
                   {getUserStatus()}
                 </div>
@@ -114,18 +109,7 @@ const Header = ({ onLogout, user }) => {
               </svg>
               Профиль
             </button>
-            
-            <button 
-              className="dropdown-menu__item"
-              onClick={handleSettingsClick}
-            >
-              <svg className="dropdown-menu__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              Настройки
-            </button>
-            
+              
             <div className="dropdown-menu__divider"></div>
             
             <button 

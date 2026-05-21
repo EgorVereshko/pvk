@@ -1,19 +1,14 @@
 from datetime import datetime, tzinfo, timedelta
 from collections import defaultdict
-from http.cookiejar import month
-
 from django.utils import timezone
 from django.contrib.auth import authenticate, logout, login
-from django.middleware.csrf import get_token
 from django.shortcuts import get_object_or_404
-from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework import status, generics
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from .permissions import IsOrganizer, IsTutorOrOrganizer, IsProjectant, IsTutor
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
-from .models import *
 from .serializers import *
 
 
@@ -67,7 +62,7 @@ def get_user(request, user_id=None):
 @permission_classes([IsAuthenticated])
 def update_user(request):
     try:
-        profile = request.user.profile
+        profile = get_object_or_404(UserProfile, user=request.user)
         serializer = UserProfileSerializer(profile, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -100,7 +95,7 @@ def get_qualities(profile):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated, IsOrganizer])
+@permission_classes([IsAuthenticated, IsTutorOrOrganizer])
 def get_projectants(request):
     projectant_roles = UserRole.objects.filter(role='Проектант').select_related('user')
     projectants = [role.user for role in projectant_roles]
@@ -373,7 +368,7 @@ def delete_template(request, template_id):
 
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, IsTutorOrOrganizer])
 def create_form(request):
     """Создание оценочной формы.
     Принимает данные в формате:
@@ -425,7 +420,7 @@ def create_form(request):
 
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, IsTutorOrOrganizer])
 def update_form(request, form_id):
     """Обновляет форму"""
     try:
@@ -912,7 +907,7 @@ def get_poll(request, form):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated, IsTutorOrOrganizer])
+@permission_classes([IsAuthenticated])
 def get_form_to_fill(request, form_id):
     form = get_object_or_404(AssessmentForm, id=form_id)
 

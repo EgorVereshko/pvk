@@ -1,3 +1,7 @@
+/* ============================================ */
+/* MAIN HEADER - Navigation Bar */
+/* ============================================ */
+
 .main-header {
     height: 65px;
     padding: 10px 190px;
@@ -16,6 +20,7 @@
     background: white;
 }
 
+/* Navigation links */
 .header__item {
     color: #334155;
     text-decoration: none;
@@ -26,6 +31,7 @@
     color: #1e40af;
 }
 
+/* Spacing for first three nav items */
 .header__item:nth-child(1) {
     margin-right: 50px;
 }
@@ -42,12 +48,17 @@
     margin-right: auto;
 }
 
-/* Аватарка */
+/* ============================================ */
+/* AVATAR & DROPDOWN MENU */
+/* ============================================ */
+
+/* Avatar wrapper */
 .header__avatar-wrapper {
     position: relative;
     margin: auto 0;
 }
 
+/* Avatar button */
 .header__avatar-btn {
     background: none;
     border: none;
@@ -63,6 +74,7 @@
     transform: scale(1.05);
 }
 
+/* Avatar image */
 .header__ava {
     background-size: cover;
     background-position: center;
@@ -79,7 +91,7 @@
     border-color: #667eea;
 }
 
-/* Выпадающее меню */
+/* Dropdown menu container */
 .dropdown-menu {
     position: absolute;
     top: calc(100% + 10px);
@@ -94,6 +106,7 @@
     animation: fadeIn 0.2s ease;
 }
 
+/* Dropdown animation */
 @keyframes fadeIn {
     from {
         opacity: 0;
@@ -105,7 +118,7 @@
     }
 }
 
-/* Инфо о пользователе */
+/* User info section in dropdown */
 .dropdown-menu__user {
     display: flex;
     align-items: center;
@@ -146,13 +159,14 @@
     text-overflow: ellipsis;
 }
 
+/* Divider between sections */
 .dropdown-menu__divider {
     height: 1px;
     background: #E2E8F0;
     margin: 8px 0;
 }
 
-/* Пункты меню */
+/* Dropdown menu items */
 .dropdown-menu__item {
     display: flex;
     align-items: center;
@@ -172,6 +186,7 @@
     background: #F1F5F9;
 }
 
+/* Logout button - red color */
 .dropdown-menu__item--logout {
     color: #EF4444;
 }
@@ -180,13 +195,17 @@
     background: #FEF2F2;
 }
 
+/* Icons in dropdown */
 .dropdown-menu__icon {
     width: 20px;
     height: 20px;
     flex-shrink: 0;
 }
 
-/* Адаптив */
+/* ============================================ */
+/* RESPONSIVE DESIGN */
+/* ============================================ */
+
 @media (max-width: 1024px) {
     .main-header {
         padding: 10px 20px;

@@ -57,7 +57,6 @@ const CheckListView = () => {
     setEditedScores(newScores);
   };
 
-  // Добавление новой компетенции
   const handleAddCompetence = () => {
     if (!newCompetenceName.trim()) {
       alert('Введите название компетенции');
@@ -69,7 +68,6 @@ const CheckListView = () => {
     setNewCompetenceName('');
   };
 
-  // Удаление компетенции
   const handleRemoveCompetence = (index) => {
     if (index < 4) {
       alert('Нельзя удалить базовые компетенции');
@@ -85,7 +83,6 @@ const CheckListView = () => {
 
   const handleSave = async () => {
     try {
-      // Проверяем, что все оценки заполнены
       let allFilled = true;
       for (let q = 0; q < editedQualities.length; q++) {
         for (let s = 0; s < 5; s++) {
@@ -102,7 +99,6 @@ const CheckListView = () => {
         return;
       }
 
-      // Получаем ID студентов из текущего чек-листа
       const studentsIds = checklist.students.map(s => s.id).filter(id => id !== null);
       
       await api.put(`/api/checklist/${id}/update/`, {
@@ -112,7 +108,7 @@ const CheckListView = () => {
       });
       alert('Чек-лист успешно обновлен');
       setEditMode(false);
-      fetchChecklist(); // Перезагружаем данные
+      fetchChecklist();
     } catch (error) {
       console.error('Ошибка сохранения:', error);
       alert('Ошибка при сохранении: ' + (error.response?.data?.error || 'Неизвестная ошибка'));
@@ -137,7 +133,6 @@ const CheckListView = () => {
     navigate('/');
   };
 
-  // Получаем студентов для отображения (строки таблицы)
   const displayStudents = editMode ? editedStudents : (checklist?.students || []);
   const displayQualities = editMode ? editedQualities : (checklist?.qualities || []);
   const displayScores = editMode ? editedScores : (checklist?.scores || []);

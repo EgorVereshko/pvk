@@ -1,3 +1,7 @@
+/* ============================================ */
+/* STUDENT LIST PAGE - User Management */
+/* ============================================ */
+
 .list-student-container {
   min-height: 100vh;
   background-color: #f8fafc;
@@ -8,6 +12,10 @@
   margin: 0 auto;
   padding: 2rem;
 }
+
+/* ============================================ */
+/* HEADER SECTION */
+/* ============================================ */
 
 .list-student-header {
   display: flex;
@@ -39,7 +47,17 @@
   color: #475569;
 }
 
-/* Поиск и фильтры */
+/* Demo data badge */
+.demo-badge {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  margin-left: 10px;
+}
+
+/* ============================================ */
+/* SEARCH & FILTERS */
+/* ============================================ */
+
 .search-filter-section {
   margin-bottom: 1.5rem;
 }
@@ -92,7 +110,10 @@
   color: #ef4444;
 }
 
-/* Таблица */
+/* ============================================ */
+/* STUDENTS TABLE */
+/* ============================================ */
+
 .students-table-wrapper {
   background: white;
   border-radius: 12px;
@@ -107,6 +128,7 @@
   font-size: 0.9rem;
 }
 
+/* Table header */
 .students-table th {
   text-align: left;
   padding: 1rem 1rem;
@@ -132,21 +154,32 @@
   font-size: 0.8rem;
 }
 
+/* Table cells */
 .students-table td {
   padding: 1rem 1rem;
   border-bottom: 1px solid #f1f5f9;
   vertical-align: middle;
 }
 
+/* Table row hover effect */
 .student-row {
-  transition: background 0.2s;
+  transition: background 0.2s ease;
+  cursor: pointer;
 }
 
 .student-row:hover {
   background: #f8fafc;
+  transform: translateX(2px);
 }
 
-/* Колонки */
+.student-row:active {
+  transform: scale(0.99);
+}
+
+/* ============================================ */
+/* COLUMN STYLES */
+/* ============================================ */
+
 .col-avatar {
   width: 60px;
   text-align: center;
@@ -156,6 +189,27 @@
   width: 80px;
 }
 
+.col-name {
+  min-width: 150px;
+}
+
+/* Avatar with image */
+.student-avatar-img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease;
+}
+
+.student-row:hover .student-avatar-img {
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Avatar without image (initials) */
 .student-avatar {
   width: 40px;
   height: 40px;
@@ -163,17 +217,26 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 600;
-  font-size: 0.9rem;
+  font-weight: bold;
+  font-size: 14px;
+  text-transform: uppercase;
   color: white;
   margin: 0 auto;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease;
 }
 
+.student-row:hover .student-avatar {
+  transform: scale(1.05);
+}
+
+/* Full name cell */
 .full-name {
   font-weight: 500;
   color: #0f172a;
 }
 
+/* ID badge */
 .id-badge {
   display: inline-block;
   padding: 0.25rem 0.5rem;
@@ -184,7 +247,10 @@
   color: #475569;
 }
 
-/* Пустое состояние */
+/* ============================================ */
+/* EMPTY STATE */
+/* ============================================ */
+
 .empty-state {
   text-align: center;
   padding: 4rem 2rem;
@@ -210,7 +276,10 @@
   color: #94a3b8;
 }
 
-/* Подвал таблицы */
+/* ============================================ */
+/* TABLE FOOTER */
+/* ============================================ */
+
 .table-footer {
   padding: 1rem;
   border-top: 1px solid #e2e8f0;
@@ -223,7 +292,10 @@
   color: #64748b;
 }
 
-/* Адаптивность */
+/* ============================================ */
+/* RESPONSIVE DESIGN */
+/* ============================================ */
+
 @media (max-width: 768px) {
   .list-student-content {
     padding: 1rem;
@@ -248,6 +320,11 @@
     height: 32px;
     font-size: 0.75rem;
   }
+  
+  .student-avatar-img {
+    width: 32px;
+    height: 32px;
+  }
 }
 
 @media (max-width: 640px) {
@@ -257,66 +334,4 @@
   .students-table td:nth-child(4) {
     display: none;
   }
-}
-
-/* Стили для аватара с изображением */
-.student-avatar-img {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid #fff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-/* Стили для строки таблицы при наведении */
-.student-row {
-  transition: background-color 0.2s ease;
-  cursor: pointer;
-}
-
-.student-row:hover {
-  background-color: #f8f9ff;
-  transform: translateX(2px);
-}
-
-/* Бейдж демо-данных */
-.demo-badge {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  margin-left: 10px;
-}
-
-/* Анимация для строки */
-.student-row {
-  transition: all 0.2s ease;
-}
-
-.student-row:active {
-  transform: scale(0.99);
-}
-
-/* Стили для аватара (без фото) */
-.student-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: bold;
-  font-size: 14px;
-  text-transform: uppercase;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s ease;
-}
-
-.student-row:hover .student-avatar {
-  transform: scale(1.05);
-}
-
-.student-row:hover .student-avatar-img {
-  transform: scale(1.05);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
