@@ -31,6 +31,7 @@ urlpatterns = [
     # Команды
     path('api/teams/', get_teams, name='get_teams'),
     path('api/teams/<int:team_id>/member-count/', get_team_member_count, name='get_team_member_count'),
+    path('api/teams/<int:team_id>/members/', get_team_members, name='get_team_members'),
 
     # Индикаторы
     path('api/indicators/', get_indicators, name='get_indicators'),

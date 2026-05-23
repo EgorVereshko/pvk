@@ -1354,3 +1354,20 @@ def save_competences_scores(request):
             {'error': f'Ошибка при сохранении: {str(e)}'},
             status=status.HTTP_400_BAD_REQUEST
         )
+    
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_team_members(request, team_id):
+    try:
+        team = Team.objects.get(id=team_id)
+        members = TeamMember.objects.filter(team=team).select_related('member')
+        members_list = [{
+            'id': m.member.id,
+            'name': m.member.short_name(),
+            'full_name': m.member.full_name(),
+            'short_name': m.member.short_name()
+        } for m in members]
+        return Response(members_list, status=status.HTTP_200_OK)
+    except Team.DoesNotExist:
+        return Response({'error': 'Команда не найдена'}, status=status.HTTP_404_NOT_FOUND)
