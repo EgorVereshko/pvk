@@ -66,7 +66,7 @@ const Form360Create = () => {
 
   const fetchQualities = async () => {
     try {
-      const res = await api.get('/api/qualities/list/');
+      const res = await api.get('/api/qualities/');
       if (res.data && res.data.length > 0) {
         const qualityNames = res.data.map(q => q.name);
         setAvailableQualities(qualityNames);
@@ -125,15 +125,22 @@ const Form360Create = () => {
     setSaving(true);
     
     try {
-      const response = await api.post('/api/form360/create/', {
+      // Используем существующий эндпоинт /api/forms/create/
+      const response = await api.post('/api/forms/create/', {
         name: formData.name,
-        team_id: formData.team_id,
-        deadline: new Date(formData.deadline).toISOString(),
-        qualities: formData.qualities
+        type: 'Оценка 360',
+        teams_id: [parseInt(formData.team_id)],
+        start_datetime: new Date().toISOString(),
+        end_datetime: new Date(formData.deadline).toISOString()
       });
       
+      console.log('Форма сохранена в БД:', response.data);
+      
       alert('Форма 360 успешно создана!');
+      
+      // Перенаправляем на список форм, а не на оценку
       navigate('/form360');
+      
     } catch (error) {
       console.error('Ошибка создания формы:', error);
       alert('Ошибка при создании формы: ' + (error.response?.data?.error || 'Неизвестная ошибка'));

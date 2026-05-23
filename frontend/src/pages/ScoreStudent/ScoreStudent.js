@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../../api';
 import Header from '../../components/Header/Header';
 import './ScoreStudent.css';
@@ -9,63 +9,74 @@ const ScoreStudent = () => {
   const [loading, setLoading] = useState(true);
   const [students, setStudents] = useState([]);
   const [selectedStudent, setSelectedStudent] = useState('');
-  const [sliderValues, setSliderValues] = useState({
-    'Организованность': 0.0,
-    'Вовлеченность': 0.0,
-    'Работа в команде': 0.0,
-    'Обучаемость': 0.0,
-  });
+  const [sliderValues, setSliderValues] = useState({});
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
+  const [tooltipText, setTooltipText] = useState({});
+  const [formName, setFormName] = useState('');
+  const [availableQualities, setAvailableQualities] = useState([]);
+  const [teamName, setTeamName] = useState('');
+  const [editingValue, setEditingValue] = useState({});
   
-  const [currentForm360, setCurrentForm360] = useState(null);
-  const [availableQualities, setAvailableQualities] = useState([
-    'Организованность',
-    'Вовлеченность',
-    'Работа в команде',
-    'Обучаемость'
-  ]);
-  const [teamInfo, setTeamInfo] = useState(null);
+  const location = useLocation();
+  const formId = location.state?.formId;
   
-  const sliderRefs = {
-    'Организованность': useRef(null),
-    'Вовлеченность': useRef(null),
-    'Работа в команде': useRef(null),
-    'Обучаемость': useRef(null),
-  };
-
+  const defaultQualities = ['Обучаемость', 'Вовлеченность', 'Организованность', 'Работа в команде'];
+  const sliderRefs = useRef({});
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const savedForm360 = localStorage.getItem('current_form360');
-    if (savedForm360) {
-      const form360 = JSON.parse(savedForm360);
-      setCurrentForm360(form360);
-      
-      if (form360.qualities && form360.qualities.length > 0) {
-        setAvailableQualities(form360.qualities);
-        
-        const initialValues = {};
-        form360.qualities.forEach(quality => {
-          initialValues[quality] = 0.0;
-        });
-        setSliderValues(initialValues);
-      }
-      
-      setTeamInfo({
-        name: form360.team_name,
-        deadline: form360.deadline
-      });
+  const qualityTooltips = {
+    'Организованность': {
+      '-1': '❌ Проектант часто опаздывает на встречи, забывает о дедлайнах, материалы хранит только у себя, не делится с командой.',
+      '0': '📋 Проектант в целом соблюдает сроки, но иногда забывает обновлять статус задач.',
+      '1': '✅ Проектант всегда соблюдает дедлайны, заранее предупреждает о возможных задержках.'
+    },
+    'Вовлеченность': {
+      '-1': '❌ Проектант пассивен на собраниях, не проявляет инициативу, делает только то, что прямо сказали.',
+      '0': '📋 Проектант участвует в обсуждениях, когда его спрашивают. Иногда предлагает идеи.',
+      '1': '✅ Проектант активно участвует в жизни команды, предлагает идеи, помогает коллегам.'
+    },
+    'Работа в команде': {
+      '-1': '❌ Проектант работает изолированно, не синхронизируется с командой.',
+      '0': '📋 Проектант отвечает на сообщения, участвует в обсуждениях, но редко помогает коллегам.',
+      '1': '✅ Проектант активно взаимодействует с командой, помогает коллегам, делится знаниями.'
+    },
+    'Обучаемость': {
+      '-1': '❌ Проектант долго осваивает новые инструменты, не задаёт уточняющих вопросов.',
+      '0': '📋 Проектант осваивает новое в среднем темпе, задаёт вопросы когда что-то непонятно.',
+      '1': '✅ Проектант быстро осваивает новые технологии, инструменты и процессы.'
     }
-    
+  };
+
+  useEffect(() => {
     fetchUserProfile();
-    fetchStudents();
-  }, [navigate]);
+    
+    if (formId) {
+      fetchFormQualities();
+    } else {
+      fetchStudents();
+      fetchQualities();
+    }
+  }, [formId]);
 
   const fetchUserProfile = async () => {
     try {
       const res = await api.get('/api/user/');
       setUser(res.data);
+      
+      if (res.data.team_name) {
+        setTeamName(res.data.team_name);
+      } else {
+        try {
+          const teamRes = await api.get('/api/user/team/');
+          if (teamRes.data && teamRes.data.name) {
+            setTeamName(teamRes.data.name);
+          }
+        } catch (err) {
+          console.log('Не удалось получить команду пользователя');
+          setTeamName('Моя команда');
+        }
+      }
     } catch (err) {
       if (err.response?.status === 401) {
         localStorage.clear();
@@ -74,22 +85,84 @@ const ScoreStudent = () => {
     }
   };
 
+  const fetchFormQualities = async () => {
+    try {
+      const res = await api.get(`/api/forms/fill/${formId}/`);
+      console.log('Детали формы:', res.data);
+      
+      setFormName(res.data.name);
+      
+      const qualities = res.data.qualities || [];
+      const qualityNames = qualities.map(q => q.name);
+      setAvailableQualities(qualityNames);
+      
+      const initialValues = {};
+      qualityNames.forEach(quality => {
+        initialValues[quality] = 0.0;
+      });
+      setSliderValues(initialValues);
+      
+      const members = res.data.team?.members || [];
+      const formattedStudents = members.map(member => ({
+        id: member.id,
+        short_name: member.name,
+        full_name: member.name
+      }));
+      setStudents(formattedStudents);
+      if (formattedStudents.length > 0) {
+        setSelectedStudent(formattedStudents[0].id);
+      }
+      if (res.data.team?.name) {
+        setTeamName(res.data.team.name);
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки формы:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchQualities = async () => {
+    try {
+      const res = await api.get('/api/qualities/');
+      if (res.data && res.data.length > 0) {
+        const qualityNames = res.data.map(q => q.name);
+        setAvailableQualities(qualityNames);
+        
+        const initialValues = {};
+        qualityNames.forEach(quality => {
+          initialValues[quality] = 0.0;
+        });
+        setSliderValues(initialValues);
+      } else {
+        setAvailableQualities(defaultQualities);
+        const initialValues = {};
+        defaultQualities.forEach(quality => {
+          initialValues[quality] = 0.0;
+        });
+        setSliderValues(initialValues);
+      }
+    } catch (error) {
+      console.log('Используем стандартные качества');
+      setAvailableQualities(defaultQualities);
+      const initialValues = {};
+      defaultQualities.forEach(quality => {
+        initialValues[quality] = 0.0;
+      });
+      setSliderValues(initialValues);
+    }
+  };
+
   const fetchStudents = async () => {
     try {
-      let studentsData = [];
+      const response = await api.get('/api/students/');
+      console.log('Студенты:', response.data);
       
-      if (currentForm360 && currentForm360.team_id) {
-        const response = await api.get(`/api/team/${currentForm360.team_id}/students/`);
-        studentsData = response.data;
-      } else {
-        const response = await api.get('/api/students/');
-        studentsData = response.data;
-      }
-      
-      setStudents(studentsData);
-      if (studentsData.length > 0) {
-        setSelectedStudent(studentsData[0].id);
-        loadStudentScores(studentsData[0].id);
+      if (response.data && response.data.length > 0) {
+        setStudents(response.data);
+        const firstStudentId = response.data[0].id;
+        setSelectedStudent(firstStudentId);
+        await loadStudentScores(firstStudentId);
       }
     } catch (error) {
       console.error('Ошибка загрузки студентов:', error);
@@ -99,27 +172,34 @@ const ScoreStudent = () => {
   };
 
   const loadStudentScores = async (studentId) => {
-    if (currentForm360) {
-      try {
-        const response = await api.get(`/api/form360/${currentForm360.id}/student/${studentId}/scores/`);
-        if (response.data && response.data.scores) {
-          setSliderValues(response.data.scores);
-        } else {
-          const resetValues = {};
-          availableQualities.forEach(quality => {
-            resetValues[quality] = 0.0;
-          });
-          setSliderValues(resetValues);
-        }
-      } catch (error) {
-        console.log('Нет сохранённых оценок для этого студента');
-        const resetValues = {};
-        availableQualities.forEach(quality => {
-          resetValues[quality] = 0.0;
+    try {
+      const response = await api.get(`/api/latest_qualities_scores/${studentId}/`);
+      console.log(`Оценки студента ${studentId}:`, response.data);
+      
+      if (response.data && Array.isArray(response.data)) {
+        const scoresObject = {};
+        response.data.forEach(item => {
+          scoresObject[item.quality_name] = item.score;
         });
-        setSliderValues(resetValues);
+        setSliderValues(scoresObject);
+      }
+    } catch (error) {
+      console.log(`Нет сохранённых оценок для студента ${studentId}`);
+    }
+  };
+
+  const markFormAsCompleted = async () => {
+    if (formId) {
+      try {
+        await api.post(`/api/forms/${formId}/complete/`);
+        console.log('Форма 360 отмечена как пройденная');
+        return true;
+      } catch (err) {
+        console.error('Ошибка при отметке формы:', err);
+        return false;
       }
     }
+    return true;
   };
 
   const handleLogout = () => {
@@ -128,10 +208,44 @@ const ScoreStudent = () => {
   };
 
   const handleSliderChange = (competence, value) => {
+    const numValue = parseFloat(value);
     setSliderValues(prev => ({
       ...prev,
-      [competence]: parseFloat(value),
+      [competence]: numValue,
     }));
+  };
+
+  // Обработчик изменения значения в окошке
+  const handleInputChange = (competence, value) => {
+    setEditingValue(prev => ({ ...prev, [competence]: value }));
+  };
+
+  // Обработчик потери фокуса или нажатия Enter
+  const handleInputBlur = (competence) => {
+    const value = editingValue[competence];
+    if (value !== undefined && value !== '') {
+      let numValue = parseFloat(value);
+      if (isNaN(numValue)) {
+        numValue = 0;
+      }
+      // Ограничиваем значение в пределах от -1 до 3
+      numValue = Math.max(-1, Math.min(3, numValue));
+      // Округляем до 1 десятичного знака
+      numValue = Math.round(numValue * 10) / 10;
+      
+      setSliderValues(prev => ({
+        ...prev,
+        [competence]: numValue,
+      }));
+    }
+    setEditingValue(prev => ({ ...prev, [competence]: undefined }));
+  };
+
+  // Обработчик нажатия Enter
+  const handleInputKeyDown = (competence, e) => {
+    if (e.key === 'Enter') {
+      handleInputBlur(competence);
+    }
   };
 
   const handleTabChange = async (studentId) => {
@@ -149,34 +263,28 @@ const ScoreStudent = () => {
     setSaveMessage('');
 
     try {
-      if (currentForm360) {
-        const scoresData = Object.entries(sliderValues).map(([competenceName, score]) => ({
-          competence_name: competenceName,
-          score: parseFloat(score),
-          student_profile_id: selectedStudent
-        }));
+      const scoresData = Object.entries(sliderValues).map(([competenceName, score]) => ({
+        competence_name: competenceName,
+        score: parseFloat(score),
+        student_profile_id: selectedStudent
+      }));
 
-        await api.post(`/api/form360/${currentForm360.id}/submit/`, {
-          student_id: selectedStudent,
-          scores: sliderValues,
-          qualities_scores: scoresData
-        });
-        
-        setSaveMessage('Оценки успешно сохранены в форму 360!');
-      } else {
-        const scoresData = Object.entries(sliderValues).map(([competenceName, score]) => ({
-          competence_name: competenceName,
-          score: parseFloat(score),
-          student_profile_id: selectedStudent
-        }));
-
-        await api.post('/api/competences/scores/', scoresData);
-        setSaveMessage('Оценки успешно сохранены!');
-      }
+      await api.post('/api/competences/scores/', scoresData);
       
-      setTimeout(() => {
-        setSaveMessage('');
-      }, 3000);
+      if (formId) {
+        await markFormAsCompleted();
+        setSaveMessage('Оценки успешно сохранены!');
+        
+        setTimeout(() => {
+          navigate('/form360');
+        }, 1500);
+      } else {
+        setSaveMessage('Оценки успешно сохранены!');
+        
+        setTimeout(() => {
+          setSaveMessage('');
+        }, 3000);
+      }
     } catch (error) {
       console.error('Ошибка сохранения:', error);
       setSaveMessage(`Ошибка: ${error.response?.data?.error || 'Неизвестная ошибка'}`);
@@ -185,17 +293,25 @@ const ScoreStudent = () => {
     }
   };
 
-  const formatValue = (value) => {
-    return value.toFixed(1);
-  };
-
+  const formatValue = (value) => (value || 0).toFixed(1);
+  
   const getBubblePosition = (competence) => {
     const value = sliderValues[competence] || 0;
     const percent = ((value + 1) / 4) * 100;
     return percent;
   };
 
+  const showTooltip = (quality) => {
+    setTooltipText(prev => ({ ...prev, [quality]: qualityTooltips[quality] }));
+  };
+
+  const hideTooltip = (quality) => {
+    setTooltipText(prev => ({ ...prev, [quality]: '' }));
+  };
+
   if (loading) return <div className="loading">Загрузка...</div>;
+
+  const qualitiesList = availableQualities.length > 0 ? availableQualities : defaultQualities;
 
   return (
     <div className="score-container">
@@ -203,45 +319,83 @@ const ScoreStudent = () => {
 
       <div className="score-content">
         <div className="score-card">
-          <h1 className="score-title">
-            {currentForm360 ? `Форма 360: ${currentForm360.name}` : 'Оценка студента'}
-          </h1>
+          <h1 className="score-title">Оценка студента</h1>
+          
+          {formId && formName && (
+            <div className="form-info-badge">
+              📝 {formName}
+            </div>
+          )}
+          
+          {formId && !formName && (
+            <div className="form-info-badge">
+              Оценка для формы: #{formId}
+            </div>
+          )}
 
           <div className="team-info">
-            <span className="team-name">
-              {currentForm360 ? `Команда: ${currentForm360.team_name}` : 'Команда ПВК'}
-            </span>
-            {currentForm360 && (
-              <span className="team-deadline">
-                Дедлайн: {new Date(currentForm360.deadline).toLocaleDateString('ru-RU')}
-              </span>
-            )}
+            <span className="team-name">Команда: {teamName || 'Загрузка...'}</span>
+            <span className="team-deadline">Оценка от -1 до 3</span>
           </div>
 
           <div className="students-tabs">
-            {students.map((student) => (
-              <button
-                key={student.id}
-                className={`student-tab ${selectedStudent === student.id ? 'active' : ''}`}
-                onClick={() => handleTabChange(student.id)}
-              >
-                {student.short_name || student.full_name || `Студент ${student.id}`}
-              </button>
-            ))}
+            {students.length === 0 ? (
+              <div className="empty-students">Нет студентов для оценки</div>
+            ) : (
+              students.map((student) => (
+                <button
+                  key={student.id}
+                  className={`student-tab ${selectedStudent === student.id ? 'active' : ''}`}
+                  onClick={() => handleTabChange(student.id)}
+                >
+                  {student.short_name || student.full_name || `Студент ${student.id}`}
+                </button>
+              ))
+            )}
           </div>
 
           <div className="competence-sliders">
-            {availableQualities.map(quality => (
+            {qualitiesList.map(quality => (
               <div key={quality} className="competence-row">
-                <span className="competence-name">{quality}</span>
-                <div className="slider-wrapper" ref={sliderRefs[quality]}>
+                <div className="competence-name-wrapper">
+                  <span className="competence-name">{quality}</span>
+                  <div 
+                    className="tooltip-icon"
+                    onMouseEnter={() => showTooltip(quality)}
+                    onMouseLeave={() => hideTooltip(quality)}
+                  >
+                    ?
+                    {tooltipText[quality] && (
+                      <div className="tooltip-content">
+                        <div className="tooltip-arrow"></div>
+                        <div className="tooltip-values">
+                          <div className="tooltip-value negative">
+                            <strong>-1 (Низкий):</strong> {tooltipText[quality]?.['-1']}
+                          </div>
+                          <div className="tooltip-value neutral">
+                            <strong>0 (Средний):</strong> {tooltipText[quality]?.['0']}
+                          </div>
+                          <div className="tooltip-value positive">
+                            <strong>+1 (Высокий):</strong> {tooltipText[quality]?.['1']}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="slider-wrapper" ref={el => sliderRefs.current[quality] = el}>
                   <div 
                     className="slider-value-bubble"
                     style={{ left: `${getBubblePosition(quality)}%` }}
                   >
-                    <span className="current-value">
-                      {formatValue(sliderValues[quality] || 0)}
-                    </span>
+                    <input
+                      type="text"
+                      className="value-input"
+                      value={editingValue[quality] !== undefined ? editingValue[quality] : formatValue(sliderValues[quality])}
+                      onChange={(e) => handleInputChange(quality, e.target.value)}
+                      onBlur={() => handleInputBlur(quality)}
+                      onKeyDown={(e) => handleInputKeyDown(quality, e)}
+                    />
                   </div>
                   <input
                     type="range"
@@ -292,17 +446,6 @@ const ScoreStudent = () => {
               </div>
             )}
           </div>
-          
-          {currentForm360 && (
-            <div className="back-to-forms">
-              <button onClick={() => {
-                localStorage.removeItem('current_form360');
-                navigate('/form360');
-              }} className="back-button">
-                ← Вернуться к списку форм
-              </button>
-            </div>
-          )}
         </div>
       </div>
     </div>
