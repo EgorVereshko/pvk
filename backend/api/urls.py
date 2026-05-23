@@ -1,96 +1,66 @@
-# from django.urls import path
-# from django.conf import settings
-# from django.conf.urls.static import static
-# from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-# from .views import RegisterView, get_profile, update_user, get_students, save_competences_scores
-
-# urlpatterns = [
-#     path('api/register/', RegisterView.as_view(), name='register'),
-#     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-#     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-#     path('api/user/', get_profile, name='current_user'),
-#     path('api/user/update/', update_user, name='update_user'),
-#     path('api/students/', get_students, name='get_students'),
-#     path('api/competences/scores/', save_competences_scores, name='save_competences_scores'),
-# ]
-
-# if settings.DEBUG:
-#     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-
 from django.urls import path
 from django.conf import settings
 from django.conf.urls.static import static
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from .views import (
-    RegisterView, get_profile, update_user, get_students, save_competences_scores,
-    get_teams, get_templates, save_template, delete_template, save_checklist,
-    get_checklists, create_event, create_indicators_list, get_indicators,
-    update_template, get_events, get_checklist_detail, update_checklist, delete_checklist, get_user_scores,
-    get_poll_templates, create_poll_template, get_poll_template_detail,
-    update_poll_template, delete_poll_template,
-    get_polls, create_poll, get_poll_detail, update_poll, delete_poll,
-    get_poll_assignments, get_poll_by_link, submit_poll_response
-)
+
+from .views import *
 
 urlpatterns = [
     # Аутентификация
     path('api/register/', RegisterView.as_view(), name='register'),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    
-    # Профиль пользователя
-    path('api/user/', get_profile, name='current_user'),
-    path('api/user/update/', update_user, name='update_user'),
+    # получить профиль текущего пользователя
+    path('api/user/', get_user, name='get_current_user'),
     path('api/students/', get_students, name='get_students'),
-    path('api/user/scores/', get_user_scores, name='get_user_scores'),
-    
+    # получить профиль по id (чтобы организатор мог получить профиль конкретного проектанта)
+    path('api/user/<int:user_id>/', get_user, name='get_user_by_id'),
+    path('api/user/update/', update_user, name='update_user'),
+
+    # Текущие оценки (для лепестковой диаграммы)
+    path('api/latest_qualities_scores/', get_latest_qualities_scores, name='get_latest_qualities_scores'),
+    path('api/latest_qualities_scores/<int:user_id>/', get_latest_qualities_scores,
+         name='get_latest_qualities_scores_by_id'),
+
+    # Оценки за 2 месяца (для динамики)
+    path('api/qualities_stats/<int:user_id>/', get_qualities_stats, name='get_qualities_stats'),
+
     # Оценки компетенций
     path('api/competences/scores/', save_competences_scores, name='save_competences_scores'),
-    
+
     # Команды
     path('api/teams/', get_teams, name='get_teams'),
-    
+    path('api/teams/<int:team_id>/member-count/', get_team_member_count, name='get_team_member_count'),
+
     # Индикаторы
     path('api/indicators/', get_indicators, name='get_indicators'),
-    
-    # Шаблоны чек-листов
-    path('api/templates/', get_templates, name='get_templates'),
-    path('api/templates/save/', save_template, name='save_template'),
-    path('api/templates/<int:template_id>/', delete_template, name='delete_template'),
-    path('api/templates/<int:template_id>/update/', update_template, name='update_template'),
-    
-    # Мероприятия
-    path('api/events/create/', create_event, name='create_event'),
-    path('api/events/', get_events, name='get_events'),
-    
-    # Списки индикаторов
-    path('api/indicators-list/create/', create_indicators_list, name='create_indicators_list'),
-    
-    # Чек-листы
-    path('api/checklist/save/', save_checklist, name='save_checklist'),
-    path('api/checklists/', get_checklists, name='get_checklists'),
-    path('api/checklist/<int:checklist_id>/', get_checklist_detail, name='get_checklist_detail'),
-    path('api/checklist/<int:checklist_id>/update/', update_checklist, name='update_checklist'),
-    path('api/checklist/<int:checklist_id>/delete/', delete_checklist, name='delete_checklist'),
+    path('api/assessment_models/', get_assessment_models, name='get_assessment_models'),
 
-    # Шаблоны опросников
-    path('api/poll-templates/', get_poll_templates, name='poll_templates'),
-    path('api/poll-templates/create/', create_poll_template, name='create_poll_template'),
-    path('api/poll-templates/<int:template_id>/', get_poll_template_detail, name='poll_template_detail'),
-    path('api/poll-templates/<int:template_id>/update/', update_poll_template, name='update_poll_template'),
-    path('api/poll-templates/<int:template_id>/delete/', delete_poll_template, name='delete_poll_template'),
+    # Шаблоны индикаторов
+    path('api/templates/', get_templates, name='get_templates'),
+    path('api/templates/create/', create_template, name='save_template'),
+    path('api/templates/<int:template_id>/update/', update_template, name='update_template'),
+    path('api/templates/delete/<int:template_id>/', delete_template, name='delete_template'),
     
-    # Опросники
-    path('api/polls/', get_polls, name='polls'),
-    path('api/polls/create/', create_poll, name='create_poll'),
-    path('api/polls/<int:poll_id>/', get_poll_detail, name='poll_detail'),
-    path('api/polls/<int:poll_id>/update/', update_poll, name='update_poll'),
-    path('api/polls/<int:poll_id>/delete/', delete_poll, name='delete_poll'),
-    
-    # Ссылки и ответы
-    path('api/poll/assignments/', get_poll_assignments, name='poll_assignments'),
-    path('api/poll/link/<str:unique_link>/', get_poll_by_link, name='poll_by_link'),
-    path('api/poll/submit/', submit_poll_response, name='submit_poll'),
+    # Оценочные формы (мероприятия)
+    path('api/forms/create/', create_form, name='create_assessment_form'),
+    path('api/forms/update/<int:form_id>/', update_form, name='create_assessment_form'),
+    path('api/forms/delete/<int:form_id>/', delete_form, name='create_assessment_form'),
+    # списки форм для проектанта
+    path('api/forms/projectant/', get_projectant_forms, name='get_projectant_forms'),
+    # для куратора
+    path('api/forms/tutor/', get_tutor_forms, name='get_tutor_forms'),
+    # для организатора
+    path('api/forms/all/', get_all_forms, name='get_all_forms'),
+    # отдельные формы
+    # подробная инфа о форме для куратора или организатора, чтобы открыть и посмотреть/отредактировать/удалить
+    path('api/forms/detailed/', get_form_detailed, name='get_form_detailed'),
+    # для заполнения формы (подстраивается под тип формы)
+    path('api/forms/fill/<int:form_id>/', get_form_to_fill, name='get_360'),
+    # получение данных форм
+    path('api/forms/submit/360', submit_360_form, name='submit_360'),
+    path('api/forms/submit/check_list', submit_check_list_form, name='submit_360'),
+    path('api/forms/submit/poll', submit_poll_form, name='submit_360'),
 ]
 
 if settings.DEBUG:

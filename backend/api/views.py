@@ -1,154 +1,15 @@
-# from django.contrib.auth import authenticate
-# from rest_framework import generics, status
-# from rest_framework.authtoken.models import Token
-# from rest_framework.decorators import api_view, permission_classes
-# from rest_framework.permissions import AllowAny, IsAuthenticated
-# from rest_framework.views import APIView
-# from rest_framework.response import Response
-# from rest_framework_simplejwt.tokens import RefreshToken
-# from django.contrib.auth.models import User
-# from django.db.models import Q
-# from .models import *
-# from .serializers import *
-
-# class RegisterView(generics.CreateAPIView):
-#     queryset = User.objects.all()
-#     permission_classes = [AllowAny]
-#     serializer_class = RegisterSerializer
-
-#     def create(self, request, *args, **kwargs):
-#         serializer = self.get_serializer(data=request.data)
-#         serializer.is_valid(raise_exception=True)
-#         user = serializer.save()
-
-#         refresh = RefreshToken.for_user(user)
-
-#         return Response({
-#             'user': {
-#                 'id': user.id,
-#                 'username': user.username,
-#             },
-#             'refresh': str(refresh),
-#             'access': str(refresh.access_token),
-#         }, status=status.HTTP_201_CREATED)
-
-# @api_view(['GET'])
-# @permission_classes([IsAuthenticated])
-# def get_profile(request):
-#     try:
-#         profile = request.user.profile
-#         serializer = UserProfileSerializer(profile)
-#         return Response(serializer.data)
-#     except UserProfile.DoesNotExist:
-#         return Response(
-#             {'error': 'Профиль не найден'},
-#             status=status.HTTP_404_NOT_FOUND
-#         )
-
-# @api_view(['PUT', 'PATCH'])
-# @permission_classes([IsAuthenticated])
-# def update_user(request):
-#     try:
-#         profile = request.user.profile
-#         serializer = UserProfileSerializer(profile, data=request.data, partial=True)
-#         if serializer.is_valid():
-#             serializer.save()
-#             return Response(serializer.data, status=status.HTTP_200_OK)
-#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-#     except UserProfile.DoesNotExist:
-#         return Response(
-#             {'error': 'Профиль не найден'},
-#             status=status.HTTP_404_NOT_FOUND
-#         )
-
-# @api_view(['GET'])
-# @permission_classes([IsAuthenticated])
-# def get_students(request):
-#     try:
-#         students = UserProfile.objects.all().values(
-#             'id', 'last_name', 'first_name', 'middle_name'
-#         )
-#         students_list = []
-#         for student in students:
-#             students_list.append({
-#                 'id': student['id'],
-#                 'short_name': f"{student['last_name']} {student['first_name'][0]}.{student['middle_name'][0]}.",
-#                 'full_name': f"{student['last_name']} {student['first_name']} {student['middle_name']}"
-#             })
-#         return Response(students_list, status=status.HTTP_200_OK)
-#     except Exception as e:
-#         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-# @api_view(['POST'])
-# @permission_classes([IsAuthenticated])
-# def save_competences_scores(request):
-#     """
-#     Сохраняет оценки компетенций для студента
-#     Ожидаемый формат: [{"competence_name": "Вовлеченность", "score": 2, "student_profile_id": 1}, ...]
-#     """
-#     try:
-#         scores_data = request.data
-#         created_scores = []
-        
-#         for score_data in scores_data:
-#             competence_name = score_data.get('competence_name')
-#             score_value = float(score_data.get('score', 0))
-#             student_profile_id = score_data.get('student_profile_id')
-            
-#             try:
-#                 student_profile = UserProfile.objects.get(id=student_profile_id)
-#             except UserProfile.DoesNotExist:
-#                 return Response(
-#                     {'error': f'Студент с ID {student_profile_id} не найден'},
-#                     status=status.HTTP_404_NOT_FOUND
-#                 )
-            
-#             competence, created = Competence.objects.get_or_create(
-#                 name=competence_name
-#             )
-            
-#             competences_score, created = CompetencesScore.objects.update_or_create(
-#                 user=student_profile,
-#                 competence=competence,
-#                 defaults={'score': score_value}
-#             )
-            
-#             created_scores.append({
-#                 'student': student_profile.short_name(),
-#                 'competence': competence.name,
-#                 'score': float(competences_score.score)
-#             })
-        
-#         return Response({
-#             'message': 'Оценки успешно сохранены',
-#             'scores': created_scores
-#         }, status=status.HTTP_201_CREATED)
-        
-#     except Exception as e:
-#         return Response(
-#             {'error': f'Ошибка при сохранении: {str(e)}'},
-#             status=status.HTTP_400_BAD_REQUEST
-#         )
-
-
-from django.contrib.auth import authenticate
-from django.db import transaction
-from rest_framework import generics, status
-from rest_framework.authtoken.models import Token
+from datetime import datetime, tzinfo, timedelta
+from collections import defaultdict
+from django.utils import timezone
+from django.contrib.auth import authenticate, logout, login
+from django.shortcuts import get_object_or_404
+from rest_framework import status, generics
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.views import APIView
+from .permissions import IsOrganizer, IsTutorOrOrganizer, IsProjectant, IsTutor
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.contrib.auth.models import User
-from django.db.models import Q
-from datetime import datetime
-from .models import *
 from .serializers import *
-
-import uuid
-from datetime import datetime
-from django.utils import timezone
 
 
 class RegisterView(generics.CreateAPIView):
@@ -175,11 +36,21 @@ class RegisterView(generics.CreateAPIView):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def get_profile(request):
+def get_user(request, user_id=None):
     try:
-        profile = request.user.profile
+        if user_id:
+            profile = UserProfile.objects.select_related('user').prefetch_related(
+                'role_owner',
+                'team_member__team'
+            ).get(user__id=user_id)
+        else:
+            profile = UserProfile.objects.select_related('user').prefetch_related(
+                'role_owner',
+                'team_member__team'
+            ).get(user=request.user)
+
         serializer = UserProfileSerializer(profile)
-        return Response(serializer.data)
+        return Response(serializer.data, status.HTTP_200_OK)
     except UserProfile.DoesNotExist:
         return Response(
             {'error': 'Профиль не найден'},
@@ -191,7 +62,7 @@ def get_profile(request):
 @permission_classes([IsAuthenticated])
 def update_user(request):
     try:
-        profile = request.user.profile
+        profile = get_object_or_404(UserProfile, user=request.user)
         serializer = UserProfileSerializer(profile, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -204,30 +75,1237 @@ def update_user(request):
         )
 
 
+def get_qualities(profile):
+    qualities = Quality.objects.all()
+    qualities_scores = []
+
+    for quality in qualities:
+        score_record = QualitiesScoreRegister.objects.filter(
+            quality=quality,
+            user=profile
+        ).latest('created_at')
+        qualities_scores.append(
+            {
+                'quality_name': quality.name,
+                'score': score_record.score,
+            }
+        )
+
+    return qualities_scores
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated, IsTutorOrOrganizer])
+def get_projectants(request):
+    projectant_roles = UserRole.objects.filter(role='Проектант').select_related('user')
+    projectants = [role.user for role in projectant_roles]
+
+    result = []
+    for projectant in projectants:
+        result.append({
+            'full_name': projectant.full_name(),
+            'scores': get_qualities(projectant),
+        })
+
+    serializer = ProjectantsListSerializer(result, many=True)
+    return Response(serializer.data)
+
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def get_students(request):
+def get_latest_qualities_scores(request, user_id=None):
+    """
+    Возвращает последние оценки за качества в формате:
+    [{'quality_name': 'Вовлеченность', 'score': 1.7}, ...]
+    """
     try:
-        students = UserProfile.objects.all().values(
-            'id', 'last_name', 'first_name', 'middle_name'
-        )
-        students_list = []
-        for student in students:
-            students_list.append({
-                'id': student['id'],
-                'short_name': f"{student['last_name']} {student['first_name'][0]}.{student['middle_name'][0]}.",
-                'full_name': f"{student['last_name']} {student['first_name']} {student['middle_name']}"
+        if user_id:
+            profile = UserProfile.objects.get(user__id=user_id)
+        else:
+            profile = UserProfile.objects.get(user=request.user)
+
+        qualities_scores = get_qualities(profile)
+        serializer = QualitiesScoreSerializer(qualities_scores, many=True)
+
+        return Response(serializer.data)
+
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_qualities_stats(request, user_id):
+    """
+        Возвращает оценки за качества за последние 2 месяца
+        по возрастанию даты получения (от самых старых до самых новых)
+        в формате:
+        [
+            {
+                'quality_name': 'Вовлеченность',
+                'scores': [1.7, 2.1, 2.4, 2.6, ...]
+            },
+        ]
+    """
+    try:
+        profile = UserProfile.objects.get(user__id=user_id)
+
+        two_months_ago = timezone.now() - timedelta(days=60)
+        quality_scores = (QualitiesScoreRegister
+                          .objects
+                          .filter
+                              (
+                              user=profile,
+                              created_at__gte=two_months_ago
+                          )
+                          .select_related('quality')
+                          .order_by('quality__name', 'created_at'))
+
+        qualities_data = defaultdict(list)
+        for score in quality_scores:
+            (qualities_data[score.quality.name]
+             .append(score.score))
+
+        result = [
+            {'quality_name': name, 'scores': scores}
+            for name, scores in qualities_data.items()
+        ]
+
+        serializer = QualityStatsSerializer(result, many=True)
+        return Response(serializer.data)
+
+    except Exception as e:
+        return Response(
+            {'error': str(e)},
+            status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_teams(request):
+    """Получение списка команд"""
+    try:
+        teams = Team.objects.all().values('id', 'name')
+        return Response(list(teams), status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_team_member_count(request, team_id):
+    """Получение количества участников команды"""
+    try:
+        team = Team.objects.get(id=team_id)
+        count = TeamMember.objects.filter(team=team).count()
+        return Response({'count': count}, status=status.HTTP_200_OK)
+    except Team.DoesNotExist:
+        return Response({'error': 'Команда не найдена'}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_indicators(request):
+    """Получение списка индикаторов"""
+    try:
+        indicators = Indicator.objects.all().values('id', 'name', 'description')
+        return Response(list(indicators), status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated, IsTutorOrOrganizer])
+def get_templates(request):
+    # Смирнов вроде хотел чтобы шаблоны на всех были общие, так что каждому все пусть выводятся
+    """Получение шаблонов чек-листов.
+    Отправляет данные в формате:
+    {
+        'id': 1,
+        'name': 'Шаблон 1',
+        'creator_profile_id': 1,
+        'creator_name': Иванов И.И,
+        'created_at': 2026-01-01 12:00:00.000000,
+        'indicators': [{'id': 1, 'name': 'Умение планировать'}]
+    }
+    """
+    try:
+        templates = Template.objects.all().select_related('creator')
+
+        templates_data = []
+        for template in templates:
+            indicators_list = template.get_indicators()
+            templates_data.append({
+                'id': template.id,
+                'name': template.name,
+                'creator_profile_id': template.creator.id,
+                'creator_name': template.creator.short_name(),
+                'created_at': template.created_at,
+                'indicators': [
+                    {
+                        'id': indicator.id,
+                        'name': indicator.name
+                    }
+                    for indicator in indicators_list
+                ]
             })
-        return Response(students_list, status=status.HTTP_200_OK)
+
+        return Response(templates_data, status=status.HTTP_200_OK)
+
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated, IsTutorOrOrganizer])
+def create_template(request):
+    """создаёт новый шаблон индикаторов.
+    Ожидает данные в формате
+    {
+        'name': 'шаблон 1',
+        'indicators': [3, 1, 8, 5, ...]
+    }
+    """
+    # indicators - cписок id выбранных индикаторов
+
+    try:
+        data = request.data
+        creator = UserProfile.objects.get(user=request.user)
+        template_name = data.get('name')
+        indicators_id_list = data.get('indicators')
+
+        # сделай на фронте Проверку на пустое название и 0 выбранных индикаторов сделай на фронте
+
+        template = Template.objects.create(
+            creator=creator,
+            name=template_name,
+        )
+
+        for indicator_id in indicators_id_list:
+            IndicatorTemplate.objects.create(template=template, indicator_id=indicator_id)
+
+        return Response({
+            'id': template.id,
+            'name': template.name,
+            'message': 'Шаблон успешно сохранен'
+        }, status=status.HTTP_201_CREATED)
+
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['PUT', 'PATCH'])
+@permission_classes([IsAuthenticated, IsTutorOrOrganizer])
+def update_template(request, template_id):
+    """Обновление существующего шаблона.
+    Ожидает данные в формате
+    {
+        'name': 'шаблон 1',
+        'indicators': [3, 1, 8, 5, ...]
+    }
+    """
+    # indicators - cписок id выбранных индикаторов
+
+    try:
+        data = request.data
+        template = Template.objects.select_related('creator').get(id=template_id)
+        user = UserProfile.objects.get(user=request.user)
+
+        if template.creator != user:
+            return Response(
+                {'error': 'Вы не создатель шаблона, вы не можете его редактировать'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        template.name = data.get('name')
+        template.save()
+        indicators_id_list = data.get('indicators')
+
+        old_indicators_id_list = []
+
+        for record in IndicatorTemplate.objects.select_related('template', 'indicator').filter(template=template):
+            old_indicators_id_list.append(record.indicator_id)
+
+        # добавление новых индикаторов к шаблону
+        for indicator_id in indicators_id_list:
+            if indicator_id not in old_indicators_id_list:
+                IndicatorTemplate.objects.create(template=template, indicator_id=indicator_id)
+
+        for indicator_id in old_indicators_id_list:
+            if indicator_id not in indicators_id_list:
+                IndicatorTemplate.objects.get(id=indicator_id).delete()
+            else:
+                continue
+
+        return Response({
+            'id': template.id,
+            'name': template.name,
+            'message': 'Шаблон успешно обновлен'
+        }, status=status.HTTP_200_OK)
+
+    except Template.DoesNotExist:
+        return Response(
+            {'error': 'Шаблон не найден'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated, IsTutorOrOrganizer])
+def delete_template(request, template_id):
+    """Удаление шаблона"""
+    try:
+        template = Template.objects.select_related('creator').get(id=template_id)
+        user = UserProfile.objects.get(user=request.user)
+
+        if template.creator != user:
+            return Response(
+                {'error': 'Вы не создатель шаблона, вы не можете его удалить'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        template.delete()
+
+        return Response({'message': 'Шаблон удален'}, status=status.HTTP_200_OK)
+
+    except Template.DoesNotExist:
+        return Response(
+            {'error': 'Шаблон не найден'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated, IsTutorOrOrganizer])
+def create_form(request):
+    """Создание оценочной формы."""
+    try:
+        data = request.data
+        name = data.get('name')
+        form_type = data.get('type')
+        if form_type != 'Оценка 360':
+            template_id = data.get('template_id')
+        else:
+            template_id = None
+        teams_id = data.get('teams_id')
+        
+        # Обработка дат с часовым поясом
+        start_datetime_str = data.get('start_datetime')
+        end_datetime_str = data.get('end_datetime')
+        
+        # Заменяем 'Z' на '+00:00' для корректного парсинга
+        start_datetime = datetime.fromisoformat(start_datetime_str.replace('Z', '+00:00'))
+        end_datetime = datetime.fromisoformat(end_datetime_str.replace('Z', '+00:00'))
+
+        form_status = 'Запланирована'
+        if start_datetime < timezone.now():
+            form_status = 'Активна'
+
+        assessment_form = AssessmentForm.objects.create(
+            name=name,
+            template_id=template_id,
+            type=form_type,
+            status=form_status,
+            start_datetime=start_datetime,
+            end_datetime=end_datetime,
+        )
+
+        for team_id in teams_id:
+            AssessmentFormTeam.objects.create(
+                assessment_form=assessment_form, 
+                team_id=team_id
+            )
+
+        return Response({'id': assessment_form.id}, status=status.HTTP_201_CREATED)
+
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated, IsTutorOrOrganizer])
+def update_form(request, form_id):
+    """Обновляет форму"""
+    try:
+        form = get_object_or_404(AssessmentForm, id=form_id)
+        data = request.data
+        name = data.get('name')
+        form_type = data.get('type')
+        start_datetime = datetime.fromisoformat(data.get('start_datetime'))
+        end_datetime = datetime.fromisoformat(data.get('end_datetime'))
+
+        if form_type != 'Оценка 360':
+            template_id = data.get('template_id')
+        else:
+            template_id = None
+
+        form.name = name
+        form.type = form_type
+        form.template_id = template_id
+        form.start_datetime = start_datetime
+        form.end_datetime = end_datetime
+        form.save()
+        form.update_status()
+
+        teams_id = data.get('teams_id')
+        old_teams_id = [record.team_id for record in
+                        AssessmentFormTeam.objects.select_related('form', 'team').filter(form=form)]
+
+        for team_id in teams_id:
+            if team_id not in old_teams_id:
+                AssessmentFormTeam.objects.create(team_id=team_id, form=form)
+            else:
+                continue
+
+        for team_id in old_teams_id:
+            if team_id not in teams_id:
+                AssessmentFormTeam.objects.get(teams_id=team_id, form=form).delete()
+            else:
+                continue
+
+        return Response(status=status.HTTP_201_CREATED)
+
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated, IsTutorOrOrganizer])
+def delete_form(request, form_id):
+    """Удаление формы"""
+    try:
+        form = AssessmentForm.objects.get(id=form_id)
+        form.delete()
+
+        return Response({'message': 'Форма удалена'}, status=status.HTTP_200_OK)
+
+    except AssessmentForm.DoesNotExist:
+        return Response({'error': 'Шаблон не найден'}, status=status.HTTP_404_NOT_FOUND)
+
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated, IsProjectant])
+def get_projectant_forms(request):
+    """
+    Возвращает формы 360 и опросники для проектанта.
+    Формат:
+    {
+        'forms_360': [{
+            'id': 1,
+            'name': 'форма 360 №2',
+            'status': 'Активна',
+            'start_datetime': 2026-01-01 12:00:00.000000,
+            'end_datetime': 2026-01-02 12:00:00.000000
+        },...],
+        'forms_polls': [{
+            'id': 5,
+            'name': 'опросник №6',
+            'status': 'Активна',
+            'start_datetime': 2026-01-01 12:00:00.000000,
+            'end_datetime': 2026-01-02 12:00:00.000000
+        },...]
+    }
+    """
+    profile = UserProfile.objects.get(user=request.user)
+    team = TeamMember.objects.select_related('team').get(member=profile).team
+
+    forms_360 = []
+    forms_polls = []
+
+    for a in (AssessmentFormTeam
+            .objects
+            .filter(team=team)
+            .select_related('team', 'assessment_form')):
+        form = a.assessment_form
+        if form.type == 'Оценка 360':
+            forms_360.append(
+                {
+                    'id': form.id,
+                    'name': form.name,
+                    'status': form.status,
+                    'start_datetime': form.start_datetime,
+                    'end_datetime': form.end_datetime
+                }
+            )
+        elif form.type == 'Опросник':
+            forms_polls.append(
+                {
+                    'id': form.id,
+                    'name': form.name,
+                    'status': form.status,
+                    'start_datetime': form.start_datetime,
+                    'end_datetime': form.end_datetime
+                }
+            )
+        else:
+            continue
+
+    result = {
+        'forms_360': forms_360,
+        'forms_polls': forms_polls
+    }
+
+    return Response(result, status=status.HTTP_200_OK)
+
+
+# def get_form_data(form: AssessmentForm, detailed: bool = False, evaluator: UserProfile = None):
+#     form.update_status()
+
+#     form_data = {
+#         'id': form.id,
+#         'name': form.name,
+#         'type': form.type,
+#         'status': form.status,
+#         'start_datetime': form.start_datetime,
+#         'end_datetime': form.end_datetime,
+#     }
+
+#     form_type = form.type
+#     match form_type:
+#         case 'Оценка 360':
+#             if evaluator is not None:
+#                 team = TeamMember.objects.select_related('team').get(member=evaluator).team
+#                 form_data |= {
+#                     'evaluator': {
+#                         'id': evaluator.id,
+#                         'short_name': evaluator.short_name(),
+#                     },
+#                     'team': {
+#                         'id': team.id,
+#                         'name': team.name,
+#                         'members': [{
+#                             'id': team_member.id,
+#                             'name': team_member.short_name()
+#                         } for team_member in team.get_members()]
+#                     },
+#                     'qualities': [{
+#                         'id': quality.id,
+#                         'name': quality.name
+#                     } for quality in Quality.objects.all()]
+#                 }
+#             elif detailed:
+#                 form_data |= {
+#                     'teams': [{
+#                         'id': team.id,
+#                         'name': team.name,
+#                         'members': [{
+#                             'id': team_member.id,
+#                             'name': team_member.short_name()
+#                         } for team_member in team.get_members()]
+#                     } for team in form.get_teams()]
+#                 }
+#             else:
+#                 form_data.update({'teams_names': form.get_teams_names()})
+
+#         case 'Чек-лист':
+#             if detailed:
+#                 form_data |= {
+#                     'template': {
+#                         'id': form.template.id,
+#                         'name': form.template.name,
+#                         'creator_profile_id': form.template.creator.id,
+#                         'creator_name': form.template.creator.short_name(),
+#                         'created_at': form.template.created_at,
+#                         'indicators': [{
+#                             'id': indicator.id,
+#                             'name': indicator.name
+#                         } for indicator in form.template.get_indicators()]
+#                     },
+#                     'teams': [{
+#                         'id': team.id,
+#                         'name': team.name,
+#                         'members': [{
+#                             'id': team_member.id,
+#                             'name': team_member.short_name()
+#                         } for team_member in team.get_members()]
+#                     } for team in form.get_teams()]
+#                 }
+
+#                 if evaluator is not None:
+#                     form_data['evaluator_id'] = evaluator.id
+
+#             else:
+#                 form_data |= {
+#                     'template': {
+#                         'id': form.template.id,
+#                         'name': form.template.name
+#                     },
+#                     'teams_names': form.get_teams_names()
+#                 }
+
+#         case 'Опросник':
+#             if detailed:
+#                 form_data |= {
+#                     'template': {
+#                         'id': form.template.id,
+#                         'name': form.template.name,
+#                         'creator_profile_id': form.template.creator.id,
+#                         'creator_name': form.template.creator.short_name(),
+#                         'created_at': form.template.created_at,
+#                         'teams': [{
+#                             'id': team.id,
+#                             'name': team.name,
+#                             'members': [{
+#                                 'id': team_member.id,
+#                                 'name': team_member.short_name()
+#                             } for team_member in team.get_members()]
+#                         } for team in form.get_teams()],
+#                         'indicators': [{
+#                             'id': indicator.id,
+#                             'name': indicator.name,
+#                             'questions': [{
+#                                 'question': question.question,
+#                                 'answer_positive': question.answer_positive,
+#                                 'answer_neutral': question.answer_neutral,
+#                                 'answer_negative': question.answer_negative
+#                             } for question in IndicatorQuestion.objects.filter(indicator_id=indicator.id)]
+#                         } for indicator in form.template.get_indicators()]
+#                     }
+#                 }
+
+#                 if evaluator is not None:
+#                     form_data |= {
+#                         'evaluator': {
+#                             'id': evaluator.id,
+#                             'short_name': evaluator.short_name()
+#                         }
+#                     }
+#             else:
+#                 form_data |= {
+#                     'template': {
+#                         'id': form.template.id,
+#                         'name': form.template.name
+#                     },
+#                     'teams_names': form.get_teams_names()
+#                 }
+
+#     return form_data
+
+def get_form_data(form: AssessmentForm, detailed: bool = False, evaluator: UserProfile = None):
+    form.update_status()
+
+    form_data = {
+        'id': form.id,
+        'name': form.name,
+        'type': form.type,
+        'status': form.status,
+        'start_datetime': form.start_datetime,
+        'end_datetime': form.end_datetime,
+    }
+
+    form_type = form.type
+    match form_type:
+        case 'Оценка 360':
+            if evaluator is not None:
+                team = TeamMember.objects.select_related('team').get(member=evaluator).team
+                form_data |= {
+                    'evaluator': {
+                        'id': evaluator.id,
+                        'short_name': evaluator.short_name(),
+                    },
+                    'team': {
+                        'id': team.id,
+                        'name': team.name,
+                        'members': [{
+                            'id': team_member.id,
+                            'name': team_member.short_name()
+                        } for team_member in team.get_members()]
+                    },
+                    'qualities': [{
+                        'id': quality.id,
+                        'name': quality.name
+                    } for quality in Quality.objects.all()]
+                }
+            elif detailed:
+                form_data |= {
+                    'teams': [{
+                        'id': team.id,
+                        'name': team.name,
+                        'members': [{
+                            'id': team_member.id,
+                            'name': team_member.short_name()
+                        } for team_member in team.get_members()]
+                    } for team in form.get_teams()]
+                }
+            else:
+                form_data.update({'teams_names': form.get_teams_names()})
+
+        case 'Чек-лист':
+            if detailed:
+                # ИСПРАВЛЕНО: проверяем наличие шаблона
+                if form.template:
+                    template_data = {
+                        'id': form.template.id,
+                        'name': form.template.name,
+                        'creator_profile_id': form.template.creator.id,
+                        'creator_name': form.template.creator.short_name(),
+                        'created_at': form.template.created_at,
+                        'indicators': [{
+                            'id': indicator.id,
+                            'name': indicator.name
+                        } for indicator in form.template.get_indicators()]
+                    }
+                else:
+                    template_data = {
+                        'id': None,
+                        'name': 'Без шаблона',
+                        'indicators': []
+                    }
+                
+                form_data |= {
+                    'template': template_data,
+                    'teams': [{
+                        'id': team.id,
+                        'name': team.name,
+                        'members': [{
+                            'id': team_member.id,
+                            'name': team_member.short_name()
+                        } for team_member in team.get_members()]
+                    } for team in form.get_teams()]
+                }
+
+                if evaluator is not None:
+                    form_data['evaluator_id'] = evaluator.id
+
+            else:
+                # ИСПРАВЛЕНО: проверяем наличие шаблона для не-detailed режима
+                if form.template:
+                    template_info = {
+                        'id': form.template.id,
+                        'name': form.template.name
+                    }
+                else:
+                    template_info = {
+                        'id': None,
+                        'name': 'Без шаблона'
+                    }
+                
+                form_data |= {
+                    'template': template_info,
+                    'teams_names': form.get_teams_names()
+                }
+
+        case 'Опросник':
+            if detailed:
+                # ИСПРАВЛЕНО: проверяем наличие шаблона
+                if form.template:
+                    template_data = {
+                        'id': form.template.id,
+                        'name': form.template.name,
+                        'creator_profile_id': form.template.creator.id,
+                        'creator_name': form.template.creator.short_name(),
+                        'created_at': form.template.created_at,
+                        'teams': [{
+                            'id': team.id,
+                            'name': team.name,
+                            'members': [{
+                                'id': team_member.id,
+                                'name': team_member.short_name()
+                            } for team_member in team.get_members()]
+                        } for team in form.get_teams()],
+                        'indicators': [{
+                            'id': indicator.id,
+                            'name': indicator.name,
+                            'questions': [{
+                                'id': q.id,
+                                'question': q.question,
+                                'answer_positive': q.answer_positive,
+                                'answer_neutral': q.answer_neutral,
+                                'answer_negative': q.answer_negative
+                            } for q in IndicatorQuestion.objects.filter(indicator_id=indicator.id)]
+                        } for indicator in (form.template.get_indicators() if form.template else [])]
+                    }
+                else:
+                    template_data = {
+                        'id': None,
+                        'name': 'Без шаблона',
+                        'indicators': []
+                    }
+                
+                form_data |= {
+                    'template': template_data
+                }
+
+                if evaluator is not None:
+                    form_data |= {
+                        'evaluator': {
+                            'id': evaluator.id,
+                            'short_name': evaluator.short_name()
+                        }
+                    }
+            else:
+                # ИСПРАВЛЕНО: проверяем наличие шаблона для не-detailed режима
+                if form.template:
+                    template_info = {
+                        'id': form.template.id,
+                        'name': form.template.name
+                    }
+                else:
+                    template_info = {
+                        'id': None,
+                        'name': 'Без шаблона'
+                    }
+                
+                form_data |= {
+                    'template': template_info,
+                    'teams_names': form.get_teams_names()
+                }
+
+    return form_data
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated, IsTutor])
+def get_tutor_forms(request):
+    """
+    Возращает список оценочных форм, в которых участвуют курируемые куратором команды.
+    Формат:
+    {
+        'id': 1,
+        'name': 'форма 1',
+        'template': {
+            'id': 1,
+            'name': 'шаблон 1'
+        },
+        'type': 'Опросник',
+        'status': 'Активна',
+        'start_datetime' = 2026-01-01 12:00:00.000000,
+        'end_datetime' = 2026-01-02 12:00:00.000000,
+        'teams_names': ['ПВК', 'Тесты', 'CRM', ...]
+        }
+    }
+    """
+    profile = get_object_or_404(UserProfile, user=request.user)
+    teams = Team.objects.filter(tutor=profile).select_related('tutor')
+
+    forms = []
+    for a in AssessmentFormTeam.objects.filter(team__in=teams).select_related('team', 'assessment_form'):
+        forms.append(get_form_data(a.assessment_form, detailed=False))
+
+    return Response(forms, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated, IsOrganizer])
+def get_all_forms(request):
+    """
+    Возвращает все оценочные формы.
+    Формат:
+    {
+        'id': 1,
+        'name': 'форма 1',
+        'template': {
+            'id': 1,
+            'name': 'шаблон 1',
+        },
+        'type': 'Опросник',
+        'status': 'Активна',
+        'start_datetime' = 2026-01-01 12:00:00.000000,
+        'end_datetime' = 2026-01-02 12:00:00.000000,
+        'teams_names': ['Айкидо', 'Тесты', 'ПВК', 'CRM']
+    }
+    """
+    forms = []
+    for a in AssessmentFormTeam.objects.all().select_related('assessment_form'):
+        forms.append(get_form_data(a.assessment_form, detailed=False))
+
+    return Response(forms, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated, IsTutorOrOrganizer])
+def get_form_detailed(request, form_id):
+    """
+    Возвращает полную информацию о форме.
+    Формат:
+    {
+        'id': 1,
+        'name': 'форма 1',
+        'template': {
+            'id': 1,
+            'name': 'шаблон 1',
+            'creator_profile_id': 3,
+            'creator_name': Смирнов Д.С.,
+            'created_at': ,
+            'indicators': [{
+                'id': 3,
+                'name': 'Умение планировать',
+                'questions': [{
+                    'question': 'При планировании адекватно определяет сроки для задач?,
+                    'answer_positive': 'Да',
+                    'answer_neutral': 'Затрудняюсь ответить',
+                    'answer_negative': 'Нет'
+                }]
+            }]
+        },
+        'type': 'Опросник',
+        'status': 'Активна',
+        'start_datetime' = 2026-01-01 12:00:00.000000,
+        'end_datetime' = 2026-01-02 12:00:00.000000,
+        'teams': [{
+            'id': 2,
+            'name': 'ПВК',
+            'members': [{
+                'id': 1,
+                'name': 'Иванов И.И'
+            }]
+        }],
+    }
+    """
+    # у 360 отсутствует template
+    # у чек-листа отсутствует questions у индикаторов
+
+    form = get_object_or_404(AssessmentForm, id=form_id)
+    form_data = get_form_data(form, detailed=True)
+
+    return Response(form_data, status=status.HTTP_200_OK)
+
+
+def get_360(request, form):
+    """
+    Возвращает полную информацию о форме "360 градусов".
+    Формат:
+    {
+        'id': 1,
+        'name': 'форма 1',
+        'type': 'Оценка 360',
+        'status': 'Активна',
+        'start_datetime' = 2026-01-01 12:00:00.000000,
+        'end_datetime' = 2026-01-02 12:00:00.000000,
+        'evaluator': {
+            'id': evaluator.id,
+            short_name': evaluator.short_name(),
+        },
+        'team': {
+            'id': 2,
+            'name': 'ПВК',
+            'members': [{
+                'id': 1,
+                'name': 'Иванов И.И',
+            }]
+        },
+        'qualities': [{
+            'id': 1,
+            'name': 'Обучаемость'
+        }]
+    }
+    """
+    evaluator = UserProfile.objects.select_related('user').get(user=request.user)
+    form_data = get_form_data(form, evaluator=evaluator)
+
+    return Response(form_data, status=status.HTTP_200_OK)
+
+
+def get_check_list(request, form):
+    """
+    Возвращает полную информацию о форме 'Чек-лист'.
+    Формат:
+    {
+        'id': 1,
+        'name': 'форма 1',
+        'template': {
+            'id': 1,
+            'name': 'шаблон 1',
+            'creator_profile_id': 3,
+            'creator_name': Смирнов Д.С.,
+            'created_at': ,
+            'indicators': [{
+                'id': 3,
+                'name': 'Умение планировать'
+            }]
+        },
+        'type': 'Чек-лист',
+        'status': 'Активна',
+        'start_datetime' = 2026-01-01 12:00:00.000000,
+        'end_datetime' = 2026-01-02 12:00:00.000000,
+        'teams': [{
+            'id': 2,
+            'name': 'ПВК',
+            'members': [{
+                'id': 1,
+                'name': 'Иванов И.И'
+            }]
+        }],
+    }
+    """
+    evaluator = UserProfile.objects.select_related('user').get(user=request.user)
+    form_data = get_form_data(form, detailed=True, evaluator=evaluator)
+
+    return Response(form_data, status=status.HTTP_200_OK)
+
+
+def get_poll(request, form):
+    """
+    Возвращает полную информацию о форме 'Опросник'.
+    Формат:
+    {
+        'id': 1,
+        'name': 'форма 1',
+        'template': {
+            'id': 1,
+            'name': 'шаблон 1',
+            'creator_profile_id': 3,
+            'creator_name': Смирнов Д.С.,
+            'created_at': ,
+            'indicators': [{
+                'id': 3,
+                'name': 'Умение планировать',
+                'questions': [{
+                    'question': 'При планировании адекватно определяет сроки для задач?,
+                    'answer_positive': 'Да',
+                    'answer_neutral': 'Затрудняюсь ответить',
+                    'answer_negative': 'Нет'
+                }]
+            }]
+        },
+        'type': 'Опросник',
+        'status': 'Активна',
+        'start_datetime' = 2026-01-01 12:00:00.000000,
+        'end_datetime' = 2026-01-02 12:00:00.000000,
+        'teams': [{
+            'id': 2,
+            'name': 'ПВК',
+            'members': [{
+                'id': 1,
+                'name': 'Иванов И.И'
+            }]
+        }],
+    }
+    """
+    evaluator = UserProfile.objects.select_related('user').get(user=request.user)
+    form_data = get_form_data(form, detailed=True, evaluator=evaluator)
+
+    return Response(form_data, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_form_to_fill(request, form_id):
+    form = get_object_or_404(AssessmentForm, id=form_id)
+
+    form_type = form.type
+    match form_type:
+        case 'Оценка 360':
+            return get_360(request, form)
+        case 'Чек-лист':
+            return get_check_list(request, form)
+        case 'Опросник':
+            return get_poll(request, form)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated, IsProjectant])
+def submit_360_form(request):
+    """
+    Принимает и сохраняет оценки формы 360 градусов.
+
+    Ожидаемый формат данных:
+    {
+        'form_id': 1,
+        'evaluated_projectants': [{
+            'evaluated_projectant_id': 5,
+            'scores': [
+                {'quality_id': 1, 'score': 4.5},
+                {'quality_id': 2, 'score': 3.8},
+                {'quality_id': 3, 'score': 5.0}
+            ]
+        }]
+    }
+    """
+    try:
+        serializer = Assessment360SubmissionSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)  # автоматический возврат 400 при ошибке
+
+        validated_data = serializer.validated_data
+        form_id = validated_data['form_id']
+        evaluator = get_object_or_404(UserProfile, user=request.user)
+
+        for projectant_data in validated_data['evaluated_projectants']:
+            for quality_score in projectant_data['scores']:
+                Scores360Register.objects.create(
+                    form_id=form_id,
+                    evaluator=evaluator,
+                    evaluated_projectant_id=projectant_data['evaluated_projectant_id'],
+                    quality_id=quality_score['quality_id'],
+                    score=quality_score['score']
+                )
+
+        return Response({'message': 'Оценки успешно сохранены'}, status=status.HTTP_201_CREATED)
+
+    except Exception as e:
+        return Response({'error': f'Ошибка сохранения: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated, IsTutorOrOrganizer])
+def submit_check_list_form(request):
+    pass
+
+
+# @api_view(['POST'])
+# @permission_classes([IsAuthenticated, IsTutorOrOrganizer])
+# def submit_poll_form(request):
+#     pass
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated, IsProjectant])
+def submit_poll_form(request):
+    """
+    Сохраняет ответы на опросник.
+    Ожидаемый формат:
+    {
+        'form_id': 1,
+        'answers': [{'question_id': 1, 'value': 1}, ...]
+    }
+    """
+    try:
+        data = request.data
+        form_id = data.get('form_id')
+        answers = data.get('answers', [])
+        
+        profile = UserProfile.objects.get(user=request.user)
+        form = AssessmentForm.objects.get(id=form_id, type='Опросник')
+        
+        # Проверяем, что пользователь входит в команду
+        teams = form.get_teams()
+        is_member = False
+        for team in teams:
+            if TeamMember.objects.filter(team=team, member=profile).exists():
+                is_member = True
+                break
+        
+        if not is_member:
+            return Response({'error': 'У вас нет доступа к этой форме'}, status=status.HTTP_403_FORBIDDEN)
+        
+        # Сохраняем ответы (нужно создать модель PollResponse)
+        # Пока сохраняем в JSON поле или создаем записи
+        print(f"Сохранение ответов от {profile.short_name()} для формы {form.name}:")
+        for answer in answers:
+            print(f"  Вопрос {answer['question_id']}: {answer['value']}")
+        
+        # TODO: Создать модель для хранения ответов
+        # PollAnswer.objects.create(
+        #     form=form,
+        #     user=profile,
+        #     question_id=answer['question_id'],
+        #     value=answer['value']
+        # )
+        
+        return Response({'message': 'Ответы успешно сохранены'}, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+# def calculate_quality_scores(profile, event_scores):
+#     assessment_model = AssessmentModel.objects.get(status='Активная')
+#     qualities = Quality.objects.all()
+#
+#     indicator_scores_scores = {
+#         quality: {
+#             record.indicator: {
+#                 'score': 0,
+#                 'ratio': record.ratio
+#             }
+#             for record in QualityIndicatorRatio.objects.filter(quality=quality)
+#         }
+#         for quality in qualities
+#     }
+#
+#     for quality in qualities:
+#         event_scores[quality] =
+#
+#         QualitiesScoreRegister.objects.create(
+#             user=profile,
+#             quality=quality,
+#             model=assessment_model,
+#             created_at=timezone.now(),
+#             score=score
+#         )
+#
+#
+# def calculate_360_scores(assessment_form: AssessmentForm):
+#     scores = Scores360Register.objects.filter(form=assessment_form)
+#
+#     evaluated_projectants = [record.evaluated_projectant for record in scores]
+#     qualities = [record.quality for record in scores]
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated, IsOrganizer])
+def get_assessment_models(request):
+    pass
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated, IsOrganizer])
+def create_assessment_model(request):
+    pass
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated, IsOrganizer])
+def update_assessment_model(request, model_id):
+    pass
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated, IsOrganizer])
+def delete_assessment_model(request, model_id):
+    pass
+
+
+
+
+# @api_view(['GET'])
+# @permission_classes([IsAuthenticated])
+# def get_students(request):
+#     try:
+#         students = UserProfile.objects.all().values(
+#             'id', 'last_name', 'first_name', 'middle_name'
+#         )
+#         students_list = []
+#         for student in students:
+#             students_list.append({
+#                 'id': student['id'],
+#                 'short_name': f"{student['last_name']} {student['first_name'][0]}.{student['middle_name'][0]}.",
+#                 'full_name': f"{student['last_name']} {student['first_name']} {student['middle_name']}"
+#             })
+#         return Response(students_list, status=status.HTTP_200_OK)
+#     except Exception as e:
+#         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_students(request):
+    try:
+        # Используем select_related чтобы получить связанного пользователя
+        students = UserProfile.objects.select_related('user').all()
+        students_list = []
+        for student in students:
+            students_list.append({
+                'id': student.id,  # ID профиля
+                'user_id': student.user.id,  # РЕАЛЬНЫЙ ID пользователя для перехода!
+                'short_name': f"{student.last_name} {student.first_name[0]}.{student.middle_name[0]}.",
+                'full_name': f"{student.last_name} {student.first_name} {student.middle_name}",
+                'last_name': student.last_name,
+                'first_name': student.first_name,
+                'middle_name': student.middle_name
+            })
+        return Response(students_list, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
+
+@api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def save_competences_scores(request):
     """
-    Сохраняет оценки компетенций для студента
+    Сохраняет оценки качеств для студента
     Ожидаемый формат: [{"competence_name": "Вовлеченность", "score": 2, "student_profile_id": 1}, ...]
     """
     try:
@@ -247,20 +1325,23 @@ def save_competences_scores(request):
                     status=status.HTTP_404_NOT_FOUND
                 )
             
-            competence, created = Competence.objects.get_or_create(
+            quality, created = Quality.objects.get_or_create(
                 name=competence_name
             )
             
-            competences_score, created = CompetencesScore.objects.update_or_create(
+            assessment_model, _ = AssessmentModel.objects.get_or_create(status='Активная')
+            
+            quality_score = QualitiesScoreRegister.objects.create(
                 user=student_profile,
-                competence=competence,
-                defaults={'score': score_value}
+                quality=quality,
+                model=assessment_model,
+                score=score_value
             )
             
             created_scores.append({
                 'student': student_profile.short_name(),
-                'competence': competence.name,
-                'score': float(competences_score.score)
+                'competence': quality.name,
+                'score': float(quality_score.score)
             })
         
         return Response({
@@ -273,1254 +1354,3 @@ def save_competences_scores(request):
             {'error': f'Ошибка при сохранении: {str(e)}'},
             status=status.HTTP_400_BAD_REQUEST
         )
-
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def get_teams(request):
-    """Получение списка команд"""
-    try:
-        teams = Team.objects.all().values('id', 'name')
-        return Response(list(teams), status=status.HTTP_200_OK)
-    except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def get_indicators(request):
-    """Получение списка индикаторов"""
-    try:
-        indicators = Indicator.objects.all().values('id', 'name', 'description')
-        return Response(list(indicators), status=status.HTTP_200_OK)
-    except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def get_templates(request):
-    """Получение шаблонов чек-листов текущего пользователя"""
-    try:
-        templates = IndicatorsListTemplate.objects.filter(
-            user=request.user.profile
-        ).select_related('indicators_list')
-        
-        templates_data = []
-        for template in templates:
-            indicators_list = template.indicators_list
-            templates_data.append({
-                'id': template.id,
-                'name': template.name,
-                'user_id': template.user.id,
-                'user_name': template.user.short_name(),
-                'created_at': template.id,
-                'indicators': [
-                    {
-                        'id': indicators_list.indicator1.id,
-                        'name': indicators_list.indicator1.name,
-                        'description': indicators_list.indicator1.description
-                    },
-                    {
-                        'id': indicators_list.indicator2.id,
-                        'name': indicators_list.indicator2.name,
-                        'description': indicators_list.indicator2.description
-                    },
-                    {
-                        'id': indicators_list.indicator3.id,
-                        'name': indicators_list.indicator3.name,
-                        'description': indicators_list.indicator3.description
-                    },
-                    {
-                        'id': indicators_list.indicator4.id,
-                        'name': indicators_list.indicator4.name,
-                        'description': indicators_list.indicator4.description
-                    },
-                    {
-                        'id': indicators_list.indicator5.id,
-                        'name': indicators_list.indicator5.name,
-                        'description': indicators_list.indicator5.description
-                    }
-                ]
-            })
-        
-        return Response(templates_data, status=status.HTTP_200_OK)
-    except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def save_template(request):
-    """Сохранение нового шаблона чек-листа"""
-    try:
-        data = request.data
-        template_name = data.get('name')
-        indicators_data = data.get('indicators')
-        competences = data.get('competences')
-        
-        if not template_name:
-            return Response(
-                {'error': 'Необходимо указать название шаблона'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        if not indicators_data or len(indicators_data) != 5:
-            return Response(
-                {'error': 'Необходимо указать 5 индикаторов'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        # Создаем или получаем индикаторы
-        indicators = []
-        for ind_data in indicators_data:
-            indicator, _ = Indicator.objects.get_or_create(
-                name=ind_data.get('name', ''),
-                defaults={'description': ind_data.get('description', '')}
-            )
-            indicators.append(indicator)
-        
-        # Создаем список индикаторов
-        indicators_list = IndicatorsList.objects.create(
-            indicator1=indicators[0],
-            indicator2=indicators[1],
-            indicator3=indicators[2],
-            indicator4=indicators[3],
-            indicator5=indicators[4]
-        )
-        
-        # Создаем шаблон
-        template = IndicatorsListTemplate.objects.create(
-            user=request.user.profile,
-            name=template_name,
-            indicators_list=indicators_list
-        )
-        
-        # Сохраняем компетенции, если они есть
-        if competences:
-            for idx, comp_name in enumerate(competences):
-                TemplateCompetence.objects.create(
-                    template=template,
-                    name=comp_name,
-                    order=idx
-                )
-        
-        return Response({
-            'id': template.id,
-            'name': template.name,
-            'message': 'Шаблон успешно сохранен'
-        }, status=status.HTTP_201_CREATED)
-        
-    except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['PUT', 'PATCH'])
-@permission_classes([IsAuthenticated])
-def update_template(request, template_id):
-    """Обновление существующего шаблона"""
-    try:
-        # Проверяем, принадлежит ли шаблон пользователю
-        template = IndicatorsListTemplate.objects.get(
-            id=template_id,
-            user=request.user.profile
-        )
-        
-        data = request.data
-        template_name = data.get('name')
-        indicators_data = data.get('indicators')
-        
-        if template_name:
-            template.name = template_name
-        
-        # Обновляем индикаторы, если они переданы
-        if indicators_data and len(indicators_data) == 5:
-            indicators_list = template.indicators_list
-            
-            # Обновляем или создаем индикаторы
-            indicator1, _ = Indicator.objects.get_or_create(
-                name=indicators_data[0].get('name', ''),
-                defaults={'description': indicators_data[0].get('description', '')}
-            )
-            indicator2, _ = Indicator.objects.get_or_create(
-                name=indicators_data[1].get('name', ''),
-                defaults={'description': indicators_data[1].get('description', '')}
-            )
-            indicator3, _ = Indicator.objects.get_or_create(
-                name=indicators_data[2].get('name', ''),
-                defaults={'description': indicators_data[2].get('description', '')}
-            )
-            indicator4, _ = Indicator.objects.get_or_create(
-                name=indicators_data[3].get('name', ''),
-                defaults={'description': indicators_data[3].get('description', '')}
-            )
-            indicator5, _ = Indicator.objects.get_or_create(
-                name=indicators_data[4].get('name', ''),
-                defaults={'description': indicators_data[4].get('description', '')}
-            )
-            
-            # Обновляем список индикаторов
-            indicators_list.indicator1 = indicator1
-            indicators_list.indicator2 = indicator2
-            indicators_list.indicator3 = indicator3
-            indicators_list.indicator4 = indicator4
-            indicators_list.indicator5 = indicator5
-            indicators_list.save()
-        
-        template.save()
-        
-        return Response({
-            'id': template.id,
-            'name': template.name,
-            'message': 'Шаблон успешно обновлен'
-        }, status=status.HTTP_200_OK)
-        
-    except IndicatorsListTemplate.DoesNotExist:
-        return Response(
-            {'error': 'Шаблон не найден или у вас нет прав на его редактирование'},
-            status=status.HTTP_404_NOT_FOUND
-        )
-    except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['DELETE'])
-@permission_classes([IsAuthenticated])
-def delete_template(request, template_id):
-    """Удаление шаблона"""
-    try:
-        template = IndicatorsListTemplate.objects.get(
-            id=template_id,
-            user=request.user.profile
-        )
-        template.delete()
-        return Response({'message': 'Шаблон удален'}, status=status.HTTP_200_OK)
-    except IndicatorsListTemplate.DoesNotExist:
-        return Response(
-            {'error': 'Шаблон не найден или у вас нет прав на его удаление'},
-            status=status.HTTP_404_NOT_FOUND
-        )
-    except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def create_event(request):
-    """Создание нового мероприятия"""
-    try:
-        data = request.data
-        team_id = data.get('team_id')
-        datetime_str = data.get('datetime')
-        name = data.get('name')
-        
-        if not all([team_id, datetime_str, name]):
-            return Response(
-                {'error': 'Необходимо указать команду, дату и название мероприятия'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        try:
-            team = Team.objects.get(id=team_id)
-        except Team.DoesNotExist:
-            return Response(
-                {'error': 'Команда не найдена'},
-                status=status.HTTP_404_NOT_FOUND
-            )
-        
-        try:
-            event_datetime = datetime.fromisoformat(datetime_str.replace('Z', '+00:00'))
-        except:
-            return Response(
-                {'error': 'Неверный формат даты'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        # Создаем мероприятие с названием
-        event = Event.objects.create(
-            team=team,
-            tutor=request.user.profile,
-            datetime=event_datetime,
-            name=name  # Вот здесь сохраняем название!
-        )
-        
-        return Response({
-            'id': event.id,
-            'name': event.name,
-            'team': team.name,
-            'datetime': event.datetime,
-            'tutor': request.user.profile.short_name()
-        }, status=status.HTTP_201_CREATED)
-        
-    except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def create_indicators_list(request):
-    """Создание списка индикаторов из оценок"""
-    try:
-        data = request.data
-        scores_data = data.get('indicators')  # матрица 4x5 с оценками
-        
-        if not scores_data:
-            return Response(
-                {'error': 'Необходимо указать оценки'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        # Создаем индикаторы на основе средних оценок по каждому качеству
-        indicators = []
-        for quality_scores in scores_data:
-            if quality_scores and any(s is not None for s in quality_scores):
-                # Вычисляем среднее значение для качества
-                valid_scores = [s for s in quality_scores if s is not None]
-                avg_score = sum(valid_scores) / len(valid_scores) if valid_scores else 0
-                
-                indicator, _ = Indicator.objects.get_or_create(
-                    name=str(round(avg_score)),
-                    defaults={'description': f'Средняя оценка: {avg_score}'}
-                )
-                indicators.append(indicator)
-            else:
-                # Если нет оценок, создаем индикатор по умолчанию
-                indicator, _ = Indicator.objects.get_or_create(
-                    name='0',
-                    defaults={'description': 'Нет оценок'}
-                )
-                indicators.append(indicator)
-        
-        # Дополняем до 5 индикаторов, если нужно
-        while len(indicators) < 5:
-            indicator, _ = Indicator.objects.get_or_create(
-                name='0',
-                defaults={'description': 'Индикатор по умолчанию'}
-            )
-            indicators.append(indicator)
-        
-        # Создаем список индикаторов
-        indicators_list = IndicatorsList.objects.create(
-            indicator1=indicators[0],
-            indicator2=indicators[1],
-            indicator3=indicators[2],
-            indicator4=indicators[3],
-            indicator5=indicators[4]
-        )
-        
-        return Response({
-            'id': indicators_list.id,
-            'message': 'Список индикаторов создан'
-        }, status=status.HTTP_201_CREATED)
-        
-    except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def save_checklist(request):
-    """Сохранение заполненного чек-листа для мероприятия"""
-    try:
-        data = request.data
-        event_id = data.get('event_id')
-        students_ids = data.get('students_ids')
-        scores_matrix = data.get('scores')
-        qualities = data.get('qualities', ['Обучаемость', 'Организованность', 'Работа в команде', 'Вовлеченность'])
-        
-        print("=" * 50)
-        print("СОХРАНЕНИЕ ЧЕК-ЛИСТА")
-        print(f"event_id: {event_id}")
-        print(f"students_ids: {students_ids}")
-        print(f"qualities: {qualities}")
-        print(f"scores_matrix: {scores_matrix}")
-        
-        if not event_id or not students_ids or not scores_matrix:
-            return Response(
-                {'error': 'Необходимо указать мероприятие, студентов и оценки'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        # Получаем мероприятие
-        try:
-            event = Event.objects.get(id=event_id)
-        except Event.DoesNotExist:
-            return Response({'error': 'Мероприятие не найдено'}, status=status.HTTP_404_NOT_FOUND)
-        
-        # Создаем список индикаторов (для совместимости)
-        indicators = []
-        for q in range(min(len(qualities), 4)):
-            valid_scores = [s for s in scores_matrix[q] if s is not None]
-            avg_score = sum(valid_scores) / len(valid_scores) if valid_scores else 0
-            indicator, _ = Indicator.objects.get_or_create(
-                name=str(round(avg_score)),
-                defaults={'description': qualities[q] if q < len(qualities) else f'Качество {q+1}'}
-            )
-            indicators.append(indicator)
-        
-        # Добавляем 5-й индикатор (общая оценка)
-        all_scores = []
-        for q in range(len(scores_matrix)):
-            all_scores.extend([s for s in scores_matrix[q] if s is not None])
-        total_avg = sum(all_scores) / len(all_scores) if all_scores else 0
-        total_indicator, _ = Indicator.objects.get_or_create(
-            name=str(round(total_avg)),
-            defaults={'description': 'Общая оценка'}
-        )
-        
-        # Дополняем индикаторы до 5
-        while len(indicators) < 4:
-            default_indicator, _ = Indicator.objects.get_or_create(
-                name='0',
-                defaults={'description': 'По умолчанию'}
-            )
-            indicators.append(default_indicator)
-        indicators.append(total_indicator)
-        
-        # Создаем список индикаторов
-        indicators_list = IndicatorsList.objects.create(
-            indicator1=indicators[0],
-            indicator2=indicators[1],
-            indicator3=indicators[2],
-            indicator4=indicators[3],
-            indicator5=indicators[4]
-        )
-        
-        # Создаем чек-лист
-        checklist = CheckList.objects.create(
-            indicators_list=indicators_list,
-            evaluated_projectant=None,
-            event=event
-        )
-        
-        print(f"Создан чек-лист с ID: {checklist.id}")
-        
-        # Сохраняем компетенции чек-листа
-        for order, quality in enumerate(qualities):
-            ChecklistCompetence.objects.create(
-                checklist=checklist,
-                name=quality,
-                order=order
-            )
-        
-        # Сохраняем индивидуальные оценки
-        scores_created = 0
-        for student_idx, student_id in enumerate(students_ids):
-            if student_id:
-                try:
-                    student = UserProfile.objects.get(id=student_id)
-                    for q_idx, quality in enumerate(qualities):
-                        if q_idx < len(scores_matrix) and student_idx < len(scores_matrix[q_idx]):
-                            score_value = scores_matrix[q_idx][student_idx]
-                            if score_value is not None:
-                                ChecklistScore.objects.create(
-                                    checklist=checklist,
-                                    student=student,
-                                    quality=quality,
-                                    score=score_value
-                                )
-                                scores_created += 1
-                                print(f"  + {quality} для {student.short_name()} = {score_value}")
-                except UserProfile.DoesNotExist:
-                    print(f"  ! Студент с ID {student_id} не найден")
-                    continue
-        
-        print(f"Всего создано оценок: {scores_created}")
-        print("=" * 50)
-        
-        return Response({
-            'id': checklist.id,
-            'message': f'Чек-лист успешно сохранен. Создано оценок: {scores_created}'
-        }, status=status.HTTP_201_CREATED)
-        
-    except Exception as e:
-        import traceback
-        print("ОШИБКА сохранения чек-листа:")
-        print(traceback.format_exc())
-        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def get_checklists(request):
-    """Получение чек-листов для мероприятий текущего пользователя"""
-    try:
-        # Получаем чек-листы, где пользователь является куратором мероприятия
-        checklists = CheckList.objects.filter(
-            event__tutor=request.user.profile
-        ).select_related('event', 'event__team', 'indicators_list', 'evaluated_projectant')
-        
-        data = []
-        for cl in checklists:
-            checklist_data = {
-                'id': cl.id,
-                'event_id': cl.event.id,
-                'event_name': cl.event.name,
-                'event_datetime': cl.event.datetime,
-                'team_name': cl.event.team.name if cl.event.team else None,
-                'evaluated_student': cl.evaluated_projectant.short_name() if cl.evaluated_projectant else None,
-                'indicators': [
-                    {
-                        'id': cl.indicators_list.indicator1.id,
-                        'name': cl.indicators_list.indicator1.name,
-                        'description': cl.indicators_list.indicator1.description
-                    },
-                    {
-                        'id': cl.indicators_list.indicator2.id,
-                        'name': cl.indicators_list.indicator2.name,
-                        'description': cl.indicators_list.indicator2.description
-                    },
-                    {
-                        'id': cl.indicators_list.indicator3.id,
-                        'name': cl.indicators_list.indicator3.name,
-                        'description': cl.indicators_list.indicator3.description
-                    },
-                    {
-                        'id': cl.indicators_list.indicator4.id,
-                        'name': cl.indicators_list.indicator4.name,
-                        'description': cl.indicators_list.indicator4.description
-                    },
-                    {
-                        'id': cl.indicators_list.indicator5.id,
-                        'name': cl.indicators_list.indicator5.name,
-                        'description': cl.indicators_list.indicator5.description
-                    }
-                ]
-            }
-            data.append(checklist_data)
-        
-        return Response(data, status=status.HTTP_200_OK)
-        
-    except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def get_events(request):
-    """Получение всех мероприятий текущего пользователя"""
-    try:
-        events = Event.objects.filter(tutor=request.user.profile).select_related('team')
-        data = []
-        for event in events:
-            data.append({
-                'id': event.id,
-                'name': event.name,
-                'team_name': event.team.name if event.team else None,
-                'datetime': event.datetime,
-                'checklists_count': CheckList.objects.filter(event=event).count()
-            })
-        return Response(data, status=status.HTTP_200_OK)
-    except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-    
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def get_checklist_detail(request, checklist_id):
-    """Получение детальной информации о чек-листе"""
-    try:
-        checklist = CheckList.objects.select_related(
-            'event', 'event__team', 'indicators_list'
-        ).get(id=checklist_id)
-        
-        print(f"Загружаем чек-лист ID: {checklist_id}")
-        
-        # Получаем компетенции чек-листа
-        checklist_competences = ChecklistCompetence.objects.filter(checklist=checklist).order_by('order')
-        
-        # Если есть сохраненные компетенции, используем их, иначе базовые
-        if checklist_competences.exists():
-            qualities = [comp.name for comp in checklist_competences]
-            print(f"Загружены компетенции из БД: {qualities}")
-        else:
-            qualities = ['Обучаемость', 'Организованность', 'Работа в команде', 'Вовлеченность']
-            print(f"Используем базовые компетенции: {qualities}")
-        
-        # Получаем все индивидуальные оценки
-        individual_scores = ChecklistScore.objects.filter(checklist=checklist).select_related('student')
-        print(f"Найдено оценок в БД: {individual_scores.count()}")
-        
-        # Группируем оценки по студентам
-        scores_by_student = {}
-        for score in individual_scores:
-            if score.student.id not in scores_by_student:
-                scores_by_student[score.student.id] = {}
-            scores_by_student[score.student.id][score.quality] = score.score
-            print(f"  - {score.student.short_name()}, {score.quality}: {score.score}")
-        
-        # Получаем студентов из команды
-        team_members = TeamMember.objects.filter(
-            team=checklist.event.team
-        ).select_related('member')
-        
-        students_data = []
-        students_ids = []
-        
-        for tm in team_members:
-            student_id = tm.member.id
-            students_data.append({
-                'id': student_id,
-                'name': tm.member.short_name(),
-                'full_name': tm.member.full_name()
-            })
-            students_ids.append(student_id)
-        
-        # Дополняем до 5 студентов
-        while len(students_data) < 5:
-            students_data.append({
-                'id': None,
-                'name': f'Студент {len(students_data) + 1}',
-                'full_name': f'Студент {len(students_data) + 1}'
-            })
-            students_ids.append(None)
-        
-        # Создаем матрицу оценок
-        scores = []
-        for q_idx, quality in enumerate(qualities):
-            row = []
-            for s_idx, student_id in enumerate(students_ids):
-                if student_id and student_id in scores_by_student:
-                    score_value = scores_by_student[student_id].get(quality)
-                    row.append(score_value)
-                else:
-                    row.append(None)
-            scores.append(row)
-        
-        print("Итоговая матрица оценок:", scores)
-        
-        return Response({
-            'id': checklist.id,
-            'event': {
-                'id': checklist.event.id,
-                'name': checklist.event.name,
-                'datetime': checklist.event.datetime,
-                'team_name': checklist.event.team.name if checklist.event.team else 'Без команды'
-            },
-            'students': students_data,
-            'qualities': qualities,
-            'scores': scores
-        }, status=status.HTTP_200_OK)
-        
-    except CheckList.DoesNotExist:
-        return Response({'error': 'Чек-лист не найден'}, status=status.HTTP_404_NOT_FOUND)
-    except Exception as e:
-        import traceback
-        print("ОШИБКА загрузки чек-листа:")
-        print(traceback.format_exc())
-        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['PUT', 'PATCH'])
-@permission_classes([IsAuthenticated])
-def update_checklist(request, checklist_id):
-    """Обновление чек-листа"""
-    try:
-        checklist = CheckList.objects.select_related(
-            'event', 'indicators_list'
-        ).get(id=checklist_id, event__tutor=request.user.profile)
-        
-        data = request.data
-        scores_data = data.get('scores')
-        students_ids = data.get('students_ids')
-        qualities = data.get('qualities')
-        
-        print("=" * 50)
-        print("ОБНОВЛЕНИЕ ЧЕК-ЛИСТА")
-        print(f"checklist_id: {checklist_id}")
-        print(f"qualities: {qualities}")
-        print(f"scores: {scores_data}")
-        
-        if not scores_data or not qualities:
-            return Response(
-                {'error': 'Необходимо указать оценки и компетенции'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        # Обновляем компетенции чек-листа
-        ChecklistCompetence.objects.filter(checklist=checklist).delete()
-        for order, quality in enumerate(qualities):
-            ChecklistCompetence.objects.create(
-                checklist=checklist,
-                name=quality,
-                order=order
-            )
-        
-        # Обновляем индивидуальные оценки
-        ChecklistScore.objects.filter(checklist=checklist).delete()
-        
-        scores_created = 0
-        for student_idx, student_id in enumerate(students_ids or []):
-            if student_id:
-                try:
-                    student = UserProfile.objects.get(id=student_id)
-                    for q_idx, quality in enumerate(qualities):
-                        if q_idx < len(scores_data) and student_idx < len(scores_data[q_idx]):
-                            score_value = scores_data[q_idx][student_idx]
-                            if score_value is not None:
-                                ChecklistScore.objects.create(
-                                    checklist=checklist,
-                                    student=student,
-                                    quality=quality,
-                                    score=score_value
-                                )
-                                scores_created += 1
-                                print(f"  + {quality} для студента {student_id} = {score_value}")
-                except UserProfile.DoesNotExist:
-                    continue
-        
-        # Обновляем индикаторы
-        indicators_list = checklist.indicators_list
-        
-        # Первые 4 индикатора - средние по первым 4 компетенциям
-        for i in range(min(4, len(scores_data))):
-            valid_scores = [s for s in scores_data[i] if s is not None]
-            avg_score = sum(valid_scores) / len(valid_scores) if valid_scores else 0
-            indicator_value = str(round(avg_score))
-            
-            indicator_field = getattr(indicators_list, f'indicator{i+1}')
-            indicator_field.name = indicator_value
-            indicator_field.save()
-        
-        # 5-й индикатор - общая средняя
-        all_values = []
-        for q in range(len(scores_data)):
-            all_values.extend([s for s in scores_data[q] if s is not None])
-        avg_total = sum(all_values) / len(all_values) if all_values else 0
-        indicators_list.indicator5.name = str(round(avg_total))
-        indicators_list.indicator5.save()
-        
-        print(f"Создано оценок: {scores_created}")
-        print("=" * 50)
-        
-        return Response({
-            'message': 'Чек-лист успешно обновлен',
-            'id': checklist.id,
-            'scores_created': scores_created
-        }, status=status.HTTP_200_OK)
-        
-    except CheckList.DoesNotExist:
-        return Response({'error': 'Чек-лист не найден'}, status=status.HTTP_404_NOT_FOUND)
-    except Exception as e:
-        import traceback
-        print("ОШИБКА обновления чек-листа:")
-        print(traceback.format_exc())
-        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['DELETE'])
-@permission_classes([IsAuthenticated])
-def delete_checklist(request, checklist_id):
-    """Удаление чек-листа"""
-    try:
-        checklist = CheckList.objects.get(id=checklist_id, event__tutor=request.user.profile)
-        checklist.delete()
-        return Response({'message': 'Чек-лист удален'}, status=status.HTTP_200_OK)
-    except CheckList.DoesNotExist:
-        return Response({'error': 'Чек-лист не найден'}, status=status.HTTP_404_NOT_FOUND)
-    except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def get_user_scores(request):
-    """Получение всех оценок текущего пользователя"""
-    try:
-        # Получаем оценки из CompetencesScore
-        competence_scores = CompetencesScore.objects.filter(
-            user=request.user.profile
-        ).select_related('competence')
-        
-        scores_data = {}
-        for cs in competence_scores:
-            scores_data[cs.competence.name] = float(cs.score)
-        
-        # Базовая структура с дефолтными значениями
-        result = {
-            'Обучаемость': scores_data.get('Обучаемость', 1.0),
-            'Вовлеченность': scores_data.get('Вовлеченность', 1.0),
-            'Организованность': scores_data.get('Организованность', 1.0),
-            'Работа в команде': scores_data.get('Работа в команде', 1.0),
-        }
-        
-        return Response(result, status=status.HTTP_200_OK)
-        
-    except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-    
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def get_poll_templates(request):
-    """Получение всех шаблонов опросников текущего пользователя"""
-    try:
-        templates = PollTemplate.objects.filter(created_by=request.user.profile).order_by('-created_at')
-        data = []
-        for template in templates:
-            questions = template.questions.all().order_by('order')
-            questions_data = []
-            for q in questions:
-                q_data = {
-                    'id': q.id,
-                    'text': q.text,
-                    'question_type': q.question_type,
-                    'order': q.order,
-                    'required': q.required,
-                }
-                if q.question_type == 'choice':
-                    options = q.options.all().order_by('order')
-                    q_data['options'] = [{'id': opt.id, 'text': opt.text, 'value': opt.value} for opt in options]
-                questions_data.append(q_data)
-            
-            data.append({
-                'id': template.id,
-                'name': template.name,
-                'description': template.description,
-                'created_at': template.created_at,
-                'questions': questions_data
-            })
-        return Response(data, status=status.HTTP_200_OK)
-    except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def create_poll_template(request):
-    """Создание нового шаблона опросника"""
-    try:
-        data = request.data
-        name = data.get('name')
-        description = data.get('description', '')
-        questions = data.get('questions', [])
-        
-        if not name:
-            return Response({'error': 'Необходимо указать название шаблона'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Создаем шаблон
-        template = PollTemplate.objects.create(
-            name=name,
-            description=description,
-            created_by=request.user.profile
-        )
-        
-        # Создаем вопросы
-        for idx, q_data in enumerate(questions):
-            question = PollQuestion.objects.create(
-                template=template,
-                text=q_data.get('text'),
-                question_type=q_data.get('question_type', 'rating'),
-                order=idx,
-                required=q_data.get('required', True)
-            )
-            
-            # Если тип вопроса - выбор, создаем варианты
-            if question.question_type == 'choice' and 'options' in q_data:
-                for opt_idx, opt_text in enumerate(q_data['options']):
-                    PollOption.objects.create(
-                        question=question,
-                        text=opt_text,
-                        order=opt_idx
-                    )
-        
-        return Response({
-            'id': template.id,
-            'message': 'Шаблон успешно создан'
-        }, status=status.HTTP_201_CREATED)
-        
-    except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def get_poll_template_detail(request, template_id):
-    """Получение деталей шаблона опросника"""
-    try:
-        template = PollTemplate.objects.get(id=template_id, created_by=request.user.profile)
-        
-        questions_data = []
-        for q in template.questions.all().order_by('order'):
-            q_data = {
-                'id': q.id,
-                'text': q.text,
-                'question_type': q.question_type,
-                'order': q.order,
-                'required': q.required,
-            }
-            if q.question_type == 'choice':
-                options = q.options.all().order_by('order')
-                q_data['options'] = [{'id': opt.id, 'text': opt.text} for opt in options]
-            questions_data.append(q_data)
-        
-        return Response({
-            'id': template.id,
-            'name': template.name,
-            'description': template.description,
-            'created_at': template.created_at,
-            'questions': questions_data
-        }, status=status.HTTP_200_OK)
-        
-    except PollTemplate.DoesNotExist:
-        return Response({'error': 'Шаблон не найден'}, status=status.HTTP_404_NOT_FOUND)
-    except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['PUT', 'PATCH'])
-@permission_classes([IsAuthenticated])
-def update_poll_template(request, template_id):
-    """Обновление шаблона опросника"""
-    try:
-        template = PollTemplate.objects.get(id=template_id, created_by=request.user.profile)
-        data = request.data
-        
-        template.name = data.get('name', template.name)
-        template.description = data.get('description', template.description)
-        template.save()
-        
-        # Обновляем вопросы (удаляем старые и создаем новые)
-        if 'questions' in data:
-            template.questions.all().delete()
-            for idx, q_data in enumerate(data['questions']):
-                question = PollQuestion.objects.create(
-                    template=template,
-                    text=q_data.get('text'),
-                    question_type=q_data.get('question_type', 'rating'),
-                    order=idx,
-                    required=q_data.get('required', True)
-                )
-                
-                if question.question_type == 'choice' and 'options' in q_data:
-                    for opt_idx, opt_text in enumerate(q_data['options']):
-                        PollOption.objects.create(
-                            question=question,
-                            text=opt_text,
-                            order=opt_idx
-                        )
-        
-        return Response({'message': 'Шаблон обновлен'}, status=status.HTTP_200_OK)
-        
-    except PollTemplate.DoesNotExist:
-        return Response({'error': 'Шаблон не найден'}, status=status.HTTP_404_NOT_FOUND)
-    except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['DELETE'])
-@permission_classes([IsAuthenticated])
-def delete_poll_template(request, template_id):
-    """Удаление шаблона опросника"""
-    try:
-        template = PollTemplate.objects.get(id=template_id, created_by=request.user.profile)
-        template.delete()
-        return Response({'message': 'Шаблон удален'}, status=status.HTTP_200_OK)
-    except PollTemplate.DoesNotExist:
-        return Response({'error': 'Шаблон не найден'}, status=status.HTTP_404_NOT_FOUND)
-    except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-
-# ========== ОПРОСНИКИ ==========
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def get_polls(request):
-    """Получение всех опросников"""
-    try:
-        polls = Poll.objects.filter(created_by=request.user.profile).order_by('-created_at')
-        data = []
-        for poll in polls:
-            assignments_count = poll.assignments.count()
-            completed_count = poll.assignments.filter(completed=True).count()
-            
-            data.append({
-                'id': poll.id,
-                'name': poll.name,
-                'description': poll.description,
-                'template_name': poll.template.name if poll.template else None,
-                'teams': [{'id': t.id, 'name': t.name} for t in poll.teams.all()],
-                'start_date': poll.start_date,
-                'end_date': poll.end_date,
-                'status': poll.status,
-                'assignments_count': assignments_count,
-                'completed_count': completed_count,
-                'created_at': poll.created_at,
-            })
-        return Response(data, status=status.HTTP_200_OK)
-    except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def create_poll(request):
-    """Создание нового опросника"""
-    try:
-        data = request.data
-        name = data.get('name')
-        description = data.get('description', '')
-        template_id = data.get('template_id')
-        team_ids = data.get('team_ids', [])
-        start_date = data.get('start_date')
-        end_date = data.get('end_date')
-        
-        if not name or not team_ids or not start_date or not end_date:
-            return Response({'error': 'Необходимо указать название, команды и даты'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Получаем шаблон, если указан
-        template = None
-        if template_id:
-            try:
-                template = PollTemplate.objects.get(id=template_id)
-            except PollTemplate.DoesNotExist:
-                return Response({'error': 'Шаблон не найден'}, status=status.HTTP_404_NOT_FOUND)
-        
-        # Парсим даты
-        try:
-            start = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
-            end = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
-        except:
-            return Response({'error': 'Неверный формат даты'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Создаем опросник
-        poll = Poll.objects.create(
-            name=name,
-            description=description,
-            template=template,
-            created_by=request.user.profile,
-            start_date=start,
-            end_date=end,
-            status='active'
-        )
-        
-        # Добавляем команды
-        teams = Team.objects.filter(id__in=team_ids)
-        poll.teams.set(teams)
-        
-        # Создаем назначения для всех студентов из команд
-        assignments = []
-        for team in teams:
-            members = TeamMember.objects.filter(team=team).select_related('member')
-            for tm in members:
-                unique_link = str(uuid.uuid4())[:8]
-                assignment = PollAssignment(
-                    poll=poll,
-                    student=tm.member,
-                    unique_link=unique_link
-                )
-                assignments.append(assignment)
-        
-        PollAssignment.objects.bulk_create(assignments)
-        
-        return Response({
-            'id': poll.id,
-            'message': 'Опросник успешно создан'
-        }, status=status.HTTP_201_CREATED)
-        
-    except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def get_poll_detail(request, poll_id):
-    """Получение деталей опросника"""
-    try:
-        poll = Poll.objects.get(id=poll_id, created_by=request.user.profile)
-        
-        assignments = poll.assignments.all().select_related('student')
-        assignments_data = []
-        for a in assignments:
-            assignments_data.append({
-                'id': a.id,
-                'student_name': a.student.short_name(),
-                'unique_link': a.unique_link,
-                'completed': a.completed,
-                'completed_at': a.completed_at,
-            })
-        
-        return Response({
-            'id': poll.id,
-            'name': poll.name,
-            'description': poll.description,
-            'template': {
-                'id': poll.template.id,
-                'name': poll.template.name
-            } if poll.template else None,
-            'teams': [{'id': t.id, 'name': t.name} for t in poll.teams.all()],
-            'start_date': poll.start_date,
-            'end_date': poll.end_date,
-            'status': poll.status,
-            'assignments': assignments_data,
-            'created_at': poll.created_at,
-        }, status=status.HTTP_200_OK)
-        
-    except Poll.DoesNotExist:
-        return Response({'error': 'Опросник не найден'}, status=status.HTTP_404_NOT_FOUND)
-    except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['PUT', 'PATCH'])
-@permission_classes([IsAuthenticated])
-def update_poll(request, poll_id):
-    """Обновление опросника"""
-    try:
-        poll = Poll.objects.get(id=poll_id, created_by=request.user.profile)
-        data = request.data
-        
-        poll.name = data.get('name', poll.name)
-        poll.description = data.get('description', poll.description)
-        poll.status = data.get('status', poll.status)
-        
-        if 'start_date' in data:
-            poll.start_date = datetime.fromisoformat(data['start_date'].replace('Z', '+00:00'))
-        if 'end_date' in data:
-            poll.end_date = datetime.fromisoformat(data['end_date'].replace('Z', '+00:00'))
-        
-        poll.save()
-        
-        return Response({'message': 'Опросник обновлен'}, status=status.HTTP_200_OK)
-        
-    except Poll.DoesNotExist:
-        return Response({'error': 'Опросник не найден'}, status=status.HTTP_404_NOT_FOUND)
-    except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['DELETE'])
-@permission_classes([IsAuthenticated])
-def delete_poll(request, poll_id):
-    """Удаление опросника"""
-    try:
-        poll = Poll.objects.get(id=poll_id, created_by=request.user.profile)
-        poll.delete()
-        return Response({'message': 'Опросник удален'}, status=status.HTTP_200_OK)
-    except Poll.DoesNotExist:
-        return Response({'error': 'Опросник не найден'}, status=status.HTTP_404_NOT_FOUND)
-    except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-
-# ========== ССЫЛКИ И ОТВЕТЫ ==========
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def get_poll_assignments(request):
-    """Получение назначений для текущего пользователя"""
-    try:
-        assignments = PollAssignment.objects.filter(
-            student=request.user.profile
-        ).select_related('poll').order_by('-poll__created_at')
-        
-        data = []
-        for a in assignments:
-            data.append({
-                'id': a.id,
-                'poll_name': a.poll.name,
-                'unique_link': a.unique_link,
-                'completed': a.completed,
-                'completed_at': a.completed_at,
-                'start_date': a.poll.start_date,
-                'end_date': a.poll.end_date,
-                'poll_status': a.poll.status,
-            })
-        return Response(data, status=status.HTTP_200_OK)
-    except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['GET'])
-@permission_classes([AllowAny])  # Доступ по ссылке без авторизации
-def get_poll_by_link(request, unique_link):
-    """Получение опросника по уникальной ссылке"""
-    try:
-        assignment = PollAssignment.objects.select_related(
-            'poll', 'poll__template', 'student'
-        ).get(unique_link=unique_link)
-        
-        # Проверяем, не истек ли срок
-        now = timezone.now()
-        if now > assignment.poll.end_date:
-            return Response({'error': 'Срок прохождения опросника истек'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        if assignment.completed:
-            return Response({'error': 'Опросник уже пройден'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Получаем вопросы из шаблона
-        questions = []
-        if assignment.poll.template:
-            for q in assignment.poll.template.questions.all().order_by('order'):
-                q_data = {
-                    'id': q.id,
-                    'text': q.text,
-                    'question_type': q.question_type,
-                    'required': q.required,
-                }
-                if q.question_type == 'choice':
-                    options = q.options.all().order_by('order')
-                    q_data['options'] = [{'id': opt.id, 'text': opt.text} for opt in options]
-                questions.append(q_data)
-        
-        return Response({
-            'assignment_id': assignment.id,
-            'poll_name': assignment.poll.name,
-            'poll_description': assignment.poll.description,
-            'student_name': assignment.student.short_name(),
-            'questions': questions,
-            'end_date': assignment.poll.end_date,
-        }, status=status.HTTP_200_OK)
-        
-    except PollAssignment.DoesNotExist:
-        return Response({'error': 'Ссылка недействительна'}, status=status.HTTP_404_NOT_FOUND)
-    except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['POST'])
-@permission_classes([AllowAny])
-def submit_poll_response(request):
-    """Сохранение ответов на опросник"""
-    try:
-        data = request.data
-        assignment_id = data.get('assignment_id')
-        answers = data.get('answers', [])
-        
-        assignment = PollAssignment.objects.get(id=assignment_id)
-        
-        if assignment.completed:
-            return Response({'error': 'Опросник уже пройден'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Сохраняем ответы
-        for ans in answers:
-            question_id = ans.get('question_id')
-            question = PollQuestion.objects.get(id=question_id)
-            
-            response_data = {
-                'assignment': assignment,
-                'question': question,
-            }
-            
-            if question.question_type == 'rating':
-                response_data['answer_value'] = ans.get('value')
-            elif question.question_type == 'text':
-                response_data['answer_text'] = ans.get('text')
-            elif question.question_type == 'choice':
-                option_id = ans.get('option_id')
-                if option_id:
-                    option = PollOption.objects.get(id=option_id)
-                    response_data['answer_option'] = option
-                    response_data['answer_value'] = option.value
-        
-            PollResponse.objects.create(**response_data)
-        
-        # Отмечаем как пройденный
-        assignment.completed = True
-        assignment.completed_at = timezone.now()
-        assignment.save()
-        
-        return Response({'message': 'Ответы сохранены'}, status=status.HTTP_201_CREATED)
-        
-    except PollAssignment.DoesNotExist:
-        return Response({'error': 'Назначение не найдено'}, status=status.HTTP_404_NOT_FOUND)
-    except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
