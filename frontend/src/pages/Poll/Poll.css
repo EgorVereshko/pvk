@@ -224,6 +224,21 @@
   background: #e2e8f0;
 }
 
+.pass-button {
+    padding: 0.5rem 1rem;
+    background: #f1f5f9;
+    border: none;
+    border-radius: 6px;
+    color: #0f172a;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.pass-button:hover {
+  background: #e2e8f0;
+}
+
 .survey-button {
   background-color: #4a90e2;
   color: white;
@@ -1143,5 +1158,295 @@
   
   .poll-card {
     padding: 1rem;
+  }
+}
+
+/* ============================================ */
+/* TEAMS SELECTION GRID - Улучшенный дизайн */
+/* ============================================ */
+
+.teams-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.team-card {
+  position: relative;
+  cursor: pointer;
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 16px;
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.team-card:hover {
+  border-color: #cbd5e0;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+}
+
+.team-card input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.team-card-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: white;
+  transition: all 0.3s ease;
+}
+
+.team-card-icon {
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.team-card-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.team-card-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.team-card-name {
+  font-weight: 600;
+  font-size: 1rem;
+  color: #0f172a;
+}
+
+.team-card-count {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.team-card-check {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.check-icon {
+  width: 16px;
+  height: 16px;
+  stroke: #cbd5e0;
+  stroke-width: 3;
+  transition: all 0.3s ease;
+}
+
+.check-icon.checked {
+  stroke: white;
+}
+
+/* Выделение выбранной команды */
+.team-card:has(input:checked) {
+  border-color: #667eea;
+  background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+}
+
+.team-card:has(input:checked) .team-card-icon {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.team-card:has(input:checked) .team-card-check {
+  background: #667eea;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+}
+
+.team-card:has(input:checked) .check-icon {
+  stroke: white;
+}
+
+/* Счетчик выбранных команд */
+.teams-selected-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+  background: #f1f5f9;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  color: #475569;
+}
+
+.teams-selected-count span {
+  font-weight: 600;
+  color: #667eea;
+}
+
+/* Адаптивность */
+@media (max-width: 640px) {
+  .teams-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .team-card-content {
+    padding: 0.875rem;
+  }
+  
+  .team-card-icon {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .team-card-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.datetime-range-compact {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.datetime-range-compact .datetime-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #f1f5f9;
+  padding: 0.5rem 1rem;
+  border-radius: 24px;
+  font-size: 0.95rem;
+  color: #0f172a;
+  font-weight: 500;
+}
+
+.datetime-range-compact .datetime-item svg {
+  width: 16px;
+  height: 16px;
+}
+
+.datetime-range-compact .datetime-item span {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.datetime-separator {
+  color: #94a3b8;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+/* Адаптивность */
+@media (max-width: 640px) {
+  .datetime-range-compact {
+    gap: 0.5rem;
+  }
+  
+  .datetime-range-compact .datetime-item {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.85rem;
+  }
+  
+  .datetime-range-compact .datetime-item span {
+    font-size: 0.85rem;
+  }
+}
+
+/* ============================================ */
+/* TEMPLATES LIST - Стили как у опросников */
+/* ============================================ */
+
+.templates-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.template-item {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid #f1f5f9;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.template-item:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.template-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.template-item-header h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0;
+}
+
+.template-meta {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.template-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  background: #f1f5f9;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  color: #475569;
+}
+
+.template-meta-item svg {
+  stroke: #64748b;
+  width: 14px;
+  height: 14px;
+}
+
+.template-item-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
+
+/* Адаптивность для шаблонов */
+@media (max-width: 640px) {
+  .template-meta {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .template-meta-item {
+    width: fit-content;
   }
 }
