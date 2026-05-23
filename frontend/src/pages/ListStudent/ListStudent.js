@@ -4,105 +4,13 @@ import api from '../../api';
 import Header from '../../components/Header/Header';
 import './ListStudent.css';
 
-const mockStudents = [
-  {
-    id: 1,
-    last_name: 'Иванов',
-    first_name: 'Иван',
-    middle_name: 'Иванович',
-    email: 'ivanov@example.com',
-    phone_number: '+7 (999) 123-45-67',
-    university: 'МГУ',
-    year_of_study: '4',
-    photo_url: null
-  },
-  {
-    id: 2,
-    last_name: 'Петрова',
-    first_name: 'Анна',
-    middle_name: 'Сергеевна',
-    email: 'petrova@example.com',
-    phone_number: '+7 (999) 234-56-78',
-    university: 'СПбГУ',
-    year_of_study: '3',
-    photo_url: null
-  },
-  {
-    id: 3,
-    last_name: 'Сидоров',
-    first_name: 'Алексей',
-    middle_name: 'Владимирович',
-    email: 'sidorov@example.com',
-    phone_number: '+7 (999) 345-67-89',
-    university: 'МФТИ',
-    year_of_study: '4',
-    photo_url: null
-  },
-  {
-    id: 4,
-    last_name: 'Козлова',
-    first_name: 'Екатерина',
-    middle_name: 'Дмитриевна',
-    email: 'kozlova@example.com',
-    phone_number: '+7 (999) 456-78-90',
-    university: 'ВШЭ',
-    year_of_study: '2',
-    photo_url: null
-  },
-  {
-    id: 5,
-    last_name: 'Морозов',
-    first_name: 'Дмитрий',
-    middle_name: 'Андреевич',
-    email: 'morozov@example.com',
-    phone_number: '+7 (999) 567-89-01',
-    university: 'МГТУ',
-    year_of_study: '4',
-    photo_url: null
-  },
-  {
-    id: 6,
-    last_name: 'Волкова',
-    first_name: 'Ольга',
-    middle_name: 'Алексеевна',
-    email: 'volkova@example.com',
-    phone_number: '+7 (999) 678-90-12',
-    university: 'РУДН',
-    year_of_study: '3',
-    photo_url: null
-  },
-  {
-    id: 7,
-    last_name: 'Соколов',
-    first_name: 'Павел',
-    middle_name: 'Николаевич',
-    email: 'sokolov@example.com',
-    phone_number: '+7 (999) 789-01-23',
-    university: 'МИФИ',
-    year_of_study: '4',
-    photo_url: null
-  },
-  {
-    id: 8,
-    last_name: 'Кузнецова',
-    first_name: 'Мария',
-    middle_name: 'Игоревна',
-    email: 'kuznetsova@example.com',
-    phone_number: '+7 (999) 890-12-34',
-    university: 'МПГУ',
-    year_of_study: '2',
-    photo_url: null
-  }
-];
-
 const ListStudent = () => {
-  const [user, setUser] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('name');
   const [sortOrder, setSortOrder] = useState('asc');
-  const [useMockData, setUseMockData] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -113,7 +21,7 @@ const ListStudent = () => {
   const fetchUserProfile = async () => {
     try {
       const res = await api.get('/api/user/');
-      setUser(res.data);
+      setCurrentUser(res.data);
     } catch (err) {
       if (err.response?.status === 401) {
         localStorage.clear();
@@ -122,24 +30,62 @@ const ListStudent = () => {
     }
   };
 
+  const fetchAverageScore = async (userId) => {
+    try {
+      const response = await api.get(`/api/latest_qualities_scores/${userId}/`);
+      if (response.data && response.data.length > 0) {
+        const hasRealScores = response.data.some(item => {
+          return item.score !== 0 && item.score !== null;
+        });
+        
+        if (hasRealScores) {
+          const scores = response.data.map(item => item.score);
+          const average = scores.reduce((a, b) => a + b, 0) / scores.length;
+          return Math.round(average * 10) / 10;
+        }
+      }
+      return null;
+    } catch (err) {
+      console.error(`Ошибка получения оценок для пользователя ${userId}:`, err);
+      return null;
+    }
+  };
+
   const fetchStudents = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/api/users/by-role/', {
-        params: { role: 'Проектант' }
-      });
+      const response = await api.get('/api/students/');
+      console.log('Студенты:', response.data);
       
       if (response.data && response.data.length > 0) {
-        setStudents(response.data);
-        setUseMockData(false);
+        const studentsWithRolesAndScores = await Promise.all(
+          response.data.map(async (student, index) => {
+            try {
+              const userDetail = await api.get(`/api/user/${student.user_id}/`);
+              const averageScore = await fetchAverageScore(student.user_id);
+              
+              return {
+                ...student,
+                role: userDetail.data.roles?.[0] || 'Проектант',
+                averageScore: averageScore
+              };
+            } catch (err) {
+              console.error(`Ошибка получения данных для ${student.full_name}:`, err);
+              return {
+                ...student,
+                role: 'Проектант',
+                averageScore: null
+              };
+            }
+          })
+        );
+        setStudents(studentsWithRolesAndScores);
       } else {
-        setStudents(mockStudents);
-        setUseMockData(true);
+        setStudents([]);
       }
     } catch (error) {
-      console.error('Ошибка загрузки студентов из бэкенда:', error);
-      setStudents(mockStudents);
-      setUseMockData(true);
+      console.error('Ошибка загрузки:', error);
+      setStudents([]);
     } finally {
       setLoading(false);
     }
@@ -160,11 +106,24 @@ const ListStudent = () => {
   };
 
   const handleStudentClick = (student) => {
-    navigate(`/student/${student.id}`, { state: { student } });
+    console.log('Клик по студенту:', student);
+    console.log('Переход на профиль с ID:', student.user_id);
+    
+    if (student && student.user_id) {
+      navigate(`/profile/${student.user_id}`);
+    } else {
+      console.error('Нет user_id для перехода');
+      alert('Не удалось открыть профиль');
+    }
   };
 
-  const getInitials = (firstName, lastName) => {
-    return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase();
+  const getInitials = (fullName) => {
+    if (!fullName) return '?';
+    const parts = fullName.split(' ');
+    if (parts.length >= 2) {
+      return `${parts[0].charAt(0)}${parts[1].charAt(0)}`.toUpperCase();
+    }
+    return fullName.charAt(0).toUpperCase();
   };
 
   const getRandomColor = (id) => {
@@ -172,11 +131,42 @@ const ListStudent = () => {
       '#667eea', '#764ba2', '#f56565', '#48bb78', '#4299e1', 
       '#ed8936', '#9f7aea', '#f687b3', '#4fd1c5', '#fbbf24'
     ];
-    return colors[(id - 1) % colors.length];
+    const index = id ? id % colors.length : 0;
+    return colors[index];
+  };
+
+  const getRoleBadgeClass = (role) => {
+    switch (role) {
+      case 'Организатор':
+        return 'role-organizer';
+      case 'Куратор':
+        return 'role-tutor';
+      default:
+        return 'role-projectant';
+    }
+  };
+
+  const getRoleName = (role) => {
+    switch (role) {
+      case 'Организатор':
+        return 'Организатор';
+      case 'Куратор':
+        return 'Куратор';
+      default:
+        return 'Проектант';
+    }
+  };
+
+  const getScoreColor = (score) => {
+    if (score === null) return '#cbd5e0';
+    if (score >= 2 && score <= 3) return '#48bb78';
+    if (score >= 0 && score < 2) return '#ed8936';
+    if (score >= -1 && score < 0) return '#f56565';
+    return '#cbd5e0';
   };
 
   const filteredStudents = students.filter(student => {
-    const fullName = `${student.last_name || ''} ${student.first_name || ''} ${student.middle_name || ''}`.toLowerCase();
+    const fullName = (student.full_name || '').toLowerCase();
     const matchesSearch = fullName.includes(searchTerm.toLowerCase());
     return matchesSearch;
   });
@@ -185,17 +175,23 @@ const ListStudent = () => {
     let aValue, bValue;
     
     if (sortBy === 'name') {
-      aValue = `${a.last_name} ${a.first_name}`;
-      bValue = `${b.last_name} ${b.first_name}`;
+      aValue = a.full_name || '';
+      bValue = b.full_name || '';
     } else if (sortBy === 'lastName') {
-      aValue = a.last_name;
-      bValue = b.last_name;
+      aValue = a.last_name || '';
+      bValue = b.last_name || '';
     } else if (sortBy === 'firstName') {
-      aValue = a.first_name;
-      bValue = b.first_name;
+      aValue = a.first_name || '';
+      bValue = b.first_name || '';
+    } else if (sortBy === 'role') {
+      aValue = a.role || 'Проектант';
+      bValue = b.role || 'Проектант';
+    } else if (sortBy === 'averageScore') {
+      aValue = a.averageScore !== null ? a.averageScore : -1;
+      bValue = b.averageScore !== null ? b.averageScore : -1;
     } else {
-      aValue = a.id;
-      bValue = b.id;
+      aValue = a.user_id;
+      bValue = b.user_id;
     }
     
     if (sortOrder === 'asc') {
@@ -209,7 +205,7 @@ const ListStudent = () => {
 
   return (
     <div className="list-student-container">
-      <Header onLogout={handleLogout} user={user} />
+      <Header onLogout={handleLogout} user={currentUser} />
 
       <div className="list-student-content">
         <div className="list-student-header">
@@ -219,13 +215,8 @@ const ListStudent = () => {
               Всего: {students.length}
             </span>
             <span className="stats-badge">
-              👨‍🎓 Проектанты
+              👥 Все студенты
             </span>
-            {useMockData && (
-              <span className="stats-badge demo-badge">
-                📋 Демо-данные
-              </span>
-            )}
           </div>
         </div>
 
@@ -256,6 +247,7 @@ const ListStudent = () => {
           <table className="students-table">
             <thead>
               <tr>
+                <th className="col-number">#</th>
                 <th className="col-avatar">Фото</th>
                 <th 
                   className={`col-name ${sortBy === 'name' ? 'active' : ''}`}
@@ -284,13 +276,30 @@ const ListStudent = () => {
                     <span className="sort-icon">{sortOrder === 'asc' ? '↑' : '↓'}</span>
                   )}
                 </th>
-                <th className="col-id">ID</th>
+                <th 
+                  className={`col-role ${sortBy === 'role' ? 'active' : ''}`}
+                  onClick={() => handleSort('role')}
+                >
+                  Роль
+                  {sortBy === 'role' && (
+                    <span className="sort-icon">{sortOrder === 'asc' ? '↑' : '↓'}</span>
+                  )}
+                </th>
+                <th 
+                  className={`col-score ${sortBy === 'averageScore' ? 'active' : ''}`}
+                  onClick={() => handleSort('averageScore')}
+                >
+                  Средний балл
+                  {sortBy === 'averageScore' && (
+                    <span className="sort-icon">{sortOrder === 'asc' ? '↑' : '↓'}</span>
+                  )}
+                </th>
               </tr>
             </thead>
             <tbody>
               {sortedStudents.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="empty-state">
+                  <td colSpan="7" className="empty-state">
                     <svg className="empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                     </svg>
@@ -299,46 +308,65 @@ const ListStudent = () => {
                   </td>
                 </tr>
               ) : (
-                sortedStudents.map((student) => (
+                sortedStudents.map((student, index) => (
                   <tr 
                     key={student.id} 
                     className="student-row"
                     onClick={() => handleStudentClick(student)}
                     style={{ cursor: 'pointer' }}
                   >
+                    <td className="col-number">
+                      <span className="number-badge">{index + 1}</span>
+                    </td>
                     <td className="col-avatar">
-                      {student.photo_url ? (
-                        <img 
-                          src={student.photo_url} 
-                          alt={`${student.first_name} ${student.last_name}`}
-                          className="student-avatar-img"
-                          onError={(e) => {
-                            e.target.style.display = 'none';
-                            const parent = e.target.parentElement;
-                            if (parent) {
-                              parent.innerHTML = `
-                                <div class="student-avatar" style="background-color: ${getRandomColor(student.id)}">
-                                  ${getInitials(student.first_name, student.last_name)}
-                                </div>
-                              `;
-                            }
-                          }}
-                        />
-                      ) : (
-                        <div className="student-avatar" style={{ backgroundColor: getRandomColor(student.id) }}>
-                          {getInitials(student.first_name, student.last_name)}
-                        </div>
-                      )}
+                      <div className="student-avatar" style={{ backgroundColor: getRandomColor(student.user_id) }}>
+                        {getInitials(student.full_name)}
+                      </div>
                     </td>
                     <td className="col-name">
                       <span className="full-name">
-                        {student.last_name} {student.first_name} {student.middle_name || ''}
+                        {student.full_name}
                       </span>
                     </td>
-                    <td className="col-lastname">{student.last_name}</td>
-                    <td className="col-firstname">{student.first_name}</td>
-                    <td className="col-id">
-                      <span className="id-badge">#{student.id}</span>
+                    <td className="col-lastname">{student.last_name || '—'}</td>
+                    <td className="col-firstname">{student.first_name || '—'}</td>
+                    <td className="col-role">
+                      <span className={`role-badge ${getRoleBadgeClass(student.role || 'Проектант')}`}>
+                        {getRoleName(student.role || 'Проектант')}
+                      </span>
+                    </td>
+                    <td className="col-score">
+                      {student.averageScore !== null ? (
+                        <span 
+                          className="score-badge"
+                          style={{ 
+                            backgroundColor: getScoreColor(student.averageScore),
+                            color: 'white',
+                            padding: '4px 8px',
+                            borderRadius: '20px',
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            display: 'inline-block'
+                          }}
+                        >
+                          {student.averageScore.toFixed(1)}
+                        </span>
+                      ) : (
+                        <span 
+                          className="score-badge no-score"
+                          style={{ 
+                            backgroundColor: '#cbd5e0',
+                            color: '#666',
+                            padding: '4px 8px',
+                            borderRadius: '20px',
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            display: 'inline-block'
+                          }}
+                        >
+                          —
+                        </span>
+                      )}
                     </td>
                   </tr>
                 ))

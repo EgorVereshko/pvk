@@ -335,3 +335,75 @@
     display: none;
   }
 }
+
+/* ============================================ */
+/* ROLES STYLES */
+/* ============================================ */
+.role-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.role-organizer {
+  background: #8b5cf6;
+  color: white;
+}
+
+.role-tutor {
+  background: #3b82f6;
+  color: white;
+}
+
+.role-projectant {
+  background: #10b981;
+  color: white;
+}
+
+.col-role {
+  min-width: 100px;
+}
+
+.col-number {
+  width: 50px;
+  text-align: center;
+}
+
+.number-badge {
+  display: inline-block;
+  width: 30px;
+  height: 30px;
+  line-height: 30px;
+  text-align: center;
+  background-color: #f0f0f0;
+  border-radius: 50%;
+  font-weight: 600;
+  color: #666;
+}
+
+.col-score {
+  width: 120px;
+  text-align: center;
+}
+
+.score-badge {
+  display: inline-block;
+  min-width: 50px;
+  text-align: center;
+}
+
+.score-badge.no-score {
+  background-color: #e2e8f0;
+  color: #a0aec0;
+}
+
+.col-score.active {
+  background-color: #f7fafc;
+}
+
+.sort-icon {
+  margin-left: 5px;
+  font-size: 12px;
+}
