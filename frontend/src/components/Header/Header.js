@@ -1,35 +1,161 @@
+// import React, { useState, useRef, useEffect } from 'react';
+// import { useNavigate } from 'react-router-dom';
+// import './Header.css';
+
+// const Header = ({ onLogout, user }) => {
+//   const [isMenuOpen, setIsMenuOpen] = useState(false);
+//   const menuRef = useRef(null);
+//   const avatarRef = useRef(null);
+//   const navigate = useNavigate();
+
+//   const getUserStatus = () => {
+//     if (!user) return 'Проектант';
+    
+//     if (user.roles && user.roles.includes('Организатор')) {
+//       return 'Организатор';
+//     }
+//     if (user.roles && user.roles.includes('Куратор')) {
+//       return 'Куратор';
+//     }
+//     return 'Проектант';
+//   };
+
+//   const handleExitClick = (e) => {
+//     e.preventDefault();
+//     if (onLogout) {
+//       onLogout();
+//     }
+//     setIsMenuOpen(false);
+//   };
+
+//   const handleProfileClick = () => {
+//     navigate('/profile');
+//     setIsMenuOpen(false);
+//   };
+
+//   const handleStudentsClick = () => {
+//     navigate('/students');
+//     setIsMenuOpen(false);
+//   };
+
+//   useEffect(() => {
+//     const handleClickOutside = (event) => {
+//       if (menuRef.current && !menuRef.current.contains(event.target) && 
+//           avatarRef.current && !avatarRef.current.contains(event.target)) {
+//         setIsMenuOpen(false);
+//       }
+//     };
+
+//     document.addEventListener('mousedown', handleClickOutside);
+//     return () => {
+//       document.removeEventListener('mousedown', handleClickOutside);
+//     };
+//   }, []);
+
+//   return (
+//     <header className="main-header">
+//       <a href='/form360' className='header__item'>Форма 360</a>
+//       <a href='/events/tutor' className='header__item'>Оценочные мероприятия</a>
+//       <a href='/polls' className='header__item'>Опросники</a>
+//       <a href='/qualities' className='header__item'>Качества</a>
+      
+//       <div className="header__avatar-wrapper">
+//         <button 
+//           ref={avatarRef}
+//           className="header__avatar-btn"
+//           onClick={() => setIsMenuOpen(!isMenuOpen)}
+//         >
+//           <img 
+//             className='header__ava' 
+//             src={user?.photo_url || '/default_avatar.jpeg'} 
+//             alt="Avatar"
+//           />
+//         </button>
+        
+//         {isMenuOpen && (
+//           <div ref={menuRef} className="dropdown-menu">
+//             <div className="dropdown-menu__user">
+//               <img 
+//                 className="dropdown-menu__avatar" 
+//                 src={user?.photo_url || '/default_avatar.jpeg'} 
+//                 alt="Avatar"
+//               />
+//               <div className="dropdown-menu__info">
+//                 <div className="dropdown-menu__name">
+//                   {user?.first_name} {user?.last_name}
+//                 </div>
+//                 <div className="dropdown-menu__email">
+//                   {user?.email || user?.username || 'user@example.com'}
+//                 </div>
+//                 <div className="dropdown-menu__status">
+//                   {getUserStatus()}
+//                 </div>
+//               </div>
+//             </div>
+            
+//             <div className="dropdown-menu__divider"></div>
+            
+//             <button 
+//               className="dropdown-menu__item"
+//               onClick={handleProfileClick}
+//             >
+//               <svg className="dropdown-menu__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+//                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+//               </svg>
+//               Профиль
+//             </button>
+
+//             <button 
+//               className="dropdown-menu__item"
+//               onClick={handleStudentsClick}
+//             >
+//               <svg className="dropdown-menu__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+//                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+//               </svg>
+//               Все студенты
+//             </button>
+              
+//             <div className="dropdown-menu__divider"></div>
+            
+//             <button 
+//               className="dropdown-menu__item dropdown-menu__item--logout"
+//               onClick={handleExitClick}
+//             >
+//               <svg className="dropdown-menu__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+//                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+//               </svg>
+//               Выйти из профиля
+//             </button>
+//           </div>
+//         )}
+//       </div>
+//     </header>
+//   );
+// };
+
+// export default Header;
+
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import './Header.css';
 
-const Header = ({ onLogout, user }) => {
+const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef(null);
   const avatarRef = useRef(null);
   const navigate = useNavigate();
+  const { user, userRole, logout, isOrganizer, isTutor, isProjectant } = useAuth();
 
   const getUserStatus = () => {
-    if (!user) return 'Проектант';
-    
-    const role = user.role?.toLowerCase();
-    
-    switch (role) {
-      case 'организатор':
-        return 'Организатор';
-      case 'куратор':
-        return 'Куратор';
-      case 'проектант':
-        return 'Проектант';
-      default:
-        return 'Проектант';
-    }
+    if (isOrganizer()) return 'Организатор';
+    if (isTutor()) return 'Куратор';
+    return 'Проектант';
   };
 
   const handleExitClick = (e) => {
     e.preventDefault();
-    if (onLogout) {
-      onLogout();
-    }
+    logout();
     setIsMenuOpen(false);
   };
 
@@ -38,8 +164,34 @@ const Header = ({ onLogout, user }) => {
     setIsMenuOpen(false);
   };
 
-  const handleSettingsClick = () => {
-    navigate('/settings');
+  const handleStudentsClick = () => {
+    navigate('/students');
+    setIsMenuOpen(false);
+  };
+
+  const handleForm360Click = () => {
+    navigate('/form360');
+    setIsMenuOpen(false);
+  };
+
+  const handleEventsClick = () => {
+    if (isProjectant()) {
+      navigate('/events');
+    } else if (isTutor()) {
+      navigate('/events/tutor');
+    } else {
+      navigate('/events/tutor');
+    }
+    setIsMenuOpen(false);
+  };
+
+  const handlePollsClick = () => {
+    navigate('/polls');
+    setIsMenuOpen(false);
+  };
+
+  const handleQualitiesClick = () => {
+    navigate('/qualities');
     setIsMenuOpen(false);
   };
 
@@ -59,10 +211,20 @@ const Header = ({ onLogout, user }) => {
 
   return (
     <header className="main-header">
-      <a href='/form360' className='header__item'>Форма 360</a>
-      <a href='/events/tutor' className='header__item'>Оценочные мероприятия</a>
-      <a href='/polls' className='header__item'>Опросники</a>
-      <a href='/qualities' className='header__item'>Качества</a>
+      <button onClick={handleForm360Click} className="header__item header__button">
+        Форма 360
+      </button>
+      <button onClick={handleEventsClick} className="header__item header__button">
+        Оценочные мероприятия
+      </button>
+      <button onClick={handlePollsClick} className="header__item header__button">
+        Опросники
+      </button>
+      {(isOrganizer()) && (
+        <button onClick={handleQualitiesClick} className="header__item header__button">
+          Качества
+        </button>
+      )}
       
       <div className="header__avatar-wrapper">
         <button 
@@ -92,7 +254,7 @@ const Header = ({ onLogout, user }) => {
                 <div className="dropdown-menu__email">
                   {user?.email || user?.username || 'user@example.com'}
                 </div>
-                <div className="dropdown-menu__status">
+                <div className={`dropdown-menu__status ${isOrganizer() ? 'status-organizer' : isTutor() ? 'status-tutor' : 'status-projectant'}`}>
                   {getUserStatus()}
                 </div>
               </div>
@@ -109,6 +271,18 @@ const Header = ({ onLogout, user }) => {
               </svg>
               Профиль
             </button>
+
+            {isOrganizer() && (
+              <button 
+                className="dropdown-menu__item"
+                onClick={handleStudentsClick}
+              >
+                <svg className="dropdown-menu__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+                Все студенты
+              </button>
+            )}
               
             <div className="dropdown-menu__divider"></div>
             
