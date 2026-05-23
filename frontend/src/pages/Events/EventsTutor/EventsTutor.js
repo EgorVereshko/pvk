@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Navigate } from 'react-router-dom';
-import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../../context/AuthContext';
 import api from '../../../api';
 import Header from '../../../components/Header/Header';
 import './EventsTutor.css';
 
 const EventsTutor = () => {
-  const [user, setUser] = useState(null);
+  const { user, logout, isTutor, isOrganizer } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('upcoming');
   const [contentType, setContentType] = useState('checklist');
   const [sortBy, setSortBy] = useState('date');
@@ -16,147 +15,113 @@ const EventsTutor = () => {
   const [selectedTeams, setSelectedTeams] = useState([]);
   const [showTeamFilter, setShowTeamFilter] = useState(false);
   const [showMenu, setShowMenu] = useState(null);
+  const [checklists, setChecklists] = useState([]);
+  const [events, setEvents] = useState([]);
+  const [teams, setTeams] = useState([]);
   
   // Модальное окно создания мероприятия
   const [showCreateEventModal, setShowCreateEventModal] = useState(false);
   const [eventForm, setEventForm] = useState({
     name: '',
     team_id: '',
-    tutor_id: '',
     date: ''
   });
-  const [availableTeams, setAvailableTeams] = useState([]);
-  const [availableTutors, setAvailableTutors] = useState([]);
   const [createSuccess, setCreateSuccess] = useState(false);
-  
-  // Реальные данные из БД
-  const [events, setEvents] = useState([]);
-  const [checklists, setChecklists] = useState([]);
   
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchUser = async () => {
-      const token = localStorage.getItem('access_token');
-      
-      if (!token) {
-        navigate('/');
-        return;
-      }
-
-      try {
-        const response = await axios.get('http://localhost:8000/api/user/', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setUser(response.data);
-        
-        // После получения пользователя, загружаем данные
-        fetchEvents();
-        fetchChecklists();
-        fetchTeams();
-        fetchTutors();
-        
-        setError(null);
-      } catch (err) {
-        if (err.response?.status === 401) {
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('refresh_token');
-          navigate('/');
-        } else {
-          setError('Ошибка при загрузке данных пользователя');
-        }
-        console.error('Ошибка:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUser();
-  }, [navigate]);
-
-  const fetchEvents = async () => {
-    try {
-      const response = await axios.get('http://localhost:8000/api/events/', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
-      });
-      setEvents(response.data);
-    } catch (error) {
-      console.error('Ошибка загрузки мероприятий:', error);
+    if (!isTutor() && !isOrganizer()) {
+      navigate('/');
     }
-  };
+    loadData();
+    fetchTeams();
+  }, []);
 
-  const fetchChecklists = async () => {
+  const loadData = async () => {
     try {
-      const response = await axios.get('http://localhost:8000/api/checklists/', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
-      });
-      setChecklists(response.data);
-      console.log('Загруженные чек-листы:', response.data);
+      setLoading(true);
+      // Загружаем все формы для куратора
+      const formsRes = await api.get('/api/forms/tutor/');
+      console.log('Все формы:', formsRes.data);
+      
+      // Фильтруем чек-листы
+      const checklistItems = formsRes.data
+        .filter(form => form.type === 'Чек-лист')
+        .map(form => ({
+          id: form.id,
+          name: form.name,
+          team_name: form.teams_names?.[0] || 'Без команды',
+          date: form.end_datetime,
+          type: new Date(form.end_datetime) > new Date() ? 'upcoming' : 'completed',
+          itemType: 'checklist'
+        }));
+      
+      setChecklists(checklistItems);
+      
+      // Загружаем мероприятия (если есть эндпоинт)
+      try {
+        const eventsRes = await api.get('/api/events/');
+        setEvents(eventsRes.data);
+      } catch (err) {
+        console.log('Мероприятия не загружены (возможно эндпоинт не реализован)');
+        setEvents([]);
+      }
+      
     } catch (error) {
-      console.error('Ошибка загрузки чек-листов:', error);
+      console.error('Ошибка загрузки:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
   const fetchTeams = async () => {
     try {
-      const response = await axios.get('http://localhost:8000/api/teams/', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
-      });
-      setAvailableTeams(response.data);
+      const res = await api.get('/api/teams/');
+      setTeams(res.data);
     } catch (error) {
       console.error('Ошибка загрузки команд:', error);
     }
   };
 
-  const fetchTutors = async () => {
-    try {
-      const response = await axios.get('http://localhost:8000/api/students/', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
-      });
-      setAvailableTutors(response.data);
-    } catch (error) {
-      console.error('Ошибка загрузки кураторов:', error);
-    }
-  };
-
-  const getEventType = (eventDate) => {
-    const today = new Date();
-    const event = new Date(eventDate);
-    return event >= today ? 'upcoming' : 'completed';
-  };
-
-  // Объединяем мероприятия и чек-листы для отображения
-  const getAllItems = () => {
-    if (contentType === 'assessment') {
-      return events.map(event => ({
+  const getFilteredItems = () => {
+    let items = [];
+    
+    if (contentType === 'checklist') {
+      items = [...checklists];
+    } else {
+      items = events.map(event => ({
         id: event.id,
         name: event.name || `Мероприятие ${event.id}`,
-        team: event.team_name || 'Без команды',
+        team_name: event.team_name || 'Без команды',
         date: event.datetime,
-        type: getEventType(event.datetime),
+        type: new Date(event.datetime) > new Date() ? 'upcoming' : 'completed',
         itemType: 'event'
       }));
-    } else {
-      return checklists.map(cl => ({
-        id: cl.id,
-        name: cl.event_name || `Чек-лист ${cl.id}`,
-        team: cl.team_name || 'Без команды',
-        date: cl.event_datetime,
-        type: getEventType(cl.event_datetime),
-        student: cl.evaluated_student,
-        indicators: cl.indicators,
-        itemType: 'checklist'
-      }));
     }
-  };
-
-  const items = getAllItems();
-  const teams = [...new Set(items.map(item => item.team).filter(Boolean))];
-
-  const handleLogout = () => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    navigate('/');
+    
+    // Фильтр по статусу
+    items = items.filter(item => item.type === activeTab);
+    
+    // Фильтр по командам
+    if (selectedTeams.length > 0) {
+      items = items.filter(item => selectedTeams.includes(item.team_name));
+    }
+    
+    // Сортировка
+    items.sort((a, b) => {
+      if (sortBy === 'name') {
+        return sortOrder === 'asc' 
+          ? a.name.localeCompare(b.name)
+          : b.name.localeCompare(a.name);
+      } else {
+        return sortOrder === 'asc'
+          ? new Date(a.date) - new Date(b.date)
+          : new Date(b.date) - new Date(a.date);
+      }
+    });
+    
+    return items;
   };
 
   const handleSort = (field) => {
@@ -170,9 +135,7 @@ const EventsTutor = () => {
 
   const handleTeamFilter = (team) => {
     setSelectedTeams(prev =>
-      prev.includes(team)
-        ? prev.filter(t => t !== team)
-        : [...prev, team]
+      prev.includes(team) ? prev.filter(t => t !== team) : [...prev, team]
     );
   };
 
@@ -180,115 +143,91 @@ const EventsTutor = () => {
     setShowTeamFilter(!showTeamFilter);
   };
 
-  const toggleMenu = (itemId) => {
-    setShowMenu(showMenu === itemId ? null : itemId);
+  const toggleMenu = (id) => {
+    setShowMenu(showMenu === id ? null : id);
   };
 
-  const handleMenuAction = (action, itemId, itemType) => {
-    console.log(`${action} элемент ${itemId} типа ${itemType}`);
-    
-    if (action === 'view') {
-      if (itemType === 'checklist') {
-        navigate(`/checklist/view/${itemId}`);
-      } else if (itemType === 'event') {
-        navigate(`/event/${itemId}`);
-      }
-    } else if (action === 'edit') {
-      if (itemType === 'checklist') {
-        navigate(`/checklist/edit/${itemId}`);
-      }
-    } else if (action === 'delete') {
-      if (window.confirm('Вы уверены, что хотите удалить этот элемент?')) {
+  const handleDelete = async (id, itemType) => {
+    if (window.confirm('Вы уверены, что хотите удалить этот элемент?')) {
+      try {
         if (itemType === 'checklist') {
-          api.delete(`/api/checklist/${itemId}/delete/`)
-            .then(() => {
-              fetchChecklists();
-              alert('Чек-лист удален');
-            })
-            .catch(error => {
-              console.error('Ошибка удаления:', error);
-              alert('Ошибка при удалении');
-            });
+          await api.delete(`/api/forms/delete/${id}/`);
+        } else {
+          await api.delete(`/api/events/${id}/delete/`);
         }
+        alert('Удалено');
+        loadData();
+      } catch (error) {
+        console.error('Ошибка удаления:', error);
+        alert('Ошибка при удалении');
       }
     }
-    
     setShowMenu(null);
   };
 
-  // Обработчики формы создания мероприятия
-  const handleEventFormChange = (e) => {
-    const { name, value } = e.target;
-    setEventForm(prev => ({ ...prev, [name]: value }));
+  const handleView = (id, itemType) => {
+    if (itemType === 'checklist') {
+      navigate(`/checklist/view/${id}`);
+    } else if (itemType === 'event') {
+      navigate(`/event/${id}`);
+    }
+    setShowMenu(null);
   };
 
   const handleCreateEvent = async () => {
     if (!eventForm.name || !eventForm.team_id || !eventForm.date) {
-      alert('Заполните все обязательные поля');
+      alert('Заполните все поля');
       return;
     }
 
     try {
-      const response = await api.post('/api/events/create/', {
+      await api.post('/api/events/create/', {
         name: eventForm.name,
-        team_id: eventForm.team_id,
-        datetime: eventForm.date,
-        tutor_id: eventForm.tutor_id || user?.id
+        team_id: parseInt(eventForm.team_id),
+        datetime: new Date(eventForm.date).toISOString()
       });
 
-      if (response.data) {
-        setCreateSuccess(true);
-        setEventForm({ name: '', team_id: '', tutor_id: '', date: '' });
-        setShowCreateEventModal(false);
-        fetchEvents();
-        
-        setTimeout(() => {
-          setCreateSuccess(false);
-        }, 3000);
-      }
+      setCreateSuccess(true);
+      setEventForm({ name: '', team_id: '', date: '' });
+      setShowCreateEventModal(false);
+      loadData();
+      
+      setTimeout(() => setCreateSuccess(false), 3000);
     } catch (error) {
       console.error('Ошибка создания мероприятия:', error);
       alert('Ошибка при создании мероприятия');
     }
   };
 
-  const filteredAndSortedItems = items
-    .filter(item => item.type === activeTab)
-    .filter(item => selectedTeams.length === 0 || selectedTeams.includes(item.team))
-    .sort((a, b) => {
-      if (sortBy === 'name') {
-        return sortOrder === 'asc' 
-          ? a.name.localeCompare(b.name)
-          : b.name.localeCompare(a.name);
-      } else if (sortBy === 'team') {
-        return sortOrder === 'asc'
-          ? a.team.localeCompare(b.team)
-          : b.team.localeCompare(a.team);
-      } else {
-        return sortOrder === 'asc'
-          ? new Date(a.date) - new Date(b.date)
-          : new Date(b.date) - new Date(a.date);
-      }
-    });
+  const handleEventFormChange = (e) => {
+    const { name, value } = e.target;
+    setEventForm(prev => ({ ...prev, [name]: value }));
+  };
 
-  if (loading) {
-    return <div className="loading">Загрузка...</div>;
-  }
+  const getUniqueTeams = () => {
+    const allItems = contentType === 'checklist' ? checklists : events;
+    return [...new Set(allItems.map(item => item.team_name).filter(Boolean))];
+  };
 
-  if (!user) {
-    return <Navigate to="/" replace />;
-  }
+  const getCountByType = (status) => {
+    if (contentType === 'checklist') {
+      return checklists.filter(f => f.type === status).length;
+    } else {
+      return events.filter(e => (new Date(e.datetime) > new Date() ? 'upcoming' : 'completed') === status).length;
+    }
+  };
+
+  if (loading) return <div className="loading">Загрузка...</div>;
+
+  const items = getFilteredItems();
 
   return (
     <div className="profile-container">
-      <Header onLogout={handleLogout} user={user} />
+      <Header onLogout={logout} user={user} />
       
       <div className="profile-content">
-        {/* Зеленая плашка успешного создания */}
         {createSuccess && (
-          <div className="success-toast">
-            ✅ Мероприятие успешно создано
-          </div>
+          <div className="success-toast">✅ Мероприятие успешно создано</div>
         )}
 
         <div className="events-header-main">
@@ -300,7 +239,7 @@ const EventsTutor = () => {
               className="create-button"
               onClick={() => navigate('/checklist/create')}
             >
-              Создать чек-лист
+              + Создать чек-лист
             </button>
             <button 
               className="create-button secondary"
@@ -314,31 +253,31 @@ const EventsTutor = () => {
         <div className="tabs-container">
           <div className="tabs">
             <button 
+              className={`tab ${contentType === 'checklist' ? 'active' : ''}`}
+              onClick={() => setContentType('checklist')}
+            >
+              Чек-листы ({checklists.length})
+            </button>
+            <button 
+              className={`tab ${contentType === 'event' ? 'active' : ''}`}
+              onClick={() => setContentType('event')}
+            >
+              Оценочные мероприятия ({events.length})
+            </button>
+          </div>
+          
+          <div className="tabs">
+            <button 
               className={`tab ${activeTab === 'upcoming' ? 'active' : ''}`}
               onClick={() => setActiveTab('upcoming')}
             >
-              Предстоящие
+              Активные ({getCountByType('upcoming')})
             </button>
             <button 
               className={`tab ${activeTab === 'completed' ? 'active' : ''}`}
               onClick={() => setActiveTab('completed')}
             >
-              Пройденные
-            </button>
-          </div>
-
-          <div className="tabs content-type-tabs">
-            <button 
-              className={`tab ${contentType === 'checklist' ? 'active' : ''}`}
-              onClick={() => setContentType('checklist')}
-            >
-              Чек-листы
-            </button>
-            <button 
-              className={`tab ${contentType === 'assessment' ? 'active' : ''}`}
-              onClick={() => setContentType('assessment')}
-            >
-              Оценочные мероприятия
+              Завершённые ({getCountByType('completed')})
             </button>
           </div>
         </div>
@@ -370,7 +309,7 @@ const EventsTutor = () => {
               {showTeamFilter && (
                 <div className="team-filter-dropdown">
                   <div className="team-checkboxes">
-                    {teams.map(team => (
+                    {getUniqueTeams().map(team => (
                       <label key={team} className="team-checkbox">
                         <input
                           type="checkbox"
@@ -386,32 +325,29 @@ const EventsTutor = () => {
             </div>
 
             <div className="events-list">
-              {filteredAndSortedItems.length === 0 ? (
+              {items.length === 0 ? (
                 <div className="empty-state">
                   <p>Нет данных для отображения</p>
                   {contentType === 'checklist' && (
-                    <button 
-                      className="create-button"
-                      onClick={() => navigate('/checklist/create')}
-                    >
+                    <button onClick={() => navigate('/checklist/create')}>
                       Создать первый чек-лист
+                    </button>
+                  )}
+                  {contentType === 'event' && (
+                    <button onClick={() => setShowCreateEventModal(true)}>
+                      Создать первое мероприятие
                     </button>
                   )}
                 </div>
               ) : (
-                filteredAndSortedItems.map(item => (
+                items.map(item => (
                   <div key={item.id} className="event-item">
                     <div className="event-content">
                       <div className="event-name">{item.name}</div>
-                      <div className="event-team">{item.team}</div>
+                      <div className="event-team">{item.team_name}</div>
                       <div className="event-date">
                         {new Date(item.date).toLocaleDateString('ru-RU')}
                       </div>
-                      {item.student && (
-                        <div className="event-student">
-                          Студент: {item.student}
-                        </div>
-                      )}
                     </div>
                     <div className="event-actions">
                       <button 
@@ -422,16 +358,11 @@ const EventsTutor = () => {
                       </button>
                       {showMenu === item.id && (
                         <div className="action-menu left">
-                          <button onClick={() => handleMenuAction('view', item.id, item.itemType)}>
+                          <button onClick={() => handleView(item.id, item.itemType)}>
                             Посмотреть
                           </button>
-                          {item.itemType === 'checklist' && (
-                            <button onClick={() => handleMenuAction('edit', item.id, item.itemType)}>
-                              Редактировать
-                            </button>
-                          )}
                           <button 
-                            onClick={() => handleMenuAction('delete', item.id, item.itemType)}
+                            onClick={() => handleDelete(item.id, item.itemType)}
                             className="delete-action"
                           >
                             Удалить
@@ -476,22 +407,8 @@ const EventsTutor = () => {
                   onChange={handleEventFormChange}
                 >
                   <option value="">Выберите команду</option>
-                  {availableTeams.map(team => (
+                  {teams.map(team => (
                     <option key={team.id} value={team.id}>{team.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label>Куратор</label>
-                <select
-                  name="tutor_id"
-                  value={eventForm.tutor_id}
-                  onChange={handleEventFormChange}
-                >
-                  <option value="">Выберите куратора</option>
-                  {availableTutors.map(tutor => (
-                    <option key={tutor.id} value={tutor.id}>{tutor.short_name}</option>
                   ))}
                 </select>
               </div>
