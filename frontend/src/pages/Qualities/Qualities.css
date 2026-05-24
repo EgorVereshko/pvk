@@ -70,7 +70,7 @@
 }
 
 .quality-actions {
-  display: flex;
+  margin-left: 5px;
   gap: 0.5rem;
 }
 
@@ -282,4 +282,58 @@
   height: 100vh;
   font-size: 1rem;
   color: #64748b;
+}
+
+.quality-actions-wrap {
+  position: relative;
+}
+
+.dots-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dots-btn:hover {
+  background: #f2f2f2;
+}
+
+.quality-actions-popup {
+  position: absolute;
+  z-index: 1000;
+  min-width: 160px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.popup-action-btn {
+  width: 100%;
+  border: none;
+  background: #f6f6f6;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.popup-action-btn:hover {
+  background: #ededed;
+}
+
+.popup-action-btn.danger {
+  color: #c62828;
 }
