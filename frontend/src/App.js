@@ -123,13 +123,13 @@ function AppRoutes() {
           <CheckListView />
         </ProtectedRoute>
       } />
-      
-      {/* Только для кураторов */}
       <Route path="/events/tutor" element={
-        <ProtectedRoute allowedRoles={['Куратор']}>
+        <ProtectedRoute allowedRoles={['Куратор', 'Организатор']}>
           <EventsTutor />
         </ProtectedRoute>
       } />
+      
+      {/* Только для кураторов */}
       
       {/* Только для организаторов */}
       <Route path="/students" element={

@@ -22,24 +22,21 @@ const Form360List = () => {
     try {
       let response;
       
-      // Для проектанта используем другой эндпоинт
       if (isProjectant()) {
         response = await api.get('/api/forms/projectant/');
         console.log('Формы для проектанта:', response.data);
         
-        // Для проектанта данные приходят в формате { forms_360: [...], forms_polls: [...] }
         const projectantForms = response.data.forms_360 || [];
         const formattedForms = projectantForms.map(form => ({
           id: form.id,
           name: form.name,
-          team_name: userTeamName,  // ← используем название команды из профиля пользователя
+          team_name: userTeamName,
           deadline: form.end_datetime,
           qualities: form.qualities?.map(q => q.name) || ['Вовлеченность', 'Работа в команде', 'Обучаемость', 'Организованность'],
           status: form.status
         }));
         setForms(formattedForms);
       } else {
-        // Для куратора и организатора
         response = await api.get('/api/forms/tutor/');
         console.log('Формы для куратора:', response.data);
         
@@ -60,7 +57,6 @@ const Form360List = () => {
     }
   };
 
-  // Удаление формы (только для кураторов и организаторов)
   const handleDeleteForm = async (formId) => {
     if (window.confirm('Вы уверены, что хотите удалить эту форму?')) {
       try {
