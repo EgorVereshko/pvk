@@ -21,20 +21,24 @@ const Profile = () => {
   const navigate = useNavigate();
 
   const isOwnProfile = !id;
+  const displayUser = isOwnProfile ? user : profileUser;
 
   useEffect(() => {
     fetchUserProfile();
-    if (isOwnProfile) {
-      fetchUserScores();
-    } else {
-      fetchUserScoresById(id);
-    }
-  }, [navigate, id]);
+  }, [id, navigate]);
 
   const fetchUserProfile = async () => {
     try {
+      setLoading(true);
       const res = await api.get('/api/user/');
       setUser(res.data);
+
+      if (!isOwnProfile) {
+        const userRes = await api.get(`/api/user/${id}/`);
+        setProfileUser(userRes.data);
+      }
+
+      await fetchUserScores();
     } catch (err) {
       if (err.response?.status === 401) {
         localStorage.clear();
@@ -42,27 +46,6 @@ const Profile = () => {
       } else {
         setError('Ошибка при загрузке профиля');
       }
-    }
-  };
-
-  const fetchUserScoresById = async (userId) => {
-    try {
-      const userRes = await api.get(`/api/user/${userId}/`);
-      setProfileUser(userRes.data);
-      
-      const scoresRes = await api.get(`/api/latest_qualities_scores/${userId}/`);
-      console.log(`Оценки пользователя ${userId}:`, scoresRes.data);
-      
-      if (scoresRes.data && Array.isArray(scoresRes.data)) {
-        const scoresObject = {};
-        scoresRes.data.forEach(item => {
-          scoresObject[item.quality_name] = item.score;
-        });
-        setUserScores(scoresObject);
-      }
-    } catch (err) {
-      console.error('Ошибка загрузки данных пользователя:', err);
-      setError('Не удалось загрузить профиль пользователя');
     } finally {
       setLoading(false);
     }
@@ -72,7 +55,7 @@ const Profile = () => {
     try {
       const res = await api.get('/api/latest_qualities_scores/');
       console.log('Свои оценки:', res.data);
-      
+
       if (res.data && Array.isArray(res.data)) {
         const scoresObject = {};
         res.data.forEach(item => {
@@ -82,20 +65,44 @@ const Profile = () => {
       }
     } catch (err) {
       console.error('Ошибка загрузки оценок:', err);
-    } finally {
-      setLoading(false);
+    }
+  };
+
+  const fetchUserScoresById = async (userId) => {
+    try {
+      const res = await api.get(`/api/latest_qualities_scores/${userId}/`);
+      console.log(`Оценки пользователя ${userId}:`, res.data);
+
+      if (res.data && Array.isArray(res.data)) {
+        const scoresObject = {};
+        res.data.forEach(item => {
+          scoresObject[item.quality_name] = item.score;
+        });
+        setUserScores(scoresObject);
+      }
+    } catch (err) {
+      console.error('Ошибка загрузки оценок:', err);
     }
   };
 
   if (loading) return <div className="loading">Загрузка профиля...</div>;
   if (!user) return <Navigate to="/" replace />;
 
-  const displayUser = isOwnProfile ? user : profileUser;
-  const pageTitle = isOwnProfile ? 'Профиль' : `Профиль: ${displayUser?.first_name} ${displayUser?.last_name}`;
+  const pageTitle = isOwnProfile
+    ? 'Профиль'
+    : `Профиль: ${displayUser?.first_name} ${displayUser?.last_name}`;
+
+  const teamName = displayUser?.team_name || 'Без команды';
 
   return (
     <div className="profile-container">
-      <Header onLogout={() => { localStorage.clear(); navigate('/'); }} user={user} />
+      <Header
+        onLogout={() => {
+          localStorage.clear();
+          navigate('/');
+        }}
+        user={user}
+      />
 
       <div className="profile-content">
         <div className="stats-info">
@@ -113,7 +120,7 @@ const Profile = () => {
                 <div className="lk-text">
                   <h3>{displayUser?.first_name} {displayUser?.last_name}</h3>
                   <p>{displayUser?.university || 'Университет не указан'}</p>
-                  <p>{displayUser?.description || 'Команда ПВК 1'}</p>
+                  <p>{teamName}</p>
                 </div>
               </div>
 
