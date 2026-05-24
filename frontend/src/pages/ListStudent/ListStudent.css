@@ -60,10 +60,13 @@
 
 .search-filter-section {
   margin-bottom: 1.5rem;
+  display: flex;
+  align-items: baseline;
 }
 
 .search-box {
   position: relative;
+  min-width: 300px;
   max-width: 400px;
 }
 
@@ -406,4 +409,32 @@
 .sort-icon {
   margin-left: 5px;
   font-size: 12px;
+}
+
+/* TEAM FILTER DROPDOWN */
+.team-filter-section {
+  margin-left: auto;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.team-select {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: white;
+  font-size: 0.9rem;
+  color: #475569;
+  min-width: 250px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.team-select:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
 }
