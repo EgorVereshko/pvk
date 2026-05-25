@@ -80,11 +80,11 @@ function AppRoutes() {
           <PollPass />
         </ProtectedRoute>
       } />
-      <Route path="/events" element={
+      {/* <Route path="/events" element={
         <ProtectedRoute allowedRoles={['Проектант']}>
           <EventsStudent />
         </ProtectedRoute>
-      } />
+      } /> */}
       <Route path="/score/student" element={
         <ProtectedRoute allowedRoles={['Проектант']}>
           <ScoreStudent />

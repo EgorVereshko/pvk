@@ -77,9 +77,11 @@ const Header = () => {
       <button onClick={handleForm360Click} className="header__item header__button">
         Форма 360
       </button>
-      <button onClick={handleEventsClick} className="header__item header__button">
-        Оценочные мероприятия
-      </button>
+      {(!isProjectant()) && (
+        <button onClick={handleEventsClick} className="header__item header__button">
+          Оценочные мероприятия
+        </button>
+      )}
       <button onClick={handlePollsClick} className="header__item header__button">
         Опросники
       </button>

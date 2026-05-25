@@ -211,7 +211,7 @@ const Qualities = () => {
       indicators: formData.indicators
     });
 
-    alert('Качество успешно создано (сохранено в localStorage)');
+    alert('Качество успешно создано');
     setShowCreateModal(false);
     resetForm();
     setQualitiesState(getQualities());

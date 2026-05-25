@@ -303,7 +303,7 @@ const CheckList = () => {
                 <table className="checklist-table">
                   <thead>
                     <tr>
-                      <th>Студент</th>
+                      <th>Студент/Качество</th>
                       {qualities.map((q, idx) => (
                         <th key={idx}>
                           {q}
