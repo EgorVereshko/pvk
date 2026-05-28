@@ -1,16 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import api from '../../api';
 import Header from '../../components/Header/Header';
 import './CheckList.css';
 
 const CheckList = () => {
-  const [user, setUser] = useState(null);
+  const { user, logout, isTutor, isOrganizer } = useAuth();
   const [loading, setLoading] = useState(true);
   const [teams, setTeams] = useState([]);
   const [templates, setTemplates] = useState([]);
-  const [students, setStudents] = useState([]);
+  const [teamMembers, setTeamMembers] = useState([]);
   const [step, setStep] = useState(1);
+
+  const [tableData, setTableData] = useState({
+    students: ['', '', '', '', ''],
+    studentNames: ['', '', '', '', ''],
+    qualities: ['Обучаемость', 'Организованность', 'Работа в команде', 'Вовлеченность'],
+    scores: []
+  });
   
   const [formData, setFormData] = useState({
     date: '',
@@ -19,76 +27,62 @@ const CheckList = () => {
     template: ''
   });
   
-  const [tableData, setTableData] = useState({
-    students: ['', '', '', '', ''],
-    studentNames: ['', '', '', '', ''],
-    qualities: ['Обучаемость', 'Организованность', 'Работа в команде', 'Вовлеченность'],
-    scores: []
-  });
+  const [qualities, setQualities] = useState(['Обучаемость', 'Организованность', 'Работа в команде', 'Вовлеченность']);
+  const [scores, setScores] = useState([]);
   
   const [showSaveTemplate, setShowSaveTemplate] = useState(false);
   const [newTemplateName, setNewTemplateName] = useState('');
-  const [editingTemplate, setEditingTemplate] = useState(null);
-  const [newCompetenceName, setNewCompetenceName] = useState('');
+  const [newQuality, setNewQuality] = useState('');
   
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchUserProfile();
-    fetchTeams();
-    fetchTemplates();
-    fetchStudents();
+    if (!isTutor() && !isOrganizer()) {
+      alert('Доступ запрещен');
+      navigate('/events/tutor');
+    }
+  }, [isTutor, isOrganizer]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [teamsRes, templatesRes] = await Promise.all([
+          api.get('/api/teams/'),
+          api.get('/api/templates/')
+        ]);
+        setTeams(teamsRes.data);
+        setTemplates(templatesRes.data);
+      } catch (error) {
+        console.error('Ошибка загрузки:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
   }, []);
 
   useEffect(() => {
-    const newScores = tableData.qualities.map(() => Array(5).fill(null));
-    setTableData(prev => ({ ...prev, scores: newScores }));
-  }, [tableData.qualities.length]);
-
-  const fetchUserProfile = async () => {
-    try {
-      const res = await api.get('/api/user/');
-      setUser(res.data);
-    } catch (err) {
-      if (err.response?.status === 401) {
-        localStorage.clear();
-        navigate('/');
-      }
+    if (formData.team) {
+      const loadMembers = async () => {
+        try {
+          const res = await api.get(`/api/teams/${formData.team}/members/`);
+          setTeamMembers(res.data);
+          const newScores = qualities.map(() => Array(res.data.length).fill(null));
+          setScores(newScores);
+        } catch (error) {
+          console.error('Ошибка загрузки участников:', error);
+          setTeamMembers([]);
+        }
+      };
+      loadMembers();
+    } else {
+      setTeamMembers([]);
+      setScores([]);
     }
-  };
-
-  const fetchTeams = async () => {
-    try {
-      const res = await api.get('/api/teams/');
-      setTeams(res.data);
-    } catch (error) {
-      console.error('Ошибка загрузки команд:', error);
-    }
-  };
-
-  const fetchTemplates = async () => {
-    try {
-      const res = await api.get('/api/templates/');
-      setTemplates(res.data);
-    } catch (error) {
-      console.error('Ошибка загрузки шаблонов:', error);
-    }
-  };
-
-  const fetchStudents = async () => {
-    try {
-      const res = await api.get('/api/students/');
-      setStudents(res.data);
-    } catch (error) {
-      console.error('Ошибка загрузки студентов:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [formData.team]);
 
   const handleFormChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleTemplateSelect = (e) => {
@@ -118,200 +112,147 @@ const CheckList = () => {
 
   const handleNext = () => {
     if (!formData.date || !formData.eventName || !formData.team) {
-      alert('Заполните дату, название мероприятия и выберите команду');
+      alert('Заполните все поля');
+      return;
+    }
+    if (teamMembers.length === 0) {
+      alert('В выбранной команде нет студентов');
       return;
     }
     setStep(2);
   };
 
-  const handleStudentSelect = (index, studentId) => {
-    const newStudents = [...tableData.students];
-    const newStudentNames = [...tableData.studentNames];
-    
-    const selectedStudent = students.find(s => s.id === parseInt(studentId));
-    
-    newStudents[index] = studentId;
-    newStudentNames[index] = selectedStudent ? selectedStudent.short_name : '';
-    
-    setTableData(prev => ({
-      ...prev,
-      students: newStudents,
-      studentNames: newStudentNames
-    }));
+  const handleScoreChange = (qualityIdx, studentIdx, value) => {
+    const newScores = [...scores];
+    newScores[qualityIdx][studentIdx] = value === '' ? null : parseInt(value);
+    setScores(newScores);
   };
 
-  const handleScoreChange = (qualityIndex, studentIndex, value) => {
-    const newScores = [...tableData.scores];
-    if (!newScores[qualityIndex]) {
-      newScores[qualityIndex] = Array(5).fill(null);
-    }
-    newScores[qualityIndex][studentIndex] = (value !== null && value !== undefined && value !== '') ? parseInt(value, 10) : null;
-    setTableData(prev => ({ ...prev, scores: newScores }));
-  };
-
-  const handleAddCompetence = () => {
-    if (!newCompetenceName.trim()) {
-      alert('Введите название компетенции');
+  const addQuality = () => {
+    if (!newQuality.trim()) {
+      alert('Введите название');
       return;
     }
-
-    setTableData(prev => ({
-      ...prev,
-      qualities: [...prev.qualities, newCompetenceName.trim()],
-      scores: [...prev.scores, Array(5).fill(null)]
-    }));
-
-    setNewCompetenceName('');
+    setQualities([...qualities, newQuality.trim()]);
+    setScores([...scores, Array(teamMembers.length).fill(null)]);
+    setNewQuality('');
   };
 
-  const handleRemoveCompetence = (index) => {
-    if (index < 4) {
+  const removeQuality = (idx) => {
+    if (idx < 4) {
       alert('Нельзя удалить базовые компетенции');
       return;
     }
-
-    const newQualities = tableData.qualities.filter((_, i) => i !== index);
-    const newScores = tableData.scores.filter((_, i) => i !== index);
-
-    setTableData(prev => ({
-      ...prev,
-      qualities: newQualities,
-      scores: newScores
-    }));
+    setQualities(qualities.filter((_, i) => i !== idx));
+    setScores(scores.filter((_, i) => i !== idx));
   };
 
-  const handleSaveTemplate = async () => {
+  const saveAsTemplate = async () => {
     if (!newTemplateName) {
       alert('Введите название шаблона');
       return;
     }
-
+    
     try {
       let allFilled = true;
-      for (let q = 0; q < tableData.qualities.length; q++) {
-        for (let s = 0; s < 5; s++) {
-          if (tableData.scores[q]?.[s] === null || tableData.scores[q]?.[s] === undefined) {
+      for (let q = 0; q < qualities.length; q++) {
+        for (let s = 0; s < teamMembers.length; s++) {
+          if (scores[q]?.[s] === null || scores[q]?.[s] === undefined) {
             allFilled = false;
             break;
           }
         }
-        if (!allFilled) break;
       }
-
+      
       if (!allFilled) {
-        alert('Заполните все оценки для всех студентов перед сохранением шаблона');
+        alert('Заполните все оценки');
         return;
       }
-
-      const indicators = [];
       
-      for (let q = 0; q < tableData.qualities.length; q++) {
-        const values = tableData.scores[q] || [];
-        const avgValue = values.length > 0 
-          ? Math.round(values.reduce((a, b) => a + b, 0) / values.length)
-          : 0;
-        
-        indicators.push({
-          name: avgValue.toString(),
-          description: tableData.qualities[q]
-        });
-      }
-      
-      if (indicators.length >= 4) {
-        const allValues = [];
-        for (let q = 0; q < tableData.qualities.length; q++) {
-          allValues.push(...(tableData.scores[q] || []));
-        }
-        const totalAvg = allValues.length > 0 
-          ? Math.round(allValues.reduce((a, b) => a + b, 0) / allValues.length)
-          : 0;
-        
-        while (indicators.length < 5) {
-          indicators.push({
-            name: totalAvg.toString(),
-            description: 'Общая оценка'
-          });
-        }
-      }
-
-      await api.post('/api/templates/save/', {
-        name: newTemplateName,
-        indicators: indicators.slice(0, 5),
-        competences: tableData.qualities
+      const indicators = qualities.map((q, idx) => {
+        const values = scores[idx] || [];
+        const avg = values.length ? Math.round(values.reduce((a, b) => a + b, 0) / values.length) : 0;
+        return { name: avg.toString(), description: q };
       });
-
-      alert('Шаблон успешно сохранен');
+      
+      await api.post('/api/templates/create/', {
+        name: newTemplateName,
+        indicators: indicators.map((_, i) => i + 1)
+      });
+      
+      alert('Шаблон сохранен');
       setShowSaveTemplate(false);
       setNewTemplateName('');
-      fetchTemplates();
-      
+      const res = await api.get('/api/templates/');
+      setTemplates(res.data);
     } catch (error) {
-      console.error('Ошибка сохранения шаблона:', error);
-      alert('Ошибка при сохранении шаблона');
+      console.error('Ошибка:', error);
+      alert('Ошибка при сохранении');
     }
   };
 
-  const handleSaveChecklist = async () => {
-    try {
-      if (!formData.team || !formData.date || !formData.eventName) {
-        alert('Для сохранения чек-листа необходимо указать команду, дату и название мероприятия');
-        return;
-      }
-
-      const allStudentsSelected = tableData.students.every(id => id && id !== '');
-      if (!allStudentsSelected) {
-        alert('Выберите всех 5 студентов для оценки');
-        return;
-      }
-
-      let allFilled = true;
-      for (let q = 0; q < tableData.qualities.length; q++) {
-        for (let s = 0; s < 5; s++) {
-          if (tableData.scores[q]?.[s] === null || tableData.scores[q]?.[s] === undefined) {
-            allFilled = false;
-            break;
-          }
+  const saveChecklist = async () => {
+    if (!formData.team || !formData.date || !formData.eventName) {
+      alert('Заполните все поля');
+      return;
+    }
+    
+    for (let q = 0; q < qualities.length; q++) {
+      for (let s = 0; s < teamMembers.length; s++) {
+        if (scores[q]?.[s] === null || scores[q]?.[s] === undefined) {
+          alert('Заполните все оценки');
+          return;
         }
-        if (!allFilled) break;
       }
-
-      if (!allFilled) {
-        alert('Заполните все оценки для всех студентов перед сохранением');
-        return;
-      }
-
-      const eventResponse = await api.post('/api/events/create/', {
-        team_id: formData.team,
-        datetime: formData.date,
-        name: formData.eventName
+    }
+    
+    try {
+      // 1. Создаем форму чек-листа
+      const formResponse = await api.post('/api/forms/create/', {
+        name: formData.eventName,
+        type: 'Чек-лист',
+        teams_id: [parseInt(formData.team)],
+        start_datetime: new Date(formData.date).toISOString(),
+        end_datetime: new Date(formData.date).toISOString(),
+        template_id: formData.template || null,
+        qualities: qualities
       });
       
-      const checklistResponse = await api.post('/api/checklist/save/', {
-        event_id: eventResponse.data.id,
-        students_ids: tableData.students,
-        scores: tableData.scores,
-        qualities: tableData.qualities
-      });
-
-      alert('Чек-лист успешно сохранен');
+      const formId = formResponse.data.id;
+      console.log('Форма создана, ID:', formId);
+      
+      // 2. Сохраняем оценки напрямую через /api/competences/scores/
+      const promises = [];
+      for (let s = 0; s < teamMembers.length; s++) {
+        for (let q = 0; q < qualities.length; q++) {
+          const score = scores[q]?.[s];
+          if (score !== null) {
+            promises.push(
+              api.post('/api/competences/scores/', [{
+                competence_name: qualities[q],
+                score: score,
+                student_profile_id: teamMembers[s].id
+              }])
+            );
+          }
+        }
+      }
+      await Promise.all(promises);
+      
+      alert('Чек-лист успешно сохранен!');
       navigate('/events/tutor');
       
     } catch (error) {
       console.error('Ошибка сохранения чек-листа:', error);
-      alert('Ошибка при сохранении чек-листа: ' + (error.response?.data?.error || 'Неизвестная ошибка'));
+      alert('Ошибка при сохранении: ' + (error.response?.data?.error || 'Неизвестная ошибка'));
     }
-  };
-
-  const handleLogout = () => {
-    localStorage.clear();
-    navigate('/');
   };
 
   if (loading) return <div className="loading">Загрузка...</div>;
 
   return (
     <div className="checklist-container">
-      <Header onLogout={handleLogout} user={user} />
+      <Header onLogout={logout} user={user} />
       
       <div className="checklist-content">
         <div className="checklist-card">
@@ -320,176 +261,104 @@ const CheckList = () => {
           {step === 1 ? (
             <div className="form-step">
               <div className="form-group">
-                <label>Дата <span className="required">*</span>:</label>
-                <input
-                  type="date"
-                  name="date"
-                  value={formData.date}
-                  onChange={handleFormChange}
-                  required
-                />
+                <label>Дата *</label>
+                <input type="date" name="date" value={formData.date} onChange={handleFormChange} />
               </div>
               
               <div className="form-group">
-                <label>Команда <span className="required">*</span>:</label>
-                <select
-                  name="team"
-                  value={formData.team}
-                  onChange={handleFormChange}
-                  required
-                >
+                <label>Команда *</label>
+                <select name="team" value={formData.team} onChange={handleFormChange}>
                   <option value="">Выберите команду</option>
                   {teams.map(team => (
-                    <option key={team.id} value={team.id}>
-                      {team.name}
-                    </option>
+                    <option key={team.id} value={team.id}>{team.name}</option>
                   ))}
                 </select>
+                {teamMembers.length > 0 && (
+                  <small className="info">Студентов: {teamMembers.length}</small>
+                )}
               </div>
               
               <div className="form-group">
-                <label>Название мероприятия <span className="required">*</span>:</label>
-                <input
-                  type="text"
-                  name="eventName"
-                  value={formData.eventName}
-                  onChange={handleFormChange}
-                  placeholder="Введите название"
-                  required
-                />
+                <label>Название мероприятия *</label>
+                <input type="text" name="eventName" value={formData.eventName} onChange={handleFormChange} />
               </div>
               
               <div className="form-group">
-                <label>Шаблон чек-листа:</label>
-                <select
-                  name="template"
-                  value={formData.template}
-                  onChange={handleTemplateSelect}
-                >
+                <label>Шаблон</label>
+                <select name="template" value={formData.template} onChange={handleTemplateSelect}>
                   <option value="">Выберите шаблон</option>
-                  {templates.map(template => (
-                    <option key={template.id} value={template.id}>
-                      {template.name}
-                    </option>
+                  {templates.map(t => (
+                    <option key={t.id} value={t.id}>{t.name}</option>
                   ))}
                 </select>
               </div>
               
-              <button className="next-button" onClick={handleNext}>
+              <button className="next-button" onClick={handleNext} disabled={teamMembers.length === 0}>
                 Далее
               </button>
             </div>
           ) : (
             <div className="table-step">
-              <h2>Заполните оценки</h2>
-              
-              <div className="checklist-table-wrapper">
-                  <table className="checklist-table">
-                    <thead>
-                      <tr>
-                        <th>Студент / Качество</th>
-                        {tableData.qualities.map((quality, qIndex) => (
-                          <th key={qIndex}>
-                            <div className="quality-with-remove">
-                              {quality}
-                              {qIndex >= 4 && (
-                                <button 
-                                  className="remove-competence"
-                                  onClick={() => handleRemoveCompetence(qIndex)}
-                                  title="Удалить компетенцию"
-                                >
-                                  ×
-                                </button>
-                              )}
-                            </div>
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {[0, 1, 2, 3, 4].map(sIndex => (
-                        <tr key={sIndex}>
-                          <td className="student-cell">
+              <div className="table-wrapper">
+                <table className="checklist-table">
+                  <thead>
+                    <tr>
+                      <th>Студент/Качество</th>
+                      {qualities.map((q, idx) => (
+                        <th key={idx}>
+                          {q}
+                          {idx >= 4 && (
+                            <button className="remove-btn" onClick={() => removeQuality(idx)}>×</button>
+                          )}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {teamMembers.map((member, sIdx) => (
+                      <tr key={member.id}>
+                        <td>{member.name}</td>
+                        {qualities.map((_, qIdx) => (
+                          <td key={qIdx}>
                             <select
-                              value={tableData.students[sIndex] || ''}
-                              onChange={(e) => handleStudentSelect(sIndex, e.target.value)}
-                              className="student-select"
+                              value={scores[qIdx]?.[sIdx] !== undefined ? scores[qIdx][sIdx] : ''}
+                              onChange={(e) => handleScoreChange(qIdx, sIdx, e.target.value)}
                             >
-                              <option value="">Выберите студента {sIndex + 1}</option>
-                              {students.map(student => (
-                                <option key={student.id} value={student.id}>
-                                  {student.short_name}
-                                </option>
-                              ))}
+                              <option value="">-</option>
+                              <option value="-1">-1</option>
+                              <option value="0">0</option>
+                              <option value="1">1</option>
                             </select>
                           </td>
-                          {tableData.qualities.map((_, qIndex) => (
-                            <td key={qIndex}>
-                              <select
-                                value={tableData.scores[qIndex]?.[sIndex] !== null && tableData.scores[qIndex]?.[sIndex] !== undefined 
-                                  ? tableData.scores[qIndex]?.[sIndex] 
-                                  : ''}
-                                onChange={(e) => handleScoreChange(qIndex, sIndex, e.target.value)}
-                                disabled={!tableData.students[sIndex]}
-                              >
-                                <option value="">-</option>
-                                <option value="-1">-1</option>
-                                <option value="0">0</option>
-                                <option value="1">1</option>
-                              </select>
-                            </td>
-                          ))}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-              {/* Блок добавления новой компетенции */}
-              <div className="add-competence-section">
-                <input
-                  type="text"
-                  placeholder="Название новой компетенции"
-                  value={newCompetenceName}
-                  onChange={(e) => setNewCompetenceName(e.target.value)}
-                  className="competence-input"
-                />
-                <button 
-                  className="add-competence-button"
-                  onClick={handleAddCompetence}
-                >
-                  + Добавить компетенцию
-                </button>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
               
-              <div className="table-actions">
-                <button 
-                  className="template-button"
-                  onClick={() => setShowSaveTemplate(true)}
-                >
-                  Сохранить как шаблон
-                </button>
-                <button 
-                  className="save-button"
-                  onClick={handleSaveChecklist}
-                >
-                  Сохранить чек-лист
-                </button>
-                <button 
-                  className="back-button"
-                  onClick={() => setStep(1)}
-                >
-                  Назад
-                </button>
+              <div className="add-quality">
+                <input
+                  type="text"
+                  placeholder="Новая компетенция"
+                  value={newQuality}
+                  onChange={(e) => setNewQuality(e.target.value)}
+                />
+                <button onClick={addQuality}>+ Добавить</button>
+              </div>
+              
+              <div className="actions">
+                <button onClick={() => setShowSaveTemplate(true)}>Сохранить как шаблон</button>
+                <button onClick={saveChecklist}>Сохранить чек-лист</button>
+                <button onClick={() => setStep(1)}>Назад</button>
               </div>
             </div>
           )}
         </div>
       </div>
       
-      {/* Модальное окно сохранения шаблона */}
       {showSaveTemplate && (
-        <div className="modal-overlay">
+        <div className="modal">
           <div className="modal-content">
             <h3>Сохранить шаблон</h3>
             <input
@@ -498,14 +367,9 @@ const CheckList = () => {
               value={newTemplateName}
               onChange={(e) => setNewTemplateName(e.target.value)}
             />
-            <div className="modal-actions">
-              <button onClick={handleSaveTemplate}>Сохранить</button>
-              <button onClick={() => {
-                setShowSaveTemplate(false);
-                setNewTemplateName('');
-              }}>
-                Отмена
-              </button>
+            <div className="modal-buttons">
+              <button onClick={saveAsTemplate}>Сохранить</button>
+              <button onClick={() => setShowSaveTemplate(false)}>Отмена</button>
             </div>
           </div>
         </div>

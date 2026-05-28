@@ -43,7 +43,7 @@ class RegisterSerializer(serializers.ModelSerializer):
             QualitiesScoreRegister.objects.create(
                 user=profile,
                 quality=quality,
-                model=AssessmentModel.objects.get_or_create(status='Активная')
+                model=AssessmentModel.objects.get_or_create(status='Активная')[0]
             )
 
         return user
@@ -181,14 +181,75 @@ class QualityStatsSerializer(serializers.Serializer):
     quality_name = serializers.CharField()
     scores = serializers.ListField(child=serializers.FloatField())
 
+
 class QualityScoreSerializer(serializers.Serializer):
     quality_id = serializers.IntegerField()
     score = serializers.FloatField()
+
 
 class ProjectantScoresSerializer(serializers.Serializer):
     evaluated_projectant_id = serializers.IntegerField()
     scores = QualityScoreSerializer(many=True)
 
+
 class Assessment360SubmissionSerializer(serializers.Serializer):
     form_id = serializers.IntegerField()
     evaluated_projectants = ProjectantScoresSerializer(many=True)
+
+
+class IndicatorScoreSerializer(serializers.Serializer):
+    """Сериализатор для одной оценки индикатора"""
+    indicator_id = serializers.IntegerField()
+    score = serializers.FloatField()
+
+    def validate_score(self, value):
+        """Проверяет, что оценка в допустимом диапазоне (-1, 0, 1)"""
+        if value not in [-1, 0, 1]:
+            raise serializers.ValidationError(
+                f'Оценка должна быть -1, 0 или 1 (получено: {value})'
+            )
+        return value
+
+
+class ProjectantIndicatorScoresSerializer(serializers.Serializer):
+    """Сериализатор для оценок одного проектанта"""
+    evaluated_projectant_id = serializers.IntegerField()
+    scores = IndicatorScoreSerializer(many=True)
+
+
+class CheckListSubmissionSerializer(serializers.Serializer):
+    """Сериализатор для отправки оценок чек-листа"""
+    form_id = serializers.IntegerField()
+    evaluator_id = serializers.IntegerField()
+    evaluated_projectants = ProjectantIndicatorScoresSerializer(many=True)
+
+    def validate_form_id(self, value):
+        """Проверяет существование формы"""
+        if not AssessmentForm.objects.filter(id=value).exists():
+            raise serializers.ValidationError(f'Форма с ID {value} не найдена')
+        return value
+
+    def validate_evaluator_id(self, value):
+        """Проверяет существование оценивающего"""
+        if not UserProfile.objects.filter(id=value).exists():
+            raise serializers.ValidationError(f'Оценивающий с ID {value} не найден')
+        return value
+
+
+class PollIndicatorScoreSerializer(serializers.Serializer):
+    indicator_id = serializers.IntegerField()
+    questions_scores = serializers.ListField(child=serializers.IntegerField(), allow_empty=False)
+
+    def validate_questions_scores(self, value):
+        if any(s not in [-1, 0, 1] for s in value):
+            raise serializers.ValidationError("Оценки вопросов должны быть -1, 0 или 1")
+        return value
+
+class PollEntrySerializer(serializers.Serializer):
+    evaluator_id = serializers.IntegerField()
+    evaluated_projectant_id = serializers.IntegerField()
+    questions_scores = PollIndicatorScoreSerializer(many=True)
+
+class PollSubmissionSerializer(serializers.Serializer):
+    form_id = serializers.IntegerField()
+    scores = PollEntrySerializer(many=True)

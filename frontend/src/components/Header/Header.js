@@ -1,35 +1,24 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import './Header.css';
 
-const Header = ({ onLogout, user }) => {
+const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef(null);
   const avatarRef = useRef(null);
   const navigate = useNavigate();
+  const { user, userRole, logout, isOrganizer, isTutor, isProjectant } = useAuth();
 
   const getUserStatus = () => {
-    if (!user) return 'Проектант';
-    
-    const role = user.role?.toLowerCase();
-    
-    switch (role) {
-      case 'организатор':
-        return 'Организатор';
-      case 'куратор':
-        return 'Куратор';
-      case 'проектант':
-        return 'Проектант';
-      default:
-        return 'Проектант';
-    }
+    if (isOrganizer()) return 'Организатор';
+    if (isTutor()) return 'Куратор';
+    return 'Проектант';
   };
 
   const handleExitClick = (e) => {
     e.preventDefault();
-    if (onLogout) {
-      onLogout();
-    }
+    logout();
     setIsMenuOpen(false);
   };
 
@@ -38,8 +27,34 @@ const Header = ({ onLogout, user }) => {
     setIsMenuOpen(false);
   };
 
-  const handleSettingsClick = () => {
-    navigate('/settings');
+  const handleStudentsClick = () => {
+    navigate('/students');
+    setIsMenuOpen(false);
+  };
+
+  const handleForm360Click = () => {
+    navigate('/form360');
+    setIsMenuOpen(false);
+  };
+
+  const handleEventsClick = () => {
+    if (isProjectant()) {
+      navigate('/events');
+    } else if (isTutor()) {
+      navigate('/events/tutor');
+    } else {
+      navigate('/events/tutor');
+    }
+    setIsMenuOpen(false);
+  };
+
+  const handlePollsClick = () => {
+    navigate('/polls');
+    setIsMenuOpen(false);
+  };
+
+  const handleQualitiesClick = () => {
+    navigate('/qualities');
     setIsMenuOpen(false);
   };
 
@@ -59,10 +74,22 @@ const Header = ({ onLogout, user }) => {
 
   return (
     <header className="main-header">
-      <a href='/form360' className='header__item'>Форма 360</a>
-      <a href='/events/tutor' className='header__item'>Оценочные мероприятия</a>
-      <a href='/polls' className='header__item'>Опросники</a>
-      <a href='/qualities' className='header__item'>Качества</a>
+      <button onClick={handleForm360Click} className="header__item header__button">
+        Форма 360
+      </button>
+      {(!isProjectant()) && (
+        <button onClick={handleEventsClick} className="header__item header__button">
+          Оценочные мероприятия
+        </button>
+      )}
+      <button onClick={handlePollsClick} className="header__item header__button">
+        Опросники
+      </button>
+      {(isOrganizer()) && (
+        <button onClick={handleQualitiesClick} className="header__item header__button">
+          Качества
+        </button>
+      )}
       
       <div className="header__avatar-wrapper">
         <button 
@@ -92,7 +119,7 @@ const Header = ({ onLogout, user }) => {
                 <div className="dropdown-menu__email">
                   {user?.email || user?.username || 'user@example.com'}
                 </div>
-                <div className="dropdown-menu__status">
+                <div className={`dropdown-menu__status ${isOrganizer() ? 'status-organizer' : isTutor() ? 'status-tutor' : 'status-projectant'}`}>
                   {getUserStatus()}
                 </div>
               </div>
@@ -109,6 +136,18 @@ const Header = ({ onLogout, user }) => {
               </svg>
               Профиль
             </button>
+
+            {isOrganizer() && (
+              <button 
+                className="dropdown-menu__item"
+                onClick={handleStudentsClick}
+              >
+                <svg className="dropdown-menu__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+                Все студенты
+              </button>
+            )}
               
             <div className="dropdown-menu__divider"></div>
             

@@ -12,6 +12,7 @@ urlpatterns = [
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     # получить профиль текущего пользователя
     path('api/user/', get_user, name='get_current_user'),
+    path('api/students/', get_students, name='get_students'),
     # получить профиль по id (чтобы организатор мог получить профиль конкретного проектанта)
     path('api/user/<int:user_id>/', get_user, name='get_user_by_id'),
     path('api/user/update/', update_user, name='update_user'),
@@ -26,6 +27,10 @@ urlpatterns = [
     # Индикаторы
     # path('api/indicators/', get_indicators, name='get_indicators'),
     path('api/assessment_models/', get_assessment_models, name='get_assessment_models'),
+    path('api/assessment_models/create', create_assessment_model, name='get_assessment_models'),
+    path('api/assessment_models/update', update_assessment_model, name='get_assessment_models'),
+    path('api/assessment_models/delete', delete_assessment_model, name='get_assessment_models'),
+    path('api/assessment_models/set_active/', set_active_model, name='set_active_model'),
     # Шаблоны индикаторов
     path('api/templates/', get_templates, name='get_templates'),
     path('api/templates/create/', create_template, name='save_template'),
@@ -45,11 +50,11 @@ urlpatterns = [
     # подробная инфа о форме для куратора или организатора, чтобы открыть и посмотреть/отредактировать/удалить
     path('api/forms/detailed/', get_form_detailed, name='get_form_detailed'),
     # для заполнения формы (подстраивается под тип формы)
-    path('api/forms/fill/<int:form_id>/', get_form_to_fill, name='get_360'),
+    path('api/forms/fill/<int:form_id>/', get_form_to_fill, name='get_form_to_fill'),
     # получение данных форм
     path('api/forms/submit/360', submit_360_form, name='submit_360'),
-    path('api/forms/submit/check_list', submit_check_list_form, name='submit_360'),
-    path('api/forms/submit/poll', submit_poll_form, name='submit_360'),
+    path('api/forms/submit/check_list', submit_check_list_form, name='submit_check_list'),
+    path('api/forms/submit/poll', submit_poll_form, name='submit_poll'),
 ]
 
 if settings.DEBUG:

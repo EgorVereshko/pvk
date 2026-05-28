@@ -118,6 +118,16 @@ class Quality(models.Model):
     def __str__(self):
         return f'{self.name}'
 
+    # def get_indicators_ratios(self):
+    #     return {
+    #         f'{indicator.id}: {indicator.ratio}'
+    #         for indicator in
+    #         QualityIndicatorRatio
+    #         .objects
+    #         .filter(quality=self)
+    #         .select_related('quality', 'indicator')
+    #     }
+
 
 class Indicator(models.Model):
     name = models.CharField(max_length=100)
@@ -130,9 +140,9 @@ class Indicator(models.Model):
 class IndicatorQuestion(models.Model):
     indicator = models.ForeignKey(Indicator, models.CASCADE, related_name='question')
     question = models.TextField(max_length=500)
-    answer_positive = models.TextField(max_length=500)
-    answer_neutral = models.TextField(max_length=500)
-    answer_negative = models.TextField(max_length=500)
+    answer_positive = models.TextField(max_length=500, null=True, blank=True)
+    answer_neutral = models.TextField(max_length=500, null=True, blank=True)
+    answer_negative = models.TextField(max_length=500, null=True, blank=True)
 
 
 class AssessmentModel(models.Model):

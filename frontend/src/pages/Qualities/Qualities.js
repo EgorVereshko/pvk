@@ -1,31 +1,77 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api';
 import Header from '../../components/Header/Header';
 import './Qualities.css';
 
+const KEY_QUALITIES = 'app_qualities';
+const KEY_COMPETENCES = 'app_competences';
+
+function getQualities() {
+  const item = localStorage.getItem(KEY_QUALITIES);
+  return item ? JSON.parse(item) : [];
+}
+
+function setQualities(items) {
+  localStorage.setItem(KEY_QUALITIES, JSON.stringify(items));
+}
+
+function addQuality(quality) {
+  const items = getQualities();
+  const maxId = items.length > 0 ? Math.max(...items.map(q => q.id)) : 0;
+  const item = { id: maxId + 1, ...quality };
+  items.push(item);
+  setQualities(items);
+  return item;
+}
+
+function updateQuality(id, data) {
+  const items = getQualities().map(q => (q.id === id ? { ...q, ...data } : q));
+  setQualities(items);
+}
+
+function deleteQuality(id) {
+  const items = getQualities().filter(q => q.id !== id);
+  setQualities(items);
+}
+
 const Qualities = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [qualities, setQualities] = useState([]);
+  const [qualities, setQualitiesState] = useState([]);
   const [competences, setCompetences] = useState([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedQuality, setSelectedQuality] = useState(null);
-  
+
+  const [openMenuId, setOpenMenuId] = useState(null);
+  const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setOpenMenuId(null);
+      }
+    };
+
+  document.addEventListener('mousedown', handleClickOutside);
+  return () => document.removeEventListener('mousedown', handleClickOutside);
+}, []);
+
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     competences: [],
     indicators: []
   });
-  
+
   const [currentIndicator, setCurrentIndicator] = useState({
     name: '',
     weight: 1.0,
     question: ''
   });
-  
+
   const [currentCompetence, setCurrentCompetence] = useState({
     id: '',
     coefficient: 1.0
@@ -35,9 +81,23 @@ const Qualities = () => {
 
   useEffect(() => {
     fetchUserProfile();
-    fetchQualities();
+    loadLocalQualities();
     fetchCompetences();
   }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setOpenMenuId(null);
+      }
+    };
+
+    if (openMenuId !== null) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [openMenuId]);
 
   const fetchUserProfile = async () => {
     try {
@@ -51,15 +111,10 @@ const Qualities = () => {
     }
   };
 
-  const fetchQualities = async () => {
-    try {
-      const res = await api.get('/api/qualities/');
-      setQualities(res.data);
-    } catch (error) {
-      console.error('Ошибка загрузки качеств:', error);
-    } finally {
-      setLoading(false);
-    }
+  const loadLocalQualities = () => {
+    const items = getQualities();
+    setQualitiesState(items);
+    setLoading(false);
   };
 
   const fetchCompetences = async () => {
@@ -68,12 +123,8 @@ const Qualities = () => {
       setCompetences(res.data);
     } catch (error) {
       console.error('Ошибка загрузки компетенций:', error);
+      setCompetences([]);
     }
-  };
-
-  const handleLogout = () => {
-    localStorage.clear();
-    navigate('/');
   };
 
   const handleFormChange = (e) => {
@@ -90,12 +141,12 @@ const Qualities = () => {
       alert('Введите вопрос для индикатора');
       return;
     }
-    
+
     setFormData(prev => ({
       ...prev,
       indicators: [...prev.indicators, { ...currentIndicator }]
     }));
-    
+
     setCurrentIndicator({
       name: '',
       weight: 1.0,
@@ -115,15 +166,15 @@ const Qualities = () => {
       alert('Выберите компетенцию');
       return;
     }
-    
+
     const competence = competences.find(c => c.id === parseInt(currentCompetence.id));
     if (!competence) return;
-    
+
     if (formData.competences.some(c => c.id === competence.id)) {
       alert('Эта компетенция уже добавлена');
       return;
     }
-    
+
     setFormData(prev => ({
       ...prev,
       competences: [...prev.competences, {
@@ -132,7 +183,7 @@ const Qualities = () => {
         coefficient: currentCompetence.coefficient
       }]
     }));
-    
+
     setCurrentCompetence({ id: '', coefficient: 1.0 });
   };
 
@@ -143,75 +194,74 @@ const Qualities = () => {
     }));
   };
 
-  const handleCreateQuality = async () => {
+  const handleCreateQuality = () => {
     if (!formData.name) {
       alert('Введите название качества');
       return;
     }
-    
     if (formData.indicators.length === 0) {
       alert('Добавьте хотя бы один индикатор');
       return;
     }
-    
-    try {
-      await api.post('/api/qualities/create/', formData);
-      alert('Качество успешно создано');
-      setShowCreateModal(false);
-      resetForm();
-      fetchQualities();
-    } catch (error) {
-      console.error('Ошибка создания:', error);
-      alert('Ошибка при создании качества');
-    }
+
+    addQuality({
+      name: formData.name,
+      description: formData.description || '',
+      competences: formData.competences,
+      indicators: formData.indicators
+    });
+
+    alert('Качество успешно создано');
+    setShowCreateModal(false);
+    resetForm();
+    setQualitiesState(getQualities());
   };
 
-  const handleEditQuality = async () => {
+  const handleEditQuality = () => {
     if (!formData.name) {
       alert('Введите название качества');
       return;
     }
-    
-    try {
-      await api.put(`/api/qualities/${selectedQuality.id}/update/`, formData);
-      alert('Качество успешно обновлено');
-      setShowEditModal(false);
-      resetForm();
-      fetchQualities();
-    } catch (error) {
-      console.error('Ошибка обновления:', error);
-      alert('Ошибка при обновлении качества');
-    }
+
+    updateQuality(selectedQuality.id, {
+      name: formData.name,
+      description: formData.description || '',
+      competences: formData.competences,
+      indicators: formData.indicators
+    });
+
+    alert('Качество успешно обновлено');
+    setShowEditModal(false);
+    resetForm();
+    setQualitiesState(getQualities());
   };
 
-  const handleDeleteQuality = async (id, name) => {
-    if (window.confirm(`Вы уверены, что хотите удалить качество "${name}"?`)) {
-      try {
-        await api.delete(`/api/qualities/${id}/delete/`);
-        alert('Качество удалено');
-        fetchQualities();
-      } catch (error) {
-        console.error('Ошибка удаления:', error);
-        alert('Ошибка при удалении');
-      }
-    }
+  const handleDeleteQuality = (id, name) => {
+    if (!window.confirm(`Вы уверены, что хотите удалить качество "${name}"?`)) return;
+
+    deleteQuality(id);
+    alert('Качество удалено');
+    setQualitiesState(getQualities());
   };
 
-  const openEditModal = async (quality) => {
-    try {
-      const res = await api.get(`/api/qualities/${quality.id}/`);
-      setSelectedQuality(res.data);
-      setFormData({
-        name: res.data.name,
-        description: res.data.description || '',
-        competences: res.data.competences || [],
-        indicators: res.data.indicators || []
-      });
-      setShowEditModal(true);
-    } catch (error) {
-      console.error('Ошибка загрузки качества:', error);
-      alert('Ошибка при загрузке данных');
-    }
+  const openEditModal = (quality) => {
+    setSelectedQuality(quality);
+    setFormData({
+      name: quality.name,
+      description: quality.description || '',
+      competences: quality.competences || [],
+      indicators: quality.indicators || []
+    });
+    setShowEditModal(true);
+  };
+
+  const openMenu = (e, quality) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setMenuPos({
+      top: rect.bottom + window.scrollY + 6,
+      left: rect.right + window.scrollX - 170
+    });
+    setOpenMenuId(quality.id);
   };
 
   const resetForm = () => {
@@ -225,6 +275,11 @@ const Qualities = () => {
     setCurrentCompetence({ id: '', coefficient: 1.0 });
   };
 
+  const handleLogout = () => {
+    localStorage.clear();
+    navigate('/');
+  };
+
   if (loading) return <div className="loading">Загрузка...</div>;
 
   return (
@@ -234,7 +289,7 @@ const Qualities = () => {
       <div className="qualities-content">
         <div className="qualities-header">
           <h1>Качества</h1>
-          <button 
+          <button
             className="create-button"
             onClick={() => {
               resetForm();
@@ -258,25 +313,39 @@ const Qualities = () => {
               <div key={quality.id} className="quality-card">
                 <div className="quality-header">
                   <h3>{quality.name}</h3>
-                  <div className="quality-actions">
-                    <button 
-                      className="edit-btn"
-                      onClick={() => openEditModal(quality)}
+                  <div className="quality-actions-wrap" ref={menuRef}>
+                    <button
+                      className="dots-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setOpenMenuId(openMenuId === quality.id ? null : quality.id);
+                      }}
                     >
-                      ✏️ Редактировать
+                      ⋮
                     </button>
-                    <button 
-                      className="delete-btn"
-                      onClick={() => handleDeleteQuality(quality.id, quality.name)}
-                    >
-                      🗑️ Удалить
-                    </button>
+
+                    {openMenuId === quality.id && (
+                      <div className="quality-actions-popup">
+                        <button
+                          className="popup-action-btn"
+                          onClick={() => openEditModal(quality)}
+                        >
+                          Редактировать
+                        </button>
+                        <button
+                          className="popup-action-btn danger"
+                          onClick={() => handleDeleteQuality(quality.id, quality.name)}
+                        >
+                          Удалить
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
                 <p className="quality-description">{quality.description || 'Нет описания'}</p>
                 <div className="quality-stats">
-                  <span className="stat">📊 Индикаторов: {quality.indicators_count}</span>
-                  <span className="stat">🔗 Компетенций: {quality.competences_count}</span>
+                  <span className="stat">📊 Индикаторов: {quality.indicators.length || 0}</span>
+                  {/* <span className="stat">🔗 Компетенций: {quality.competences.length || 0}</span> */}
                 </div>
               </div>
             ))
@@ -284,13 +353,11 @@ const Qualities = () => {
         </div>
       </div>
 
-      {/* МОДАЛКА СОЗДАНИЯ КАЧЕСТВА */}
       {showCreateModal && (
         <div className="modal-overlay">
           <div className="modal-content large">
             <h2>Создание нового качества</h2>
-            
-            {/* Основная информация */}
+
             <div className="form-group">
               <label>Название качества *</label>
               <input
@@ -312,13 +379,12 @@ const Qualities = () => {
               />
             </div>
 
-            {/* Компетенции */}
-            <div className="section">
+            {/* <div className="section">
               <h3>Компетенции</h3>
               <div className="competence-selector">
                 <select
                   value={currentCompetence.id}
-                  onChange={(e) => setCurrentCompetence({...currentCompetence, id: e.target.value})}
+                  onChange={(e) => setCurrentCompetence({ ...currentCompetence, id: e.target.value })}
                 >
                   <option value="">Выберите компетенцию</option>
                   {competences.map(comp => (
@@ -329,7 +395,7 @@ const Qualities = () => {
                   type="number"
                   placeholder="Коэффициент"
                   value={currentCompetence.coefficient}
-                  onChange={(e) => setCurrentCompetence({...currentCompetence, coefficient: parseFloat(e.target.value)})}
+                  onChange={(e) => setCurrentCompetence({ ...currentCompetence, coefficient: parseFloat(e.target.value) })}
                   step="0.1"
                   min="0"
                   max="10"
@@ -337,7 +403,7 @@ const Qualities = () => {
                 />
                 <button className="add-btn" onClick={addCompetence}>+ Добавить</button>
               </div>
-              
+
               <div className="competences-list">
                 {formData.competences.map((comp, idx) => (
                   <div key={idx} className="competence-tag">
@@ -347,9 +413,8 @@ const Qualities = () => {
                   </div>
                 ))}
               </div>
-            </div>
+            </div> */}
 
-            {/* Индикаторы */}
             <div className="section">
               <h3>Индикаторы</h3>
               <div className="indicator-form">
@@ -357,27 +422,27 @@ const Qualities = () => {
                   type="text"
                   placeholder="Название индикатора *"
                   value={currentIndicator.name}
-                  onChange={(e) => setCurrentIndicator({...currentIndicator, name: e.target.value})}
+                  onChange={(e) => setCurrentIndicator({ ...currentIndicator, name: e.target.value })}
                 />
                 <input
                   type="number"
                   placeholder="Вес"
                   value={currentIndicator.weight}
-                  onChange={(e) => setCurrentIndicator({...currentIndicator, weight: parseFloat(e.target.value)})}
+                  onChange={(e) => setCurrentIndicator({ ...currentIndicator, weight: parseFloat(e.target.value) })}
                   step="0.1"
                   min="0"
-                  max="100"
+                  max="1"
                   style={{ width: '100px' }}
                 />
                 <textarea
                   placeholder="Вопрос для индикатора *"
                   value={currentIndicator.question}
-                  onChange={(e) => setCurrentIndicator({...currentIndicator, question: e.target.value})}
+                  onChange={(e) => setCurrentIndicator({ ...currentIndicator, question: e.target.value })}
                   rows="2"
                 />
                 <button className="add-btn" onClick={addIndicator}>+ Добавить индикатор</button>
               </div>
-              
+
               <div className="indicators-list">
                 {formData.indicators.map((ind, idx) => (
                   <div key={idx} className="indicator-item">
@@ -396,10 +461,13 @@ const Qualities = () => {
               <button className="save-button" onClick={handleCreateQuality}>
                 Сохранить
               </button>
-              <button className="cancel-button" onClick={() => {
-                setShowCreateModal(false);
-                resetForm();
-              }}>
+              <button
+                className="cancel-button"
+                onClick={() => {
+                  setShowCreateModal(false);
+                  resetForm();
+                }}
+              >
                 Отмена
               </button>
             </div>
@@ -407,12 +475,11 @@ const Qualities = () => {
         </div>
       )}
 
-      {/* МОДАЛКА РЕДАКТИРОВАНИЯ */}
       {showEditModal && (
         <div className="modal-overlay">
           <div className="modal-content large">
             <h2>Редактирование качества</h2>
-            
+
             <div className="form-group">
               <label>Название качества *</label>
               <input
@@ -432,13 +499,12 @@ const Qualities = () => {
               />
             </div>
 
-            {/* Компетенции */}
             <div className="section">
               <h3>Компетенции</h3>
               <div className="competence-selector">
                 <select
                   value={currentCompetence.id}
-                  onChange={(e) => setCurrentCompetence({...currentCompetence, id: e.target.value})}
+                  onChange={(e) => setCurrentCompetence({ ...currentCompetence, id: e.target.value })}
                 >
                   <option value="">Выберите компетенцию</option>
                   {competences.map(comp => (
@@ -449,12 +515,12 @@ const Qualities = () => {
                   type="number"
                   placeholder="Коэффициент"
                   value={currentCompetence.coefficient}
-                  onChange={(e) => setCurrentCompetence({...currentCompetence, coefficient: parseFloat(e.target.value)})}
+                  onChange={(e) => setCurrentCompetence({ ...currentCompetence, coefficient: parseFloat(e.target.value) })}
                   step="0.1"
                 />
                 <button className="add-btn" onClick={addCompetence}>+ Добавить</button>
               </div>
-              
+
               <div className="competences-list">
                 {formData.competences.map((comp, idx) => (
                   <div key={idx} className="competence-tag">
@@ -466,7 +532,6 @@ const Qualities = () => {
               </div>
             </div>
 
-            {/* Индикаторы */}
             <div className="section">
               <h3>Индикаторы</h3>
               <div className="indicator-form">
@@ -474,23 +539,23 @@ const Qualities = () => {
                   type="text"
                   placeholder="Название индикатора"
                   value={currentIndicator.name}
-                  onChange={(e) => setCurrentIndicator({...currentIndicator, name: e.target.value})}
+                  onChange={(e) => setCurrentIndicator({ ...currentIndicator, name: e.target.value })}
                 />
                 <input
                   type="number"
                   placeholder="Вес"
                   value={currentIndicator.weight}
-                  onChange={(e) => setCurrentIndicator({...currentIndicator, weight: parseFloat(e.target.value)})}
+                  onChange={(e) => setCurrentIndicator({ ...currentIndicator, weight: parseFloat(e.target.value) })}
                 />
                 <textarea
                   placeholder="Вопрос для индикатора"
                   value={currentIndicator.question}
-                  onChange={(e) => setCurrentIndicator({...currentIndicator, question: e.target.value})}
+                  onChange={(e) => setCurrentIndicator({ ...currentIndicator, question: e.target.value })}
                   rows="2"
                 />
                 <button className="add-btn" onClick={addIndicator}>+ Добавить индикатор</button>
               </div>
-              
+
               <div className="indicators-list">
                 {formData.indicators.map((ind, idx) => (
                   <div key={idx} className="indicator-item">
@@ -509,10 +574,13 @@ const Qualities = () => {
               <button className="save-button" onClick={handleEditQuality}>
                 Сохранить изменения
               </button>
-              <button className="cancel-button" onClick={() => {
-                setShowEditModal(false);
-                resetForm();
-              }}>
+              <button
+                className="cancel-button"
+                onClick={() => {
+                  setShowEditModal(false);
+                  resetForm();
+                }}
+              >
                 Отмена
               </button>
             </div>

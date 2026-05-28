@@ -60,10 +60,13 @@
 
 .search-filter-section {
   margin-bottom: 1.5rem;
+  display: flex;
+  align-items: baseline;
 }
 
 .search-box {
   position: relative;
+  min-width: 300px;
   max-width: 400px;
 }
 
@@ -334,4 +337,104 @@
   .students-table td:nth-child(4) {
     display: none;
   }
+}
+
+/* ============================================ */
+/* ROLES STYLES */
+/* ============================================ */
+.role-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.role-organizer {
+  background: #8b5cf6;
+  color: white;
+}
+
+.role-tutor {
+  background: #3b82f6;
+  color: white;
+}
+
+.role-projectant {
+  background: #10b981;
+  color: white;
+}
+
+.col-role {
+  min-width: 100px;
+}
+
+.col-number {
+  width: 50px;
+  text-align: center;
+}
+
+.number-badge {
+  display: inline-block;
+  width: 30px;
+  height: 30px;
+  line-height: 30px;
+  text-align: center;
+  background-color: #f0f0f0;
+  border-radius: 50%;
+  font-weight: 600;
+  color: #666;
+}
+
+.col-score {
+  width: 120px;
+  text-align: center;
+}
+
+.score-badge {
+  display: inline-block;
+  min-width: 50px;
+  text-align: center;
+}
+
+.score-badge.no-score {
+  background-color: #e2e8f0;
+  color: #a0aec0;
+}
+
+.col-score.active {
+  background-color: #f7fafc;
+}
+
+.sort-icon {
+  margin-left: 5px;
+  font-size: 12px;
+}
+
+/* TEAM FILTER DROPDOWN */
+.team-filter-section {
+  margin-left: auto;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.team-select {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: white;
+  font-size: 0.9rem;
+  color: #475569;
+  min-width: 250px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.team-select:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
 }

@@ -4,166 +4,6 @@ import api from '../../api';
 import Header from '../../components/Header/Header';
 import './Poll.css';
 
-// ========== ГРУППИРОВКА КОМПЕТЕНЦИЙ ПО ПВК ==========
-const competenceCategories = {
-  'Обучаемость': {
-    color: '#3498db',
-    competences: [
-      'Умение анализировать, выявлять существенное',
-      'Воспроизведение по инструкции',
-      'Реакция на критику (устное общение)',
-      'Поведение в ситуации неопределенности',
-      'Исправление ошибок',
-      'Умение планировать (декомпозиция)',
-      'Умение планировать (логика последовательности)',
-      'Умение планировать (оценка сроков)'
-    ]
-  },
-  'Вовлеченность': {
-    color: '#2ecc71',
-    competences: [
-      'Умение анализировать, выявлять существенное',
-      'Реакция на критику (устное общение)',
-      'Предупреждение о проблемах'
-    ]
-  },
-  'Организованность': {
-    color: '#f39c12',
-    competences: [
-      'Предупреждение о проблемах',
-      'Соблюдение сроков',
-      'Умение планировать (декомпозиция)',
-      'Умение планировать (логика последовательности)',
-      'Умение планировать (оценка сроков)',
-      'Вклад во взаимосвязанную задачу (согласование)',
-      'Вклад во взаимосвязанную задачу (своевременность)'
-    ]
-  },
-  'Работа в команде': {
-    color: '#e74c3c',
-    competences: [
-      'Предупреждение о проблемах',
-      'Вклад во взаимосвязанную задачу (согласование)',
-      'Вклад во взаимосвязанную задачу (своевременность)'
-    ]
-  }
-};
-
-const competenceOptions = [
-  // Обучаемость
-  { id: 1, name: 'Умение анализировать, выявлять существенное', category: 'Обучаемость' },
-  { id: 2, name: 'Воспроизведение по инструкции', category: 'Обучаемость' },
-  { id: 3, name: 'Реакция на критику (устное общение)', category: 'Обучаемость' },
-  { id: 4, name: 'Поведение в ситуации неопределенности', category: 'Обучаемость' },
-  { id: 5, name: 'Исправление ошибок', category: 'Обучаемость' },
-  { id: 6, name: 'Умение планировать (декомпозиция)', category: 'Обучаемость' },
-  { id: 7, name: 'Умение планировать (логика последовательности)', category: 'Обучаемость' },
-  { id: 8, name: 'Умение планировать (оценка сроков)', category: 'Обучаемость' },
-  // Вовлеченность
-  { id: 9, name: 'Умение анализировать, выявлять существенное', category: 'Вовлеченность' },
-  { id: 10, name: 'Реакция на критику (устное общение)', category: 'Вовлеченность' },
-  { id: 11, name: 'Предупреждение о проблемах', category: 'Вовлеченность' },
-  // Организованность
-  { id: 12, name: 'Предупреждение о проблемах', category: 'Организованность' },
-  { id: 13, name: 'Соблюдение сроков', category: 'Организованность' },
-  { id: 14, name: 'Умение планировать (декомпозиция)', category: 'Организованность' },
-  { id: 15, name: 'Умение планировать (логика последовательности)', category: 'Организованность' },
-  { id: 16, name: 'Умение планировать (оценка сроков)', category: 'Организованность' },
-  { id: 17, name: 'Вклад во взаимосвязанную задачу (согласование)', category: 'Организованность' },
-  { id: 18, name: 'Вклад во взаимосвязанную задачу (своевременность)', category: 'Организованность' },
-  // Работа в команде
-  { id: 19, name: 'Предупреждение о проблемах', category: 'Работа в команде' },
-  { id: 20, name: 'Вклад во взаимосвязанную задачу (согласование)', category: 'Работа в команде' },
-  { id: 21, name: 'Вклад во взаимосвязанную задачу (своевременность)', category: 'Работа в команде' }
-];
-
-// ========== ДАННЫЕ КОМПЕТЕНЦИЙ С ПАРНЫМИ ИНДИКАТОРАМИ ==========
-const competenceIndicators = {
-  'Умение анализировать, выявлять существенное': {
-    positive: 'Правильно определил проблему, причины, лежащие в основе проекта?',
-    negative: 'Не смог правильно, чётко определить проблему проекта, потребности пользователей?'
-  },
-  'Воспроизведение по инструкции': {
-    positive: 'Результат соответствует заданным требованиям, шаблону?',
-    negative: 'В полученном результате много ошибок, не соответствующих требованиям к работе, инструкциям?'
-  },
-  'Организованность': {
-    positive: 'Материалы по проекту хранит в общей проектной папке?',
-    negative: 'Материалы хранятся только у студента, отсутствуют в общем доступе?'
-  },
-  'Реакция на критику (устное общение)': {
-    positive: 'Студент внимательно слушал, уточнял, когда получал оценку, обратную связь своей работе?',
-    negative: 'Студент спорил, перебивал, когда ему давали обратную связь, оценивали результаты?'
-  },
-  'Исправление ошибок': {
-    positive: 'Исправляет указанные ошибки, недочёты?',
-    negative: 'Ошибки, недочёты исправляет после нескольких напоминаний, не с первого раза?'
-  },
-  'Поведение в ситуации неопределенности': {
-    positive: 'Задаёт уточняющие вопросы к поставленной задаче, чтобы выяснить детали?',
-    negative: 'Приступает к задаче, не уточнив детали, из-за чего не получает необходимый результат?'
-  },
-  'Предупреждение о проблемах': {
-    positive: 'Предупреждает заранее, что не справляется с задачей, не успевает на собрание и т.п., до того как у него уточняют это?',
-    negative: 'Не предупреждает заранее о том, что не справляется с задачей, не успевает на собрание и т.п.?'
-  },
-  'Соблюдение сроков': {
-    positive: 'Соблюдает поставленные сроки задач. Своевременно подключается к собраниям?',
-    negative: 'Обычно задерживает сроки выполнения задач, опаздывает на собрания без предупреждения?'
-  },
-  'Умение планировать (декомпозиция)': {
-    positive: 'Корректно разбивает (декомпозирует) задачу на отдельные работы?',
-    negative: 'Нарушена логика при декомпозиции задач на отдельные работы?'
-  },
-  'Умение планировать (логика последовательности)': {
-    positive: 'Выстраивает логику последовательность задач при планировании работы?',
-    negative: 'Нарушает логику последовательности выполняемых задач при планировании работы?'
-  },
-  'Умение планировать (оценка сроков)': {
-    positive: 'При планировании адекватно определяет сроки для задач, в которые может быть получен результат?',
-    negative: 'При планировании выставляет несоответствующее объему время для выполнения той или иной задачи?'
-  },
-  'Вклад во взаимосвязанную задачу (согласование)': {
-    positive: 'Участвует в обсуждении и согласовании сроков для задач, взаимосвязанных с другими участниками?',
-    negative: 'Не принимает участие в обсуждении и согласовании сроков для задач, в которых взаимодействует с другими участниками?'
-  },
-  'Вклад во взаимосвязанную задачу (своевременность)': {
-    positive: 'Своевременно сдавал результаты своей части работы во взаимосвязанных задачах?',
-    negative: 'Задерживал сдачу результатов своей части работы во взаимосвязанных задачах?'
-  }
-};
-
-const generateQuestionsFromCompetences = (selectedCompetences) => {
-  const questions = [];
-  
-  selectedCompetences.forEach(comp => {
-    const indicators = competenceIndicators[comp.name];
-    if (indicators) {
-      questions.push({
-        text: indicators.positive,
-        type: 'boolean',
-        required: true,
-        options: [
-          { value: 1, label: 'Да' },
-          { value: 0, label: 'Нет' }
-        ]
-      });
-      
-      questions.push({
-        text: indicators.negative,
-        type: 'boolean',
-        required: true,
-        options: [
-          { value: 1, label: 'Да' },
-          { value: 0, label: 'Нет' }
-        ]
-      });
-    }
-  });
-  
-  return questions;
-};
-
 const Poll = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -171,6 +11,7 @@ const Poll = () => {
   const [polls, setPolls] = useState([]);
   const [templates, setTemplates] = useState([]);
   const [teams, setTeams] = useState([]);
+  const [userRole, setUserRole] = useState(null);
   const [showCreateTemplate, setShowCreateTemplate] = useState(false);
   const [selectedPoll, setSelectedPoll] = useState(null);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
@@ -182,20 +23,17 @@ const Poll = () => {
     description: ''
   });
 
-  const [selectedCompetences, setSelectedCompetences] = useState([]);
+  const [selectedIndicators, setSelectedIndicators] = useState([]);
+  const [allIndicators, setAllIndicators] = useState([]);
+  
   const [pollForm, setPollForm] = useState({
     name: '',
     description: '',
     template_id: '',
     team_ids: [],
-    start_date: '',
-    end_date: ''
+    start_datetime: '',
+    end_datetime: ''
   });
-
-  const [showSurveyModal, setShowSurveyModal] = useState(false);
-  const [selectedSurveyPoll, setSelectedSurveyPoll] = useState(null);
-  const [surveyAnswers, setSurveyAnswers] = useState({});
-  const [showSuccessToast, setShowSuccessToast] = useState(false);
 
   const navigate = useNavigate();
 
@@ -204,12 +42,48 @@ const Poll = () => {
     fetchPolls();
     fetchTemplates();
     fetchTeams();
+    fetchIndicators();
+    
+    // Проверка каждые 30 секунд
+    const interval = setInterval(() => {
+      fetchPolls();
+    }, 30000);
+    
+    // Проверка при фокусе вкладки
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchPolls();
+      }
+    };
+    
+    // Проверка при возвращении на страницу (для React Router)
+    const handleRouteChange = () => {
+      fetchPolls();
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    fetchUserProfile();
+    fetchPolls();
+    fetchTemplates();
+    fetchTeams();
+    fetchIndicators();
   }, []);
 
   const fetchUserProfile = async () => {
     try {
       const res = await api.get('/api/user/');
       setUser(res.data);
+      const role = res.data.roles?.[0] || 'Проектант';
+      setUserRole(role);
+      console.log('Роль пользователя:', role);
     } catch (err) {
       if (err.response?.status === 401) {
         localStorage.clear();
@@ -220,8 +94,22 @@ const Poll = () => {
 
   const fetchPolls = async () => {
     try {
-      const res = await api.get('/api/polls/');
-      setPolls(res.data);
+      let pollForms = [];
+      
+      const role = userRole || (await api.get('/api/user/')).data.roles?.[0] || 'Проектант';
+      
+      if (role === 'Проектант') {
+        const res = await api.get('/api/forms/projectant/');
+        console.log('Формы для проектанта:', res.data);
+        pollForms = res.data.forms_polls || [];
+      } else {
+        const res = await api.get('/api/forms/tutor/');
+        console.log('Формы для куратора:', res.data);
+        pollForms = res.data.filter(form => form.type === 'Опросник');
+      }
+      
+      console.log('Загруженные опросники:', pollForms);
+      setPolls(pollForms);
     } catch (error) {
       console.error('Ошибка загрузки опросников:', error);
     }
@@ -229,22 +117,10 @@ const Poll = () => {
 
   const fetchTemplates = async () => {
     try {
-      const res = await api.get('/api/poll-templates/');
-      const templatesWithQuestions = await Promise.all(
-        res.data.map(async (template) => {
-          try {
-            const detailRes = await api.get(`/api/poll-templates/${template.id}/`);
-            return detailRes.data;
-          } catch (error) {
-            return template;
-          }
-        })
-      );
-      setTemplates(templatesWithQuestions);
+      const res = await api.get('/api/templates/');
+      setTemplates(res.data);
     } catch (error) {
       console.error('Ошибка загрузки шаблонов:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -257,30 +133,31 @@ const Poll = () => {
     }
   };
 
+  const fetchIndicators = async () => {
+    try {
+      const res = await api.get('/api/indicators/');
+      setAllIndicators(res.data);
+    } catch (error) {
+      console.error('Ошибка загрузки индикаторов:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleLogout = () => {
     localStorage.clear();
     navigate('/');
   };
 
-  const fetchPollDetails = async (pollId) => {
-    try {
-      const response = await api.get(`/api/polls/${pollId}/`);
-      setSelectedPoll(response.data);
-    } catch (error) {
-      console.error('Ошибка загрузки деталей опросника:', error);
-      alert('Не удалось загрузить детали опросника');
-    }
-  };
-
   const handleDeletePoll = async (pollId) => {
     if (window.confirm('Вы уверены, что хотите удалить этот опросник?')) {
       try {
-        await api.delete(`/api/polls/${pollId}/delete/`);
+        await api.delete(`/api/forms/delete/${pollId}/`);
         alert('Опросник удален');
         fetchPolls();
       } catch (error) {
         console.error('Ошибка удаления:', error);
-        alert('Ошибка при удалении');
+        alert('Ошибка при удалении: ' + (error.response?.data?.error || 'Неизвестная ошибка'));
       }
     }
   };
@@ -289,28 +166,30 @@ const Poll = () => {
     setEditingPoll(poll);
     setPollForm({
       name: poll.name,
-      description: poll.description || '',
+      description: '',
       template_id: poll.template?.id || '',
-      team_ids: poll.teams.map(t => t.id),
-      start_date: poll.start_date ? new Date(poll.start_date).toISOString().slice(0, 16) : '',
-      end_date: poll.end_date ? new Date(poll.end_date).toISOString().slice(0, 16) : ''
+      team_ids: [],
+      start_datetime: poll.start_datetime ? new Date(poll.start_datetime).toISOString().slice(0, 16) : '',
+      end_datetime: poll.end_datetime ? new Date(poll.end_datetime).toISOString().slice(0, 16) : ''
     });
   };
 
   const handleUpdatePoll = async () => {
-    if (!pollForm.name || !pollForm.start_date || !pollForm.end_date || pollForm.team_ids.length === 0) {
+    if (!pollForm.name || !pollForm.start_datetime || !pollForm.end_datetime) {
       alert('Заполните все обязательные поля');
       return;
     }
     
     try {
-      const formData = {
-        ...pollForm,
-        start_date: new Date(pollForm.start_date).toISOString(),
-        end_date: new Date(pollForm.end_date).toISOString(),
-      };
+      await api.post(`/api/forms/update/${editingPoll.id}/`, {
+        name: pollForm.name,
+        type: 'Опросник',
+        start_datetime: new Date(pollForm.start_datetime).toISOString(),
+        end_datetime: new Date(pollForm.end_datetime).toISOString(),
+        template_id: pollForm.template_id || null,
+        teams_id: pollForm.team_ids
+      });
       
-      await api.put(`/api/polls/${editingPoll.id}/update/`, formData);
       alert('Опросник успешно обновлен');
       setEditingPoll(null);
       setPollForm({
@@ -318,13 +197,13 @@ const Poll = () => {
         description: '',
         template_id: '',
         team_ids: [],
-        start_date: '',
-        end_date: ''
+        start_datetime: '',
+        end_datetime: ''
       });
       fetchPolls();
     } catch (error) {
       console.error('Ошибка обновления опросника:', error);
-      alert('Ошибка при обновлении: ' + (error.response?.data?.error || 'Неизвестная ошибка'));
+      alert('Ошибка при обновлении');
     }
   };
 
@@ -342,14 +221,14 @@ const Poll = () => {
     });
   };
 
-  const addCompetence = (competence) => {
-    if (!selectedCompetences.find(c => c.id === competence.id)) {
-      setSelectedCompetences([...selectedCompetences, competence]);
+  const addIndicator = (indicator) => {
+    if (!selectedIndicators.find(i => i.id === indicator.id)) {
+      setSelectedIndicators([...selectedIndicators, indicator]);
     }
   };
 
-  const removeCompetence = (competenceId) => {
-    setSelectedCompetences(selectedCompetences.filter(c => c.id !== competenceId));
+  const removeIndicator = (indicatorId) => {
+    setSelectedIndicators(selectedIndicators.filter(i => i.id !== indicatorId));
   };
 
   const handleCreateTemplate = async () => {
@@ -358,23 +237,21 @@ const Poll = () => {
       return;
     }
     
-    if (selectedCompetences.length === 0) {
-      alert('Выберите хотя бы одну компетенцию');
+    if (selectedIndicators.length === 0) {
+      alert('Выберите хотя бы один индикатор');
       return;
     }
     
     try {
-      const questions = generateQuestionsFromCompetences(selectedCompetences);
-      
-      await api.post('/api/poll-templates/create/', {
-        ...templateForm,
-        questions
+      await api.post('/api/templates/create/', {
+        name: templateForm.name,
+        indicators: selectedIndicators.map(i => i.id)
       });
       
       alert('Шаблон успешно создан');
       setShowCreateTemplate(false);
       setTemplateForm({ name: '', description: '' });
-      setSelectedCompetences([]);
+      setSelectedIndicators([]);
       fetchTemplates();
     } catch (error) {
       console.error('Ошибка создания шаблона:', error);
@@ -382,27 +259,22 @@ const Poll = () => {
     }
   };
 
-  const handleEditTemplate = (template) => {
+  const handleEditTemplate = async (template) => {
     setEditingTemplate(template);
-    
-    const competences = [];
-    const questionTexts = template.questions?.map(q => q.text) || [];
-    
-    Object.keys(competenceIndicators).forEach(compName => {
-      const indicators = competenceIndicators[compName];
-      if (questionTexts.includes(indicators.positive) && questionTexts.includes(indicators.negative)) {
-        const option = competenceOptions.find(opt => opt.name === compName);
-        if (option && !competences.find(c => c.id === option.id)) {
-          competences.push(option);
-        }
-      }
-    });
-    
-    setSelectedCompetences(competences);
     setTemplateForm({
       name: template.name,
-      description: template.description || ''
+      description: ''
     });
+    
+    try {
+      const res = await api.get('/api/templates/');
+      const fullTemplate = res.data.find(t => t.id === template.id);
+      if (fullTemplate && fullTemplate.indicators) {
+        setSelectedIndicators(fullTemplate.indicators);
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки индикаторов шаблона:', error);
+    }
   };
 
   const handleUpdateTemplate = async () => {
@@ -411,23 +283,21 @@ const Poll = () => {
       return;
     }
     
-    if (selectedCompetences.length === 0) {
-      alert('Выберите хотя бы одну компетенцию');
+    if (selectedIndicators.length === 0) {
+      alert('Выберите хотя бы один индикатор');
       return;
     }
     
     try {
-      const questions = generateQuestionsFromCompetences(selectedCompetences);
-      
-      await api.put(`/api/poll-templates/${editingTemplate.id}/update/`, {
-        ...templateForm,
-        questions
+      await api.post(`/api/templates/${editingTemplate.id}/update/`, {
+        name: templateForm.name,
+        indicators: selectedIndicators.map(i => i.id)
       });
       
       alert('Шаблон успешно обновлен');
       setEditingTemplate(null);
       setTemplateForm({ name: '', description: '' });
-      setSelectedCompetences([]);
+      setSelectedIndicators([]);
       fetchTemplates();
     } catch (error) {
       console.error('Ошибка обновления шаблона:', error);
@@ -438,7 +308,7 @@ const Poll = () => {
   const handleDeleteTemplate = async (templateId) => {
     if (window.confirm('Вы уверены, что хотите удалить этот шаблон?')) {
       try {
-        await api.delete(`/api/poll-templates/${templateId}/delete/`);
+        await api.delete(`/api/templates/delete/${templateId}/`);
         alert('Шаблон удален');
         fetchTemplates();
       } catch (error) {
@@ -448,13 +318,80 @@ const Poll = () => {
     }
   };
 
-  useEffect(() => {
-    if (!showCreateTemplate && !editingTemplate) {
-      setSelectedCompetences([]);
+  const viewTemplateDetails = async (template) => {
+    try {
+      const res = await api.get('/api/templates/');
+      const fullTemplate = res.data.find(t => t.id === template.id);
+      setSelectedTemplate(fullTemplate);
+    } catch (error) {
+      console.error('Ошибка загрузки деталей шаблона:', error);
     }
-  }, [showCreateTemplate, editingTemplate]);
+  };
+
+  const getPollLink = (poll) => {
+    return `/poll/${poll.id}`;
+  };
+
+  const getStatusText = (status) => {
+    switch (status) {
+      case 'Активна': return 'Активен';
+      case 'Запланирована': return 'Запланирован';
+      case 'Завершена': return 'Закрыт';
+      default: return status;
+    }
+  };
+
+  const getStatusClass = (status) => {
+    switch (status) {
+      case 'Активна': return 'active';
+      case 'Запланирована': return 'draft';
+      case 'Завершена': return 'closed';
+      default: return '';
+    }
+  };
 
   if (loading) return <div className="loading">Загрузка...</div>;
+
+  const getQuestionCount = (poll) => {
+    if (!poll || !poll.template || !poll.template.indicators) return 0;
+    
+    let count = 0;
+    poll.template.indicators.forEach(indicator => {
+      if (indicator.questions && indicator.questions.length > 0) {
+        count += indicator.questions.length;
+      }
+    });
+    return count;
+  };
+
+  const fetchPollDetails = async (poll) => {
+    try {
+      const response = await api.get(`/api/forms/fill/${poll.id}/`);
+      console.log('Детали опросника:', response.data);
+      
+      let questionCount = 0;
+      if (response.data.template && response.data.template.indicators) {
+        response.data.template.indicators.forEach(indicator => {
+          if (indicator.questions) {
+            questionCount += indicator.questions.length;
+          }
+        });
+      }
+      
+      setSelectedPoll({
+        ...poll,
+        creator_name: response.data.template?.creator_name || '—',
+        question_count: questionCount
+      });
+    } catch (error) {
+      console.error('Ошибка загрузки деталей:', error);
+      setSelectedPoll({
+        ...poll,
+        creator_name: '—',
+        question_count: 0
+      });
+    }
+  };
 
   return (
     <div className="poll-container">
@@ -463,20 +400,22 @@ const Poll = () => {
       <div className="poll-content">
         <div className="poll-header">
           <h1>Функциональные опросники</h1>
-          <div className="header-actions">
-            <button 
-              className="create-button"
-              onClick={() => navigate('/polls/create')}
-            >
-              + Создать опросник
-            </button>
-            <button 
-              className="create-button secondary"
-              onClick={() => setShowCreateTemplate(true)}
-            >
-              + Создать шаблон
-            </button>
-          </div>
+          {(userRole === 'Куратор' || userRole === 'Организатор') && (
+            <div className="header-actions">
+              <button 
+                className="create-button"
+                onClick={() => navigate('/polls/create')}
+              >
+                + Создать опросник
+              </button>
+              <button 
+                className="create-button secondary"
+                onClick={() => setShowCreateTemplate(true)}
+              >
+                + Создать шаблон
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="poll-tabs">
@@ -484,14 +423,16 @@ const Poll = () => {
             className={`tab ${activeTab === 'polls' ? 'active' : ''}`}
             onClick={() => setActiveTab('polls')}
           >
-            Опросники
+            Опросники ({polls.length})
           </button>
-          <button 
-            className={`tab ${activeTab === 'templates' ? 'active' : ''}`}
-            onClick={() => setActiveTab('templates')}
-          >
-            Шаблоны
-          </button>
+          {(userRole === 'Куратор' || userRole === 'Организатор') && (
+            <button 
+              className={`tab ${activeTab === 'templates' ? 'active' : ''}`}
+              onClick={() => setActiveTab('templates')}
+            >
+              Шаблоны ({templates.length})
+            </button>
+          )}
         </div>
 
         {/* СПИСОК ОПРОСНИКОВ */}
@@ -499,10 +440,10 @@ const Poll = () => {
           <div className="polls-list">
             {polls.length === 0 ? (
               <div className="empty-state">
-                <p>Нет созданных опросников</p>
-                <button onClick={() => navigate('/polls/create')}>
-                  Создать первый опросник
-                </button>
+                <svg className="empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <p>Нет доступных опросников</p>
               </div>
             ) : (
               polls.map(poll => (
@@ -510,41 +451,72 @@ const Poll = () => {
                   <div className="poll-item-header">
                     <h3>{poll.name}</h3>
                     <div className="poll-actions">
-                      <button 
-                        className="icon-button edit"
-                        onClick={() => handleEditPoll(poll)}
-                        title="Редактировать"
-                      >
-                        ✏️
-                      </button>
-                      <button 
-                        className="icon-button delete"
-                        onClick={() => handleDeletePoll(poll.id)}
-                        title="Удалить"
-                      >
-                        🗑️
-                      </button>
-                      <span className={`status ${poll.status}`}>
-                        {poll.status === 'active' ? 'Активен' : 
-                         poll.status === 'draft' ? 'Черновик' : 'Закрыт'}
+                      {(userRole === 'Куратор' || userRole === 'Организатор') && (
+                        <>
+                          <button 
+                            className="icon-button edit"
+                            onClick={() => handleEditPoll(poll)}
+                            title="Редактировать"
+                          >
+                            ✏️
+                          </button>
+                          <button 
+                            className="icon-button delete"
+                            onClick={() => handleDeletePoll(poll.id)}
+                            title="Удалить"
+                          >
+                            🗑️
+                          </button>
+                        </>
+                      )}
+                      <span className={`status ${getStatusClass(poll.status)}`}>
+                        {getStatusText(poll.status)}
                       </span>
                     </div>
                   </div>
-                  <p className="poll-description">{poll.description}</p>
                   <div className="poll-meta">
-                    <span>📅 {new Date(poll.start_date).toLocaleDateString()} - {new Date(poll.end_date).toLocaleDateString()}</span>
-                    <span>👥 {poll.assignments_count} участников</span>
-                    <span>✅ {poll.completed_count} прошли</span>
-                  </div>
-                  <div className="poll-teams">
-                    {poll.teams.map(team => (
-                      <span key={team.id} className="team-tag">{team.name}</span>
-                    ))}
+                    <div className="datetime-range-compact">
+                      <div className="datetime-item">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#667eea" strokeWidth="2">
+                          <circle cx="12" cy="12" r="10"></circle>
+                          <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                        <span>{new Date(poll.start_datetime).toLocaleString('ru-RU', {
+                          day: 'numeric',
+                          month: 'numeric',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}</span>
+                      </div>
+                      <span className="datetime-separator">—</span>
+                      <div className="datetime-item">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2">
+                          <circle cx="12" cy="12" r="10"></circle>
+                          <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                        <span>{new Date(poll.end_datetime).toLocaleString('ru-RU', {
+                          day: 'numeric',
+                          month: 'numeric',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}</span>
+                      </div>
+                    </div>
                   </div>
                   <div className="poll-item-footer">
                     <button 
+                      className="pass-button"
+                      onClick={() => navigate(getPollLink(poll))}
+                      disabled={poll.status !== 'Активна'}
+                    >
+                      {poll.status === 'Активна' ? 'Пройти опрос' : 
+                       poll.status === 'Запланирована' ? 'Скоро начнётся' : 'Завершён'}
+                    </button>
+                    <button 
                       className="view-button"
-                      onClick={() => fetchPollDetails(poll.id)}
+                      onClick={() => fetchPollDetails(poll)}
                     >
                       Подробнее
                     </button>
@@ -556,10 +528,13 @@ const Poll = () => {
         )}
 
         {/* СПИСОК ШАБЛОНОВ */}
-        {activeTab === 'templates' && (
+        {activeTab === 'templates' && (userRole === 'Куратор' || userRole === 'Организатор') && (
           <div className="templates-list">
             {templates.length === 0 ? (
               <div className="empty-state">
+                <svg className="empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+                </svg>
                 <p>Нет созданных шаблонов</p>
                 <button onClick={() => setShowCreateTemplate(true)}>
                   Создать первый шаблон
@@ -568,7 +543,7 @@ const Poll = () => {
             ) : (
               templates.map(template => (
                 <div key={template.id} className="template-item">
-                  <div className="template-header">
+                  <div className="template-item-header">
                     <h3>{template.name}</h3>
                     <div className="template-actions">
                       <button 
@@ -587,502 +562,305 @@ const Poll = () => {
                       </button>
                     </div>
                   </div>
-                  <p>{template.description}</p>
-                  <div className="questions-count">
-                    Вопросов: {template.questions?.length || 0}
+                  
+                  <div className="template-meta">
+                    <div className="template-meta-item">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                      </svg>
+                      <span>Создатель: {template.creator_name || '—'}</span>
+                    </div>
+                    <div className="template-meta-item">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M4 4v16h16V4H4zm2 2h12v12H6V6z"></path>
+                        <path d="M8 8h8v2H8zM8 12h6v2H8z"></path>
+                      </svg>
+                      <span>Индикаторов: {template.indicators?.length || 0}</span>
+                    </div>
+                    <div className="template-meta-item">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                      </svg>
+                      <span>Создан: {new Date(template.created_at).toLocaleDateString('ru-RU')}</span>
+                    </div>
                   </div>
-                  <button 
-                    className="view-button"
-                    onClick={() => setSelectedTemplate(template)}
-                  >
-                    Просмотреть
-                  </button>
+                  
+                  <div className="template-item-footer">
+                    <button 
+                      className="view-button"
+                      onClick={() => viewTemplateDetails(template)}
+                    >
+                      Просмотреть
+                    </button>
+                  </div>
                 </div>
               ))
             )}
           </div>
         )}
+      </div>
 
-        {/* МОДАЛКА РЕДАКТИРОВАНИЯ ОПРОСНИКА */}
-        {editingPoll && (
-          <div className="modal-overlay">
-            <div className="modal-content large">
-              <h2>Редактирование опросника</h2>
-              
-              <div className="form-group">
-                <label>Название *</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={pollForm.name}
-                  onChange={handlePollFormChange}
-                  placeholder="Введите название опросника"
-                />
-              </div>
+      {/* МОДАЛКА СОЗДАНИЯ ШАБЛОНА */}
+      {showCreateTemplate && (
+        <div className="modal-overlay">
+          <div className="modal-content large">
+            <h2>Создание шаблона опросника</h2>
+            
+            <div className="form-group">
+              <label>Название шаблона *</label>
+              <input
+                type="text"
+                value={templateForm.name}
+                onChange={(e) => setTemplateForm({...templateForm, name: e.target.value})}
+                placeholder="Введите название шаблона"
+              />
+            </div>
 
-              <div className="form-group">
-                <label>Описание</label>
-                <textarea
-                  name="description"
-                  value={pollForm.description}
-                  onChange={handlePollFormChange}
-                  placeholder="Введите описание"
-                />
-              </div>
+            <div className="form-group">
+              <label>Описание</label>
+              <textarea
+                value={templateForm.description}
+                onChange={(e) => setTemplateForm({...templateForm, description: e.target.value})}
+                placeholder="Введите описание шаблона"
+              />
+            </div>
 
-              <div className="form-group">
-                <label>Шаблон</label>
-                <select
-                  name="template_id"
-                  value={pollForm.template_id}
-                  onChange={handlePollFormChange}
-                >
-                  <option value="">Без шаблона</option>
-                  {templates.map(t => (
-                    <option key={t.id} value={t.id}>{t.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label>Команды для оценки *</label>
-                <div className="teams-select">
-                  {teams.map(team => (
-                    <label key={team.id} className="team-checkbox">
+            <div className="indicators-section">
+              <h3>Выберите индикаторы для оценки</h3>
+              <div className="indicators-list">
+                {allIndicators.map(indicator => (
+                  <div key={indicator.id} className="indicator-item">
+                    <label className="indicator-select">
                       <input
                         type="checkbox"
-                        checked={pollForm.team_ids.includes(team.id)}
-                        onChange={() => handleTeamSelect(team.id)}
+                        checked={selectedIndicators.some(i => i.id === indicator.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            addIndicator(indicator);
+                          } else {
+                            removeIndicator(indicator.id);
+                          }
+                        }}
                       />
-                      {team.name}
+                      <span className="indicator-name">{indicator.name}</span>
                     </label>
-                  ))}
-                </div>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Дата начала *</label>
-                  <input
-                    type="datetime-local"
-                    name="start_date"
-                    value={pollForm.start_date}
-                    onChange={handlePollFormChange}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Дата окончания *</label>
-                  <input
-                    type="datetime-local"
-                    name="end_date"
-                    value={pollForm.end_date}
-                    onChange={handlePollFormChange}
-                  />
-                </div>
-              </div>
-
-              <div className="modal-actions">
-                <button className="save-button" onClick={handleUpdatePoll}>
-                  Сохранить изменения
-                </button>
-                <button className="cancel-button" onClick={() => setEditingPoll(null)}>
-                  Отмена
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* МОДАЛКА СОЗДАНИЯ ШАБЛОНА */}
-        {showCreateTemplate && (
-          <div className="modal-overlay">
-            <div className="modal-content large">
-              <h2>Создание шаблона опросника</h2>
-              
-              <div className="form-group">
-                <label>Название шаблона *</label>
-                <input
-                  type="text"
-                  value={templateForm.name}
-                  onChange={(e) => setTemplateForm({...templateForm, name: e.target.value})}
-                  placeholder="Введите название шаблона"
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Описание</label>
-                <textarea
-                  value={templateForm.description}
-                  onChange={(e) => setTemplateForm({...templateForm, description: e.target.value})}
-                  placeholder="Введите описание шаблона"
-                />
-              </div>
-
-              <div className="competences-section">
-                <h3>Выберите индикаторы для оценки</h3>
-                <p className="hint">
-                  Каждая компетенция будет представлена двумя вопросами: 
-                  положительным и отрицательным индикатором.
-                  Компетенции сгруппированы по четырем ПВК.
-                </p>
-                
-                {Object.entries(competenceCategories).map(([category, data]) => (
-                  <div key={category} className="category-group">
-                    <div 
-                      className="category-header"
-                      style={{ borderLeftColor: data.color }}
-                    >
-                      <h4 style={{ color: data.color }}>{category}</h4>
-                      <span className="category-count">
-                        {data.competences.length} индикаторов
-                      </span>
-                    </div>
-                    
-                    <div className="competences-list category-competences">
-                      {data.competences.map(compName => {
-                        const option = competenceOptions.find(
-                          opt => opt.name === compName && opt.category === category
-                        );
-                        if (!option) return null;
-                        
-                        const isSelected = selectedCompetences.some(c => 
-                          c.name === option.name && c.category === option.category
-                        );
-                        
-                        return (
-                          <div key={option.id} className="competence-item">
-                            <label className="competence-select">
-                              <input
-                                type="checkbox"
-                                checked={isSelected}
-                                onChange={(e) => {
-                                  if (e.target.checked) {
-                                    addCompetence(option);
-                                  } else {
-                                    removeCompetence(option.id);
-                                  }
-                                }}
-                              />
-                              <span className="competence-name">{compName}</span>
-                            </label>
-                          </div>
-                        );
-                      })}
-                    </div>
                   </div>
                 ))}
-
-                {selectedCompetences.length > 0 && (
-                  <div className="selected-summary">
-                    <h4>Выбранные компетенции ({selectedCompetences.length}):</h4>
-                    <div className="summary-list">
-                      {Object.entries(competenceCategories).map(([category, data]) => {
-                        const selectedInCategory = selectedCompetences.filter(
-                          c => c.category === category
-                        );
-                        if (selectedInCategory.length === 0) return null;
-                        
-                        return (
-                          <div key={category} className="summary-category">
-                            <span 
-                              className="summary-category-badge"
-                              style={{ backgroundColor: data.color }}
-                            >
-                              {category}
-                            </span>
-                            <div className="summary-category-items">
-                              {selectedInCategory.map(comp => (
-                                <span key={comp.id} className="summary-item">
-                                  {comp.name}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    <p className="summary-hint">
-                      Будет создано {selectedCompetences.length * 2} вопросов 
-                      (положительный и отрицательный индикатор для каждой компетенции)
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              <div className="modal-actions">
-                <button className="save-button" onClick={handleCreateTemplate}>
-                  Создать шаблон
-                </button>
-                <button className="cancel-button" onClick={() => {
-                  setShowCreateTemplate(false);
-                  setSelectedCompetences([]);
-                }}>
-                  Отмена
-                </button>
               </div>
             </div>
+
+            <div className="modal-actions">
+              <button className="save-button" onClick={handleCreateTemplate}>
+                Создать шаблон
+              </button>
+              <button className="cancel-button" onClick={() => {
+                setShowCreateTemplate(false);
+                setSelectedIndicators([]);
+              }}>
+                Отмена
+              </button>
+            </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* МОДАЛКА РЕДАКТИРОВАНИЯ ШАБЛОНА */}
-        {editingTemplate && (
-          <div className="modal-overlay">
-            <div className="modal-content large">
-              <h2>Редактирование шаблона</h2>
-              
+      {/* МОДАЛКА ПРОСМОТРА ОПРОСНИКА */}
+      {selectedPoll && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h2>{selectedPoll.name}</h2>
+              <button className="close-button" onClick={() => setSelectedPoll(null)}>×</button>
+            </div>
+            
+            <div className="poll-detail-info">
+              <div className="info-item">
+                <span className="info-label">Статус:</span>
+                <span className={`status-badge ${getStatusClass(selectedPoll.status)}`}>
+                  {getStatusText(selectedPoll.status)}
+                </span>
+              </div>
+              <div className="info-item">
+                <span className="info-label">Период:</span>
+                <span>
+                  {new Date(selectedPoll.start_datetime).toLocaleString('ru-RU', {
+                    day: 'numeric',
+                    month: 'numeric',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })} - {new Date(selectedPoll.end_datetime).toLocaleString('ru-RU', {
+                    day: 'numeric',
+                    month: 'numeric',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </span>
+              </div>
+              <div className="info-item">
+                <span className="info-label">Создатель:</span>
+                <span>{selectedPoll.creator_name || '—'}</span>
+              </div>
+              <div className="info-item">
+                <span className="info-label">Количество вопросов:</span>
+                <span>{selectedPoll.question_count || 0}</span>
+              </div>
+            </div>
+
+            <div className="modal-actions">
+              <button 
+                className="pass-button"
+                onClick={() => {
+                  setSelectedPoll(null);
+                  navigate(getPollLink(selectedPoll));
+                }}
+                disabled={selectedPoll.status !== 'Активна'}
+              >
+                {selectedPoll.status === 'Активна' ? 'Пройти опрос' : 'Опрос недоступен'}
+              </button>
+              <button className="cancel-button" onClick={() => setSelectedPoll(null)}>
+                Закрыть
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* МОДАЛКА РЕДАКТИРОВАНИЯ ОПРОСНИКА */}
+      {editingPoll && (
+        <div className="modal-overlay">
+          <div className="modal-content large">
+            <h2>Редактирование опросника</h2>
+            
+            <div className="form-group">
+              <label>Название *</label>
+              <input
+                type="text"
+                name="name"
+                value={pollForm.name}
+                onChange={handlePollFormChange}
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Шаблон</label>
+              <select name="template_id" value={pollForm.template_id} onChange={handlePollFormChange}>
+                <option value="">Без шаблона</option>
+                {templates.map(t => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label>Команды</label>
+              <div className="teams-select">
+                {teams.map(team => (
+                  <label key={team.id} className="team-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={pollForm.team_ids.includes(team.id)}
+                      onChange={() => handleTeamSelect(team.id)}
+                    />
+                    {team.name}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="form-row">
               <div className="form-group">
-                <label>Название шаблона *</label>
+                <label>Дата начала *</label>
                 <input
-                  type="text"
-                  value={templateForm.name}
-                  onChange={(e) => setTemplateForm({...templateForm, name: e.target.value})}
-                  placeholder="Введите название шаблона"
+                  type="datetime-local"
+                  name="start_datetime"
+                  value={pollForm.start_datetime}
+                  onChange={handlePollFormChange}
                 />
               </div>
-
               <div className="form-group">
-                <label>Описание</label>
-                <textarea
-                  value={templateForm.description}
-                  onChange={(e) => setTemplateForm({...templateForm, description: e.target.value})}
-                  placeholder="Введите описание шаблона"
+                <label>Дата окончания *</label>
+                <input
+                  type="datetime-local"
+                  name="end_datetime"
+                  value={pollForm.end_datetime}
+                  onChange={handlePollFormChange}
                 />
               </div>
+            </div>
 
-              <div className="competences-section">
-                <h3>Выберите индикаторы для оценки</h3>
-                <p className="hint">
-                  Каждая компетенция будет представлена двумя вопросами: 
-                  положительным и отрицательным индикатором.
-                  Компетенции сгруппированы по четырем ПВК.
-                </p>
-                
-                {Object.entries(competenceCategories).map(([category, data]) => (
-                  <div key={category} className="category-group">
-                    <div 
-                      className="category-header"
-                      style={{ borderLeftColor: data.color }}
-                    >
-                      <h4 style={{ color: data.color }}>{category}</h4>
-                      <span className="category-count">
-                        {data.competences.length} индикаторов
-                      </span>
-                    </div>
-                    
-                    <div className="competences-list category-competences">
-                      {data.competences.map(compName => {
-                        const option = competenceOptions.find(
-                          opt => opt.name === compName && opt.category === category
-                        );
-                        if (!option) return null;
-                        
-                        const isSelected = selectedCompetences.some(c => 
-                          c.name === option.name && c.category === option.category
-                        );
-                        
-                        return (
-                          <div key={option.id} className="competence-item">
-                            <label className="competence-select">
-                              <input
-                                type="checkbox"
-                                checked={isSelected}
-                                onChange={(e) => {
-                                  if (e.target.checked) {
-                                    addCompetence(option);
-                                  } else {
-                                    removeCompetence(option.id);
-                                  }
-                                }}
-                              />
-                              <span className="competence-name">{compName}</span>
-                            </label>
-                          </div>
-                        );
-                      })}
-                    </div>
+            <div className="modal-actions">
+              <button className="save-button" onClick={handleUpdatePoll}>Сохранить</button>
+              <button className="cancel-button" onClick={() => setEditingPoll(null)}>Отмена</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* МОДАЛКА ПРОСМОТРА ШАБЛОНА */}
+      {selectedTemplate && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h2>{selectedTemplate.name}</h2>
+              <button className="close-button" onClick={() => setSelectedTemplate(null)}>×</button>
+            </div>
+            <p>Создатель: {selectedTemplate.creator_name}</p>
+            <p>Создан: {new Date(selectedTemplate.created_at).toLocaleDateString()}</p>
+            <h3>Индикаторы:</h3>
+            {selectedTemplate.indicators?.map((ind, idx) => (
+              <div key={idx}>{idx + 1}. {ind.name}</div>
+            ))}
+            <div className="modal-actions">
+              <button className="cancel-button" onClick={() => setSelectedTemplate(null)}>Закрыть</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* МОДАЛКА РЕДАКТИРОВАНИЯ ШАБЛОНА */}
+      {editingTemplate && (
+        <div className="modal-overlay">
+          <div className="modal-content large">
+            <h2>Редактирование шаблона</h2>
+            <div className="form-group">
+              <label>Название *</label>
+              <input
+                type="text"
+                value={templateForm.name}
+                onChange={(e) => setTemplateForm({...templateForm, name: e.target.value})}
+              />
+            </div>
+            <div className="indicators-section">
+              <h3>Выберите индикаторы</h3>
+              <div className="indicators-list">
+                {allIndicators.map(indicator => (
+                  <div key={indicator.id}>
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={selectedIndicators.some(i => i.id === indicator.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) addIndicator(indicator);
+                          else removeIndicator(indicator.id);
+                        }}
+                      />
+                      {indicator.name}
+                    </label>
                   </div>
                 ))}
-
-                {selectedCompetences.length > 0 && (
-                  <div className="selected-summary">
-                    <h4>Выбранные компетенции ({selectedCompetences.length}):</h4>
-                    <div className="summary-list">
-                      {Object.entries(competenceCategories).map(([category, data]) => {
-                        const selectedInCategory = selectedCompetences.filter(
-                          c => c.category === category
-                        );
-                        if (selectedInCategory.length === 0) return null;
-                        
-                        return (
-                          <div key={category} className="summary-category">
-                            <span 
-                              className="summary-category-badge"
-                              style={{ backgroundColor: data.color }}
-                            >
-                              {category}
-                            </span>
-                            <div className="summary-category-items">
-                              {selectedInCategory.map(comp => (
-                                <span key={comp.id} className="summary-item">
-                                  {comp.name}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    <p className="summary-hint">
-                      Будет создано {selectedCompetences.length * 2} вопросов 
-                      (положительный и отрицательный индикатор для каждой компетенции)
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              <div className="modal-actions">
-                <button className="save-button" onClick={handleUpdateTemplate}>
-                  Сохранить изменения
-                </button>
-                <button className="cancel-button" onClick={() => {
-                  setEditingTemplate(null);
-                  setSelectedCompetences([]);
-                }}>
-                  Отмена
-                </button>
               </div>
             </div>
-          </div>
-        )}
-
-        {/* МОДАЛКА ПРОСМОТРА ШАБЛОНА */}
-        {selectedTemplate && (
-          <div className="modal-overlay">
-            <div className="modal-content large">
-              <div className="modal-header">
-                <h2>{selectedTemplate.name}</h2>
-                <button className="close-button" onClick={() => setSelectedTemplate(null)}>×</button>
-              </div>
-              
-              <p className="template-detail-description">{selectedTemplate.description}</p>
-
-              <div className="template-detail-info">
-                <p><strong>Дата создания:</strong> {new Date(selectedTemplate.created_at).toLocaleDateString()}</p>
-                <p><strong>Количество вопросов:</strong> {selectedTemplate.questions?.length || 0}</p>
-              </div>
-
-              <div className="template-questions-section">
-                <h3>Вопросы в шаблоне:</h3>
-                <div className="template-questions-list">
-                  {selectedTemplate.questions?.map((question, idx) => (
-                    <div key={idx} className="template-question-detail">
-                      <div className="question-header">
-                        <span className="question-number">{idx + 1}</span>
-                        <span className="question-text">{question.text}</span>
-                      </div>
-                      <div className="question-options-preview">
-                        <span className="option-badge positive">Да</span>
-                        <span className="option-badge negative">Нет</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="modal-actions">
-                <button className="edit-button" onClick={() => {
-                  handleEditTemplate(selectedTemplate);
-                  setSelectedTemplate(null);
-                }}>
-                  Редактировать
-                </button>
-                <button className="cancel-button" onClick={() => setSelectedTemplate(null)}>
-                  Закрыть
-                </button>
-              </div>
+            <div className="modal-actions">
+              <button className="save-button" onClick={handleUpdateTemplate}>Сохранить</button>
+              <button className="cancel-button" onClick={() => setEditingTemplate(null)}>Отмена</button>
             </div>
           </div>
-        )}
-
-        {/* МОДАЛКА ПРОСМОТРА ОПРОСНИКА */}
-        {selectedPoll && (
-          <div className="modal-overlay">
-            <div className="modal-content large">
-              <div className="modal-header">
-                <h2>{selectedPoll.name}</h2>
-                <button className="close-button" onClick={() => setSelectedPoll(null)}>×</button>
-              </div>
-              
-              <p className="poll-detail-description">{selectedPoll.description}</p>
-
-              {selectedPoll.template && selectedPoll.template.questions && selectedPoll.template.questions.length > 0 ? (
-                <div className="poll-questions-section">
-                  <h3>Вопросы для оценки:</h3>
-                  <p className="questions-hint">Выберите один из вариантов ответа для каждого вопроса</p>
-                  
-                  <div className="poll-questions-list">
-                    {selectedPoll.template.questions.map((question, idx) => (
-                      <div key={idx} className="poll-question-card">
-                        <div className="poll-question-header">
-                          <span className="question-number">{idx + 1}</span>
-                          <span className="question-text">{question.text}</span>
-                        </div>
-                        
-                        <div className="poll-question-options">
-                          {question.options?.map(opt => (
-                            <label key={opt.value} className="poll-option-label">
-                              <input
-                                type="radio"
-                                name={`question-${idx}`}
-                                value={opt.value}
-                                disabled
-                              />
-                              <span className={`poll-option-badge ${
-                                opt.value === 1 ? 'positive' : 'negative'
-                              }`}>
-                                {opt.label}
-                              </span>
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <div className="no-questions-message">
-                  <p>В этом опроснике нет вопросов. Выберите шаблон с вопросами при создании.</p>
-                </div>
-              )}
-
-              <div className="poll-detail-info">
-                <div className="info-item">
-                  <span className="info-label">Статус:</span>
-                  <span className={`status-badge ${selectedPoll.status}`}>
-                    {selectedPoll.status === 'active' ? 'Активен' : 
-                     selectedPoll.status === 'draft' ? 'Черновик' : 'Закрыт'}
-                  </span>
-                </div>
-                <div className="info-item">
-                  <span className="info-label">Период:</span>
-                  <span>{new Date(selectedPoll.start_date).toLocaleDateString()} - {new Date(selectedPoll.end_date).toLocaleDateString()}</span>
-                </div>
-                <div className="info-item">
-                  <span className="info-label">Участников:</span>
-                  <span>{selectedPoll.assignments_count || 0} (прошло: {selectedPoll.completed_count || 0})</span>
-                </div>
-              </div>
-
-              <div className="modal-actions">
-                <button className="close-modal-btn" onClick={() => setSelectedPoll(null)}>
-                  Закрыть
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };
