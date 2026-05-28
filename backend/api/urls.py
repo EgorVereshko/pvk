@@ -43,7 +43,7 @@ urlpatterns = [
     # списки форм для проектанта
     path('api/forms/projectant/', get_projectant_forms, name='get_projectant_forms'),
     # для куратора
-    path('api/forms/tutor/', get_tutor_forms, name='get_tutor_forms'),
+    path('api/forms/tutor/', get_all_forms, name='get_tutor_forms'),
     # для организатора
     path('api/forms/all/', get_all_forms, name='get_all_forms'),
     # отдельные формы
