@@ -118,6 +118,16 @@ class Quality(models.Model):
     def __str__(self):
         return f'{self.name}'
 
+    # def get_indicators_ratios(self):
+    #     return {
+    #         f'{indicator.id}: {indicator.ratio}'
+    #         for indicator in
+    #         QualityIndicatorRatio
+    #         .objects
+    #         .filter(quality=self)
+    #         .select_related('quality', 'indicator')
+    #     }
+
 
 class Indicator(models.Model):
     name = models.CharField(max_length=100)

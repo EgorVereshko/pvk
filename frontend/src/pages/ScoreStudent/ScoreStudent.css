@@ -38,7 +38,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 12px 20px;
-  margin-bottom: 24px;
+  margin-bottom: 15px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-radius: 12px;
   color: white;
@@ -508,4 +508,165 @@
   border: 1px solid #cbd5e1;
   font-size: 15px;
   width: 100%;
+}
+
+/* ============================================ */
+/* TOOLTIP STYLES */
+/* ============================================ */
+
+.competence-name-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tooltip-icon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  background: #64748b;
+  color: white;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: help;
+  transition: background 0.2s;
+}
+
+.tooltip-icon:hover {
+  background: #0f172a;
+}
+
+.tooltip-content {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 10px;
+  width: 320px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e2e8f0;
+  z-index: 100;
+  padding: 12px;
+  animation: tooltipFadeIn 0.2s ease;
+}
+
+.tooltip-arrow {
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid white;
+}
+
+.tooltip-values {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tooltip-value {
+  font-size: 12px;
+  line-height: 1.4;
+  padding: 6px;
+  border-radius: 6px;
+}
+
+.tooltip-value.negative {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.tooltip-value.negative strong {
+  color: #dc2626;
+}
+
+.tooltip-value.neutral {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.tooltip-value.neutral strong {
+  color: #64748b;
+}
+
+.tooltip-value.positive {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.tooltip-value.positive strong {
+  color: #10b981;
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .tooltip-content {
+    width: 260px;
+    left: 0;
+    transform: translateX(0);
+  }
+  
+  .tooltip-arrow {
+    left: 15px;
+    transform: translateX(0);
+  }
+}
+
+.form-info-badge {
+  background-color: #667eea;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+/* Стили для поля ввода в окошке слайдера */
+.slider-value-bubble {
+  position: absolute;
+  transform: translateX(-50%);
+  background: #1f2937;
+  border-radius: 20px;
+  padding: 2px 8px;
+  pointer-events: auto;
+  white-space: nowrap;
+}
+
+.value-input {
+  width: 45px;
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  outline: none;
+  padding: 2px 0;
+}
+
+.value-input:focus {
+  outline: none;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
 }

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import api from '../../../api';
+import { useAuth } from '../../../context/AuthContext';
 import './Login.css';
 
 function Login() {
@@ -11,6 +11,7 @@ function Login() {
   const [errors, setErrors] = useState({});
   const [apiError, setApiError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   const validate = () => {
@@ -49,13 +50,10 @@ function Login() {
     setIsSubmitting(true);
 
     try {
-      const response = await api.post('/api/token/', formData);
-      
-      localStorage.setItem('access_token', response.data.access);
-      localStorage.setItem('refresh_token', response.data.refresh);
-      
-      navigate('/profile');
-      
+      await login(formData.username, formData.password);
+      setTimeout(() => {
+        navigate('/profile');
+      }, 100);
     } catch (err) {
       console.error('Ошибка входа:', err);
       
