@@ -3,6 +3,7 @@ from collections import defaultdict
 from django.utils import timezone
 from django.contrib.auth import authenticate, logout, login
 from django.shortcuts import get_object_or_404
+from django.utils.dateparse import parse_datetime
 from rest_framework import status, generics
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -398,8 +399,8 @@ def create_form(request):
         end_datetime_str = data.get('end_datetime')
         
         # Заменяем 'Z' на '+00:00' для корректного парсинга
-        start_datetime = datetime.fromisoformat(start_datetime_str.replace('Z', '+00:00'))
-        end_datetime = datetime.fromisoformat(end_datetime_str.replace('Z', '+00:00'))
+        start_datetime = parse_datetime(start_datetime_str.replace('Z', '+00:00'))
+        end_datetime = parse_datetime(end_datetime_str.replace('Z', '+00:00'))
 
         form_status = 'Запланирована'
         if start_datetime < timezone.now():
@@ -435,8 +436,8 @@ def update_form(request, form_id):
         data = request.data
         name = data.get('name')
         form_type = data.get('type')
-        start_datetime = datetime.fromisoformat(data.get('start_datetime'))
-        end_datetime = datetime.fromisoformat(data.get('end_datetime'))
+        start_datetime = parse_datetime(data.get('start_datetime'))
+        end_datetime = parse_datetime(data.get('end_datetime'))
 
         if form_type != 'Оценка 360':
             template_id = data.get('template_id')
