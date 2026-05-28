@@ -12,7 +12,8 @@ urlpatterns = [
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     # получить профиль текущего пользователя
     path('api/user/', get_user, name='get_current_user'),
-    path('api/students/', get_students, name='get_students'),
+    # path('api/students/', get_students, name='get_students'),
+    path('api/students/', get_projectants, name='get_students'),
     # получить профиль по id (чтобы организатор мог получить профиль конкретного проектанта)
     path('api/user/<int:user_id>/', get_user, name='get_user_by_id'),
     path('api/user/update/', update_user, name='update_user'),

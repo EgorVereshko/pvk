@@ -101,18 +101,44 @@ def get_qualities(profile):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_projectants(request):
+    """
+    Возвращает список студентов в формате:
+    'id': student.id,  # ID профиля
+    'user_id': student.user.id,  # РЕАЛЬНЫЙ ID пользователя для перехода!
+    'short_name': 'Иванов И.И.',
+    'full_name': 'Иванов Иван Иванович',
+    'last_name': 'Иванов',
+    'first_name': 'Иван',
+    'middle_name': 'Иванович',
+    'average_score': 2.1
+    """
     projectant_roles = UserRole.objects.filter(role='Проектант').select_related('user')
     projectants = [role.user for role in projectant_roles]
 
     result = []
     for projectant in projectants:
+        qualities = get_qualities(projectant)
+
+        s = 0
+        count = 0
+        for q_score in qualities:
+            s += q_score['score']
+            count += 1
+
+        average_score = s / count
+
         result.append({
-            'full_name': projectant.full_name(),
-            'scores': get_qualities(projectant),
+            'id': projectant.id,  # ID профиля
+            'user_id': projectant.user.id,  # РЕАЛЬНЫЙ ID пользователя для перехода!
+            'short_name': f"{projectant.short_name()}.",
+            'full_name': f"{projectant.full_name()}",
+            'last_name': projectant.last_name,
+            'first_name': projectant.first_name,
+            'middle_name': projectant.middle_name,
+            'average_score': average_score
         })
 
-    serializer = ProjectantsListSerializer(result, many=True)
-    return Response(serializer.data)
+    return Response(result)
 
 
 @api_view(['GET'])
