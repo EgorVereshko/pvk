@@ -274,13 +274,11 @@ const ScoreStudent = () => {
       if (formId) {
         await markFormAsCompleted();
         setSaveMessage('Оценки успешно сохранены!');
-        
         setTimeout(() => {
-          navigate('/form360');
-        }, 1500);
+          setSaveMessage('');
+        }, 3000);
       } else {
         setSaveMessage('Оценки успешно сохранены!');
-        
         setTimeout(() => {
           setSaveMessage('');
         }, 3000);

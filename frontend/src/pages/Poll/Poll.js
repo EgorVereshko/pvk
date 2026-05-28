@@ -506,14 +506,16 @@ const Poll = () => {
                     </div>
                   </div>
                   <div className="poll-item-footer">
-                    <button 
-                      className="pass-button"
-                      onClick={() => navigate(getPollLink(poll))}
-                      disabled={poll.status !== 'Активна'}
-                    >
-                      {poll.status === 'Активна' ? 'Пройти опрос' : 
-                       poll.status === 'Запланирована' ? 'Скоро начнётся' : 'Завершён'}
-                    </button>
+                    {userRole === 'Проектант' && (
+                      <button 
+                        className="pass-button"
+                        onClick={() => navigate(getPollLink(poll))}
+                        disabled={poll.status !== 'Активна'}
+                      >
+                        {poll.status === 'Активна' ? 'Пройти опрос' : 
+                        poll.status === 'Запланирована' ? 'Скоро начнётся' : 'Завершён'}
+                      </button>
+                    )}
                     <button 
                       className="view-button"
                       onClick={() => fetchPollDetails(poll)}
@@ -711,6 +713,7 @@ const Poll = () => {
             </div>
 
             <div className="modal-actions">
+              {userRole === 'Проектант' && (
               <button 
                 className="pass-button"
                 onClick={() => {
@@ -721,6 +724,7 @@ const Poll = () => {
               >
                 {selectedPoll.status === 'Активна' ? 'Пройти опрос' : 'Опрос недоступен'}
               </button>
+              )}
               <button className="cancel-button" onClick={() => setSelectedPoll(null)}>
                 Закрыть
               </button>

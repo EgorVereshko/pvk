@@ -175,6 +175,11 @@ const Profile = () => {
   const displayUser = isOwnProfile ? user : profileUser;
   const isProjectant = userRole === 'Проектант';
 
+  const getUserRole = (role) => {
+    if (!role) return 'Проектант';
+    return role;
+  };
+
   useEffect(() => {
     fetchUserProfile();
   }, [id]);
@@ -247,6 +252,7 @@ const Profile = () => {
     : `Профиль: ${displayUser?.first_name} ${displayUser?.last_name}`;
 
   const teamName = displayUser?.team_name || 'Без команды';
+  const displayRole = getUserRole(displayUser?.role || userRole);
 
   return (
     <div className="profile-container">
@@ -273,8 +279,9 @@ const Profile = () => {
 
                 <div className="lk-text">
                   <h3>{displayUser?.first_name} {displayUser?.last_name}</h3>
-                  <p>{displayUser?.university || 'Университет не указан'}</p>
+                  <p>{displayUser?.university || 'УрФУ'}</p>
                   <p>{teamName}</p>
+                  <p className="user-role">Роль: {displayRole}</p>
                 </div>
               </div>
 
