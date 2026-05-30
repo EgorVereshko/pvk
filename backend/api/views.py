@@ -1143,11 +1143,93 @@ def submit_360_form(request):
         return Response({'error': f'Ошибка сохранения: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+# @api_view(['POST'])
+# @permission_classes([IsAuthenticated, IsTutorOrOrganizer])
+# def submit_check_list_form(request):
+#     pass
+
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated, IsTutorOrOrganizer])
 def submit_check_list_form(request):
-    pass
+    """
+    Принимает и сохраняет оценки чек-листа.
 
+    Ожидаемый формат данных:
+    {
+        'form_id': 1,
+        'evaluator_id': 3,
+        'evaluated_projectants': [
+            {
+                'evaluated_projectant_id': 5,
+                'scores': [
+                    {'indicator_id': 1, 'score': -1},
+                    {'indicator_id': 2, 'score': 0},
+                    {'indicator_id': 3, 'score': 1}
+                ]
+            }
+        ]
+    }
+    """
+    try:
+        data = request.data
+        form_id = data.get('form_id')
+        evaluator_id = data.get('evaluator_id')
+        evaluated_projectants = data.get('evaluated_projectants', [])
+        
+        # Проверяем существование формы
+        form = get_object_or_404(AssessmentForm, id=form_id)
+        
+        # Проверяем, что форма активна
+        form.update_status()
+        if form.status != 'Активна':
+            return Response(
+                {'error': 'Форма не активна. Нельзя отправить оценку.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Проверяем, что это чек-лист
+        if form.type != 'Чек-лист':
+            return Response(
+                {'error': 'Эта форма не является чек-листом.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Получаем оценивающего
+        evaluator = get_object_or_404(UserProfile, user_id=evaluator_id) if evaluator_id else get_object_or_404(UserProfile, user=request.user)
+        
+        # Сохраняем оценки
+        records_to_create = []
+        for projectant_data in evaluated_projectants:
+            evaluated_projectant_id = projectant_data.get('evaluated_projectant_id')
+            scores_list = projectant_data.get('scores', [])
+            
+            for score_item in scores_list:
+                indicator_id = score_item.get('indicator_id')
+                score_value = score_item.get('score')
+                
+                records_to_create.append(IndicatorScoresRegister(
+                    evaluated_projectant_id=evaluated_projectant_id,
+                    evaluator=evaluator,
+                    form=form,
+                    indicator_id=indicator_id,
+                    score=score_value,
+                ))
+        
+        if records_to_create:
+            IndicatorScoresRegister.objects.bulk_create(records_to_create)
+        
+        return Response({
+            'message': 'Оценки чек-листа успешно сохранены',
+            'form_id': form.id,
+            'form_name': form.name
+        }, status=status.HTTP_201_CREATED)
+        
+    except Exception as e:
+        return Response(
+            {'error': f'Ошибка сохранения: {str(e)}'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
 # @api_view(['POST'])
 # @permission_classes([IsAuthenticated, IsTutorOrOrganizer])

@@ -60,8 +60,8 @@ urlpatterns = [
     path('api/forms/fill/<int:form_id>/', get_form_to_fill, name='get_360'),
     # получение данных форм
     path('api/forms/submit/360', submit_360_form, name='submit_360'),
-    path('api/forms/submit/check_list', submit_check_list_form, name='submit_360'),
-    path('api/forms/submit/poll', submit_poll_form, name='submit_360'),
+    path('api/forms/submit/check_list', submit_check_list_form, name='submit_check_list'),
+    path('api/forms/submit/poll', submit_poll_form, name='submit_poll'),
 ]
 
 if settings.DEBUG:
