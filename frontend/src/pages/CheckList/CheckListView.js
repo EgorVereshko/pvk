@@ -176,7 +176,9 @@
 
 
 
-// Отоюражение локал данных
+
+
+// Отображение локал данных
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -195,17 +197,17 @@ const CheckListView = () => {
   const navigate = useNavigate();
 
   const testStudents = [
-    { id: 1, name: 'Олегов О.О.' },
-    { id: 2, name: 'Петров П.П.' },
-    { id: 3, name: 'Исаев А.А.' }
+    { id: 1, name: 'Петров П.П.' },
+    { id: 2, name: 'Исаев А.А.' },
+    { id: 3, name: 'Максимов М.М.' }
   ];
 
-  const testQualities = ['Обучаемость', 'Организованность', 'Работа в команде', 'Вовлеченность'];
+  const testQualities = ['Умение анализировать, выявлять существенное', 'Поведение в ситуации неопределенности', 'Умение планировать'];
 
   const testScores = [
     [-1, 0, 1, -1],
-    [0, 1, 1, 0],
-    [1, -1, 0, 1]
+    [-1, -1, 1, 0],
+    [0, -1, 1, 1]
   ];
 
   useEffect(() => {
