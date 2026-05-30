@@ -1318,10 +1318,44 @@ def submit_poll_form(request):
 #     evaluated_projectants = [record.evaluated_projectant for record in scores]
 #     qualities = [record.quality for record in scores]
 
+# @api_view(['GET'])
+# @permission_classes([IsAuthenticated, IsOrganizer])
+# def get_assessment_models(request):
+#     pass
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated, IsOrganizer])
 def get_assessment_models(request):
-    pass
+    """
+    Возвращает все модели оценивания
+    """
+    try:
+        models = AssessmentModel.objects.all()
+        result = []
+        
+        for model in models:
+            ratios = QualityIndicatorRatio.objects.filter(model=model).select_related('quality', 'indicator')
+            
+            result.append({
+                'id': model.id,
+                'name': model.name,
+                'status': model.status,
+                'qualities_indicators_ratios': [
+                    {
+                        'quality_id': record.quality.id,
+                        'quality_name': record.quality.name,
+                        'indicator_id': record.indicator.id,
+                        'indicator_name': record.indicator.name,
+                        'ratio': record.ratio,
+                    }
+                    for record in ratios
+                ]
+            })
+        
+        return Response(result, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['POST'])
