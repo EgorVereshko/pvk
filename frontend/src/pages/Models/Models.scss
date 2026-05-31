@@ -1,4 +1,7 @@
-/* Models.css */
+/* ============================================ */
+/* MODELS PAGE - Quality Models Management */
+/* ============================================ */
+
 .models-container {
   min-height: 100vh;
   background: #f8fafc;
@@ -164,7 +167,10 @@
   padding: 2rem;
 }
 
-/* Модальное окно */
+/* ============================================ */
+/* MODAL WINDOW */
+/* ============================================ */
+
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -346,6 +352,10 @@
   font-size: 1rem;
   color: #64748b;
 }
+
+/* ============================================ */
+/* RESPONSIVE DESIGN */
+/* ============================================ */
 
 @media (max-width: 768px) {
   .models-content {

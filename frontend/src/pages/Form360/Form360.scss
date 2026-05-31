@@ -60,25 +60,6 @@
   font-size: 0.9rem;
 }
 
-/* .form-group input,
-.form-group select,
-.form-group textarea {
-  padding: 0.75rem 1rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  font-size: 0.95rem;
-  transition: all 0.2s;
-}
-
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
-  outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-} */
-
-/* Helper text */
 .hint {
   font-size: 0.8rem;
   color: #94a3b8;
@@ -91,63 +72,155 @@
 
 .qualities-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 0.75rem;
-  margin: 0.5rem 0;
+  margin: 0.5rem 0 1rem;
 }
 
 .quality-checkbox {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem;
-  background: #f8fafc;
-  border-radius: 8px;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
 }
 
 .quality-checkbox:hover {
-  background: #f1f5f9;
+  border-color: #cbd5e0;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
-.quality-checkbox input {
-  width: 18px;
-  height: 18px;
+.quality-checkbox:has(input:checked) {
+  background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+  border-color: #667eea;
 }
 
-.quality-checkbox span {
+.quality-checkbox:has(input:checked)::before {
+  content: '✓';
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 24px;
+  height: 24px;
+  background: #667eea;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  transform: rotate(0deg);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+}
+
+.quality-checkbox input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.quality-checkbox .checkbox-custom {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #cbd5e0;
+  border-radius: 6px;
+  background: white;
+  transition: all 0.2s ease;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.quality-checkbox:has(input:checked) .checkbox-custom {
+  background: #667eea;
+  border-color: #667eea;
+}
+
+.quality-checkbox:has(input:checked) .checkbox-custom::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.quality-checkbox .checkbox-text {
   font-size: 0.9rem;
+  font-weight: 500;
   color: #334155;
+  transition: color 0.2s;
 }
 
-/* Add custom quality row */
+.quality-checkbox:has(input:checked) .checkbox-text {
+  color: #4c51bf;
+}
+
+.quality-checkbox .quality-icon {
+  width: 28px;
+  height: 28px;
+  background: #f1f5f9;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.quality-checkbox:has(input:checked) .quality-icon {
+  background: #667eea;
+  color: white;
+}
+
 .add-quality-row {
   display: flex;
   gap: 0.75rem;
   margin-top: 0.5rem;
+  background: #f8fafc;
+  padding: 1rem;
+  border-radius: 12px;
 }
 
 .quality-input {
   flex: 1;
-  padding: 0.75rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
   font-size: 0.9rem;
+  transition: all 0.2s;
+  background: white;
+}
+
+.quality-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
 .add-quality-btn {
   padding: 0.75rem 1.5rem;
-  background: #f1f5f9;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border: none;
-  border-radius: 10px;
-  color: #334155;
+  border-radius: 12px;
+  color: white;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .add-quality-btn:hover {
-  background: #e2e8f0;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
 /* ============================================ */
@@ -227,7 +300,6 @@
   background: #1e293b;
 }
 
-/* Tabs */
 .form360-tabs {
   display: flex;
   gap: 1rem;
@@ -260,7 +332,6 @@
   background: #0f172a;
 }
 
-/* Forms list */
 .forms-list {
   display: flex;
   flex-direction: column;
@@ -292,7 +363,6 @@
   color: #0f172a;
 }
 
-/* Status badges */
 .status-badge {
   padding: 0.25rem 0.75rem;
   border-radius: 20px;
@@ -308,6 +378,15 @@
 .status-badge.closed {
   background: #f1f5f9;
   color: #475569;
+}
+
+.status-badge.completed {
+  background-color: #48bb78;
+  color: white;
+}
+
+.status-badge.completed::before {
+  content: '✓ ';
 }
 
 .form-item-details {
@@ -350,6 +429,8 @@
 .form-item-actions {
   display: flex;
   justify-content: flex-end;
+  gap: 0.5rem;
+  align-items: center;
 }
 
 .start-btn {
@@ -371,6 +452,32 @@
 .start-btn:disabled {
   background: #cbd5e1;
   cursor: not-allowed;
+}
+
+.start-btn.completed {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.delete-form-btn {
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background 0.2s;
+  color: #ef4444;
+}
+
+.delete-form-btn:hover {
+  background: #fee2e2;
+}
+
+.form-actions-buttons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 /* ============================================ */
@@ -458,14 +565,12 @@
   border-radius: 20px;
 }
 
-/* Two-column layout for pass form */
 .pass-body {
   display: grid;
   grid-template-columns: 300px 1fr;
   gap: 2rem;
 }
 
-/* Students list sidebar */
 .students-list h3 {
   font-size: 1rem;
   font-weight: 600;
@@ -510,7 +615,6 @@
   border-left: 3px solid #10b981;
 }
 
-/* Student avatar */
 .student-avatar {
   width: 40px;
   height: 40px;
@@ -544,7 +648,6 @@
   border-radius: 10px;
 }
 
-/* Evaluation section */
 .evaluation-section {
   background: #f8fafc;
   border-radius: 16px;
@@ -558,7 +661,6 @@
   margin-bottom: 1rem;
 }
 
-/* Scores grid */
 .scores-grid {
   display: flex;
   flex-direction: column;
@@ -586,7 +688,6 @@
   gap: 0.5rem;
 }
 
-/* Score option buttons */
 .score-option {
   display: flex;
   align-items: center;
@@ -613,7 +714,6 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* Negative score style */
 .score-value.negative {
   background: #fee2e2;
   color: #991b1b;
@@ -625,7 +725,6 @@
   color: white;
 }
 
-/* Neutral score style */
 .score-value.neutral {
   background: #f1f5f9;
   color: #475569;
@@ -637,7 +736,6 @@
   color: white;
 }
 
-/* Positive score style */
 .score-value.positive {
   background: #d1fae5;
   color: #065f46;
@@ -649,7 +747,6 @@
   color: white;
 }
 
-/* Submit button */
 .submit-scores-btn {
   width: 100%;
   padding: 0.75rem;
@@ -736,210 +833,4 @@
     padding: 0.35rem 0.75rem;
     font-size: 0.75rem;
   }
-}
-
-.form-actions-buttons {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.delete-form-btn {
-  background: none;
-  border: none;
-  font-size: 1.1rem;
-  cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 6px;
-  transition: background 0.2s;
-  color: #ef4444;
-}
-
-.delete-form-btn:hover {
-  background: #fee2e2;
-}
-
-/* ============================================ */
-/* STATUS BADGE */
-/* ============================================ */
-
-.status-badge.completed {
-  background-color: #48bb78;
-  color: white;
-}
-
-.status-badge.completed::before {
-  content: '✓ ';
-}
-
-.start-btn.completed {
-  background-color: #9ca3af;
-  cursor: not-allowed;
-}
-
-/* ============================================ */
-/* QUALITIES SELECTION - КРАСИВЫЕ ЧЕКБОКСЫ */
-/* ============================================ */
-
-.qualities-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 0.75rem;
-  margin: 0.5rem 0 1rem;
-}
-
-/* Красивый чекбокс в стиле карточки */
-.quality-checkbox {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  background: white;
-  border: 2px solid #e2e8f0;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  position: relative;
-  overflow: hidden;
-}
-
-.quality-checkbox:hover {
-  border-color: #cbd5e0;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-}
-
-/* Стиль для выбранного чекбокса */
-.quality-checkbox:has(input:checked) {
-  background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
-  border-color: #667eea;
-}
-
-.quality-checkbox:has(input:checked)::before {
-  content: '✓';
-  position: absolute;
-  top: -8px;
-  right: -8px;
-  width: 24px;
-  height: 24px;
-  background: #667eea;
-  color: white;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  transform: rotate(0deg);
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
-}
-
-/* Скрываем стандартный чекбокс */
-.quality-checkbox input[type="checkbox"] {
-  position: absolute;
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-/* Кастомный индикатор */
-.quality-checkbox .checkbox-custom {
-  width: 20px;
-  height: 20px;
-  border: 2px solid #cbd5e0;
-  border-radius: 6px;
-  background: white;
-  transition: all 0.2s ease;
-  position: relative;
-  flex-shrink: 0;
-}
-
-.quality-checkbox:has(input:checked) .checkbox-custom {
-  background: #667eea;
-  border-color: #667eea;
-}
-
-.quality-checkbox:has(input:checked) .checkbox-custom::after {
-  content: '✓';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  color: white;
-  font-size: 12px;
-  font-weight: bold;
-}
-
-/* Текст качества */
-.quality-checkbox .checkbox-text {
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: #334155;
-  transition: color 0.2s;
-}
-
-.quality-checkbox:has(input:checked) .checkbox-text {
-  color: #4c51bf;
-}
-
-/* Иконка качества (декоративная) */
-.quality-checkbox .quality-icon {
-  width: 28px;
-  height: 28px;
-  background: #f1f5f9;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  transition: all 0.2s;
-}
-
-.quality-checkbox:has(input:checked) .quality-icon {
-  background: #667eea;
-  color: white;
-}
-
-/* ============================================ */
-/* Кнопка добавления нового качества */
-/* ============================================ */
-
-.add-quality-row {
-  display: flex;
-  gap: 0.75rem;
-  margin-top: 0.5rem;
-  background: #f8fafc;
-  padding: 1rem;
-  border-radius: 12px;
-}
-
-.quality-input {
-  flex: 1;
-  padding: 0.75rem 1rem;
-  border: 2px solid #e2e8f0;
-  border-radius: 12px;
-  font-size: 0.9rem;
-  transition: all 0.2s;
-  background: white;
-}
-
-.quality-input:focus {
-  outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
-.add-quality-btn {
-  padding: 0.75rem 1.5rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: none;
-  border-radius: 12px;
-  color: white;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.add-quality-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
