@@ -746,3 +746,296 @@ select:disabled {
   height: 100vh;
   font-size: 18px;
 }
+
+/* Стили для выбора индикаторов */
+.table-wrapper {
+  overflow-x: auto;
+  margin-bottom: 20px;
+}
+
+.checklist-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  font-size: 14px;
+  table-layout: fixed;
+}
+
+.indicators-selection {
+  margin-top: 20px;
+  padding: 15px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.indicators-selection label {
+  font-weight: 600;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.selected-indicators-list {
+  margin: 10px 0;
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: white;
+}
+
+.selected-indicator-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.selected-indicator-item:last-child {
+  border-bottom: none;
+}
+
+.indicator-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.indicator-name {
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.indicator-quality-badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  background: #e2e8f0;
+  border-radius: 12px;
+  color: #475569;
+}
+
+.remove-indicator-btn {
+  background: none;
+  border: none;
+  color: #ef4444;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.remove-indicator-btn:hover {
+  color: #dc2626;
+}
+
+.empty-indicators {
+  padding: 20px;
+  text-align: center;
+  color: #94a3b8;
+}
+
+.add-indicator-section {
+  margin-top: 12px;
+}
+
+.indicator-select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: white;
+  font-size: 14px;
+}
+
+.form-actions-step1 {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.save-template-btn {
+  padding: 10px 20px;
+  background: #f59e0b;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.save-template-btn:disabled {
+  background: #fcd34d;
+  cursor: not-allowed;
+}
+
+.loading-small {
+  padding: 20px;
+  text-align: center;
+  color: #94a3b8;
+}
+
+/* Стили для таблицы чек-листа - студенты по вертикали, индикаторы по горизонтали */
+.table-wrapper {
+  overflow-x: auto;
+  margin-bottom: 20px;
+}
+
+.checklist-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  font-size: 14px;
+}
+
+.checklist-table th,
+.checklist-table td {
+  border: 1px solid #e2e8f0;
+  padding: 12px;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.checklist-table th {
+  background: #f8fafc;
+  font-weight: 600;
+  color: #1e293b;
+  min-width: 120px;
+  position: relative;
+}
+
+.student-name-cell {
+  background: #f8fafc;
+  font-weight: 500;
+  text-align: left;
+  min-width: 150px;
+}
+
+.student-name {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.indicator-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  position: relative;
+}
+
+.indicator-header-name {
+  font-weight: 600;
+  color: #0f172a;
+  font-size: 14px;
+}
+
+.indicator-header-quality {
+  font-size: 10px;
+  color: #64748b;
+  background: #e2e8f0;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.remove-indicator-table-btn {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #fee2e2;
+  border: none;
+  color: #ef4444;
+  font-size: 14px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.remove-indicator-table-btn:hover {
+  background: #fecaca;
+  color: #dc2626;
+}
+
+.score-select {
+  width: 70px;
+  padding: 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 14px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.score-select:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.add-indicator-table {
+  margin: 15px 0;
+}
+
+.actions {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.actions button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.actions button:first-child {
+  background: #48bb78;
+  color: white;
+}
+
+.actions button:first-child:hover {
+  background: #38a169;
+}
+
+.actions button:last-child {
+  background: #a0aec0;
+  color: white;
+}
+
+.actions button:last-child:hover {
+  background: #718096;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .checklist-table th,
+  .checklist-table td {
+    padding: 8px;
+  }
+  
+  .score-select {
+    width: 55px;
+    padding: 6px;
+    font-size: 12px;
+  }
+  
+  .indicator-header-name {
+    font-size: 11px;
+  }
+  
+  .indicator-header-quality {
+    font-size: 9px;
+  }
+  
+  .student-name {
+    font-size: 12px;
+  }
+}

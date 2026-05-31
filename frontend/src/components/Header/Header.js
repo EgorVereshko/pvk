@@ -79,7 +79,7 @@ const Header = () => {
       </button>
       {(!isProjectant()) && (
         <button onClick={handleEventsClick} className="header__item header__button">
-          Оценочные мероприятия
+          Чек-листы
         </button>
       )}
       <button onClick={handlePollsClick} className="header__item header__button">
