@@ -1,0 +1,1019 @@
+/* ============================================ */
+/* CHECKLIST PAGE - Create and Manage Checklists */
+/* ============================================ */
+
+.checklist-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.checklist-content {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.checklist-card {
+  background: white;
+  border-radius: 10px;
+  padding: 30px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+}
+
+.checklist-card h1 {
+  text-align: center;
+  color: #333;
+  margin-bottom: 30px;
+}
+
+/* ============================================ */
+/* FORM STEP - Step 1 (Create Form) */
+/* ============================================ */
+
+.form-step {
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  color: #555;
+  font-weight: 500;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 16px;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.required {
+  color: #e53e3e;
+  font-weight: bold;
+}
+
+.hint {
+  display: block;
+  color: #718096;
+  font-size: 12px;
+  margin-top: 5px;
+  font-style: italic;
+}
+
+.next-button {
+  width: 100%;
+  padding: 12px;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.next-button:hover {
+  background: #5a67d8;
+}
+
+/* ============================================ */
+/* TABLE STEP - Step 2 (Scores Entry) */
+/* ============================================ */
+
+.table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.edit-template-button {
+  padding: 8px 16px;
+  background: #48bb78;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.edit-template-button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.checklist-table-wrapper {
+  overflow-x: auto;
+  margin-bottom: 20px;
+}
+
+.checklist-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+}
+
+.checklist-table th,
+.checklist-table td {
+  border: 1px solid #ddd;
+  padding: 12px;
+  text-align: center;
+}
+
+.checklist-table th {
+  background: #f7fafc;
+  font-weight: 600;
+  color: #4a5568;
+}
+
+.checklist-table th input {
+  width: 100%;
+  padding: 5px;
+  border: 1px solid #cbd5e0;
+  border-radius: 3px;
+  text-align: center;
+}
+
+.quality-cell {
+  background: #f7fafc;
+  font-weight: 500;
+  color: #2d3748;
+}
+
+.checklist-table select {
+  width: 100%;
+  padding: 5px;
+  border: 1px solid #cbd5e0;
+  border-radius: 3px;
+  background: white;
+}
+
+select:disabled {
+  background-color: #e2e8f0;
+  cursor: not-allowed;
+}
+
+.student-select {
+  width: 100%;
+  padding: 5px;
+  border: 1px solid #cbd5e0;
+  border-radius: 3px;
+  background: white;
+  font-size: 14px;
+}
+
+.student-select:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+/* ============================================ */
+/* TABLE ACTIONS - Bottom Buttons */
+/* ============================================ */
+
+.table-actions {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+.template-button {
+  padding: 12px 30px;
+  background: #ed8936;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.template-button:hover {
+  background: #dd6b20;
+}
+
+.save-button {
+  padding: 12px 30px;
+  background: #48bb78;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.save-button:hover {
+  background: #38a169;
+}
+
+.back-button {
+  padding: 12px 30px;
+  background: #a0aec0;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.back-button:hover {
+  background: #718096;
+}
+
+/* ============================================ */
+/* COMPETENCE MANAGEMENT */
+/* ============================================ */
+
+.quality-with-remove {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
+}
+
+.remove-competence {
+  background: none;
+  border: none;
+  color: #f56565;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0 5px;
+  border-radius: 3px;
+}
+
+.remove-competence:hover {
+  background: #fff5f5;
+  color: #e53e3e;
+}
+
+.add-competence-section {
+  display: flex;
+  gap: 10px;
+  margin: 20px 0;
+  padding: 15px;
+  background: #f7fafc;
+  border-radius: 5px;
+  align-items: center;
+}
+
+.competence-input {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #cbd5e0;
+  border-radius: 5px;
+  font-size: 14px;
+}
+
+.competence-input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.add-competence-button {
+  padding: 10px 20px;
+  background: #48bb78;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.add-competence-button:hover {
+  background: #38a169;
+}
+
+/* ============================================ */
+/* CHECKLIST VIEW MODE */
+/* ============================================ */
+
+.checklist-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.edit-button {
+  padding: 8px 16px;
+  background: #4299e1;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.delete-button {
+  padding: 8px 16px;
+  background: #f56565;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.cancel-button {
+  padding: 8px 16px;
+  background: #a0aec0;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.event-info {
+  background: #f7fafc;
+  padding: 15px;
+  border-radius: 5px;
+  margin-bottom: 20px;
+}
+
+.event-info p {
+  margin: 5px 0;
+}
+
+.score-value {
+  display: inline-block;
+  padding: 5px 10px;
+  background: #ebf4ff;
+  border-radius: 3px;
+  font-weight: 600;
+  color: #2c5282;
+}
+
+.evaluated-student {
+  margin-top: 20px;
+  padding: 15px;
+  background: #f0fff4;
+  border-radius: 5px;
+  color: #276749;
+}
+
+/* ============================================ */
+/* MODAL WINDOW */
+/* ============================================ */
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  padding: 30px;
+  border-radius: 10px;
+  width: 400px;
+  max-width: 90%;
+}
+
+.modal-content h3 {
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.modal-content input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  margin-bottom: 20px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.modal-actions button {
+  padding: 8px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.modal-actions button:first-child {
+  background: #667eea;
+  color: white;
+}
+
+.modal-actions button:last-child {
+  background: #e2e8f0;
+  color: #4a5568;
+}
+
+/* ============================================ */
+/* RESPONSIVE DESIGN */
+/* ============================================ */
+
+@media (max-width: 768px) {
+  .checklist-card {
+    padding: 20px;
+  }
+  
+  .table-actions {
+    flex-direction: column;
+  }
+  
+  .template-button,
+  .save-button,
+  .back-button {
+    width: 100%;
+  }
+  
+  .add-competence-section {
+    flex-direction: column;
+  }
+  
+  .add-competence-button {
+    width: 100%;
+  }
+}
+
+.form-group small {
+  color: #718096;
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+.warning {
+  color: #e53e3e;
+  font-size: 12px;
+  margin-top: 5px;
+  display: block;
+}
+
+.info {
+  color: #38a169;
+  font-size: 12px;
+  margin-top: 5px;
+  display: block;
+}
+
+.student-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.student-name {
+  font-weight: 500;
+  color: #2d3748;
+}
+
+.next-button:disabled {
+  background: #a0aec0;
+  cursor: not-allowed;
+}
+
+.next-button:disabled:hover {
+  background: #a0aec0;
+}
+
+/* CheckList.css */
+.checklist-container {
+  min-height: 100vh;
+  background: #f5f7fa;
+}
+
+.checklist-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.checklist-card {
+  background: white;
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.checklist-card h1 {
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.form-step {
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+.form-group input, .form-group select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+
+.next-button {
+  width: 100%;
+  padding: 12px;
+  background: #4a90e2;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.next-button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  margin-bottom: 20px;
+}
+
+.checklist-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.checklist-table th, .checklist-table td {
+  border: 1px solid #ddd;
+  padding: 10px;
+  text-align: center;
+}
+
+.checklist-table th {
+  background: #f5f5f5;
+  position: relative;
+}
+
+.remove-btn {
+  margin-left: 8px;
+  background: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.checklist-table select {
+  padding: 5px;
+  border-radius: 4px;
+}
+
+.add-quality {
+  display: flex;
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.add-quality input {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+
+.add-quality button {
+  padding: 10px 20px;
+  background: #48bb78;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.actions {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.actions button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.actions button:first-child {
+  background: #ed8936;
+  color: white;
+}
+
+.actions button:nth-child(2) {
+  background: #48bb78;
+  color: white;
+}
+
+.actions button:last-child {
+  background: #a0aec0;
+  color: white;
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  width: 400px;
+  max-width: 90%;
+}
+
+.modal-content input {
+  width: 100%;
+  padding: 10px;
+  margin: 15px 0;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+
+.modal-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.modal-buttons button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.modal-buttons button:first-child {
+  background: #4a90e2;
+  color: white;
+}
+
+.modal-buttons button:last-child {
+  background: #e2e8f0;
+}
+
+.info {
+  display: block;
+  margin-top: 5px;
+  color: #48bb78;
+  font-size: 12px;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  font-size: 18px;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  margin-bottom: 20px;
+}
+
+.checklist-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  font-size: 14px;
+  table-layout: fixed;
+}
+
+.indicators-selection {
+  margin-top: 20px;
+  padding: 15px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.indicators-selection label {
+  font-weight: 600;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.selected-indicators-list {
+  margin: 10px 0;
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: white;
+}
+
+.selected-indicator-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.selected-indicator-item:last-child {
+  border-bottom: none;
+}
+
+.indicator-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.indicator-name {
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.indicator-quality-badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  background: #e2e8f0;
+  border-radius: 12px;
+  color: #475569;
+}
+
+.remove-indicator-btn {
+  background: none;
+  border: none;
+  color: #ef4444;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.remove-indicator-btn:hover {
+  color: #dc2626;
+}
+
+.empty-indicators {
+  padding: 20px;
+  text-align: center;
+  color: #94a3b8;
+}
+
+.add-indicator-section {
+  margin-top: 12px;
+}
+
+.indicator-select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: white;
+  font-size: 14px;
+}
+
+.form-actions-step1 {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.save-template-btn {
+  padding: 10px 20px;
+  background: #f59e0b;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.save-template-btn:disabled {
+  background: #fcd34d;
+  cursor: not-allowed;
+}
+
+.loading-small {
+  padding: 20px;
+  text-align: center;
+  color: #94a3b8;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  margin-bottom: 20px;
+}
+
+.checklist-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  font-size: 14px;
+}
+
+.checklist-table th,
+.checklist-table td {
+  border: 1px solid #e2e8f0;
+  padding: 12px;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.checklist-table th {
+  background: #f8fafc;
+  font-weight: 600;
+  color: #1e293b;
+  min-width: 120px;
+  position: relative;
+}
+
+.student-name-cell {
+  background: #f8fafc;
+  font-weight: 500;
+  text-align: left;
+  min-width: 150px;
+}
+
+.student-name {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.indicator-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  position: relative;
+}
+
+.indicator-header-name {
+  font-weight: 600;
+  color: #0f172a;
+  font-size: 14px;
+}
+
+.indicator-header-quality {
+  font-size: 10px;
+  color: #64748b;
+  background: #e2e8f0;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.remove-indicator-table-btn {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #fee2e2;
+  border: none;
+  color: #ef4444;
+  font-size: 14px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.remove-indicator-table-btn:hover {
+  background: #fecaca;
+  color: #dc2626;
+}
+
+.score-select {
+  width: 70px;
+  padding: 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 14px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.score-select:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.add-indicator-table {
+  margin: 15px 0;
+}
+
+.actions {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.actions button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.actions button:first-child {
+  background: #48bb78;
+  color: white;
+}
+
+.actions button:first-child:hover {
+  background: #38a169;
+}
+
+.actions button:last-child {
+  background: #a0aec0;
+  color: white;
+}
+
+.actions button:last-child:hover {
+  background: #718096;
+}
+
+@media (max-width: 768px) {
+  .checklist-table th,
+  .checklist-table td {
+    padding: 8px;
+  }
+  
+  .score-select {
+    width: 55px;
+    padding: 6px;
+    font-size: 12px;
+  }
+  
+  .indicator-header-name {
+    font-size: 11px;
+  }
+  
+  .indicator-header-quality {
+    font-size: 9px;
+  }
+  
+  .student-name {
+    font-size: 12px;
+  }
+}

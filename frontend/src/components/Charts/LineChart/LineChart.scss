@@ -1,0 +1,169 @@
+/* ============================================ */
+/* LINE CHART - Dynamic Development Chart */
+/* ============================================ */
+
+/* Main chart container */
+.line-chart {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 20px;
+  border: 1px solid #f1f5f9;
+}
+
+/* Chart title */
+.line-chart h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 20px;
+}
+
+/* Scrollable chart container */
+.chart-container {
+  overflow-x: auto;
+  overflow-y: visible;
+  margin: 0 -10px;
+  position: relative;
+}
+
+/* Chart legend container */
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px solid #f1f5f9;
+}
+
+/* Individual legend item */
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #475569;
+}
+
+/* Legend color square */
+.legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+/* Helper note below chart */
+.chart-note {
+  margin-top: 15px;
+  font-size: 11px;
+  color: #94a3b8;
+  font-style: italic;
+}
+
+/* Loading state */
+.chart-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 250px;
+  color: #94a3b8;
+  font-size: 14px;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #f1f5f9;
+}
+
+/* ============================================ */
+/* TOOLTIP STYLES */
+/* ============================================ */
+
+/* Tooltip container */
+.chart-container {
+  position: relative;
+}
+
+/* Tooltip bubble */
+.chart-tooltip {
+  position: absolute;
+  background: #0f172a;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  pointer-events: none;
+  z-index: 100;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  animation: tooltipFadeIn 0.15s ease-out;
+}
+
+/* Tooltip arrow */
+.chart-tooltip::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid #0f172a;
+}
+
+/* Tooltip label (competence name) */
+.tooltip-label {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-bottom: 4px;
+}
+
+/* Tooltip value (score) */
+.tooltip-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: white;
+}
+
+/* Tooltip fade-in animation */
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-90%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-100%);
+  }
+}
+
+/* ============================================ */
+/* RESPONSIVE DESIGN */
+/* ============================================ */
+
+/* Ensure SVG has minimum width for scrolling */
+.chart-container svg {
+  min-width: 450px;
+}
+
+@media (max-width: 768px) {
+  .chart-container svg {
+    min-width: 500px;
+  }
+  
+  /* Mobile tooltip adjustments */
+  .chart-tooltip {
+    padding: 6px 10px;
+    font-size: 10px;
+  }
+  
+  .tooltip-label {
+    font-size: 9px;
+  }
+  
+  .tooltip-value {
+    font-size: 11px;
+  }
+}

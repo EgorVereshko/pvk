@@ -1,0 +1,664 @@
+/* ============================================ */
+/* SCORE STUDENT PAGE - Evaluation Form */
+/* ============================================ */
+
+.score-container {
+  min-height: 100vh;
+  background: #f6f7fb;
+  font-family: Inter, Arial, sans-serif;
+}
+
+.score-content {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+.score-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 30px 40px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
+}
+
+.score-title {
+  text-align: center;
+  font-size: 26px;
+  font-weight: 600;
+  margin-bottom: 30px;
+  color: #1f2937;
+}
+
+/* ============================================ */
+/* TEAM INFO SECTION */
+/* ============================================ */
+
+.team-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  margin-bottom: 15px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  color: white;
+}
+
+.team-name {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.team-deadline {
+  font-size: 14px;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+/* ============================================ */
+/* STUDENT TABS */
+/* ============================================ */
+
+.students-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+  padding: 5px;
+  background: #f3f4f6;
+  border-radius: 10px;
+}
+
+.student-tab {
+  padding: 10px 20px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #4b5563;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex: 1 1 auto;
+  min-width: 120px;
+  text-align: center;
+}
+
+.student-tab:hover {
+  background: #e5e7eb;
+  color: #1f2937;
+}
+
+.student-tab.active {
+  background: #111827;
+  color: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.selected-student-info {
+  margin-bottom: 25px;
+  padding: 12px 16px;
+  background: #f9fafb;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #374151;
+  border-left: 4px solid #111827;
+}
+
+/* ============================================ */
+/* COMPETENCE SLIDERS */
+/* ============================================ */
+
+.competence-sliders {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.competence-row {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  align-items: center;
+  gap: 20px;
+}
+
+.competence-name {
+  font-size: 15px;
+  font-weight: 500;
+  color: #111827;
+}
+
+/* ============================================ */
+/* SLIDER STYLES */
+/* ============================================ */
+
+.slider-wrapper {
+  position: relative;
+  padding-top: 40px;
+  padding-bottom: 40px;
+}
+
+.slider-value-bubble {
+  position: absolute;
+  top: 5px;
+  transform: translateX(-50%);
+  background: #111827;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  min-width: 50px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transition: left 0.05s ease;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.slider-value-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid #111827;
+}
+
+.current-value {
+  display: block;
+  line-height: 1;
+}
+
+.slider-wrapper input[type="range"] {
+  width: 100%;
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 3px;
+  appearance: none;
+  outline: none;
+  position: relative;
+  z-index: 10;
+}
+
+.slider-wrapper input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 24px;
+  height: 24px;
+  background: #111827;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  transition: transform 0.1s ease, background 0.1s ease;
+  z-index: 15;
+  position: relative;
+  margin-top: -9px;
+}
+
+.slider-wrapper input[type="range"]::-moz-range-thumb {
+  width: 24px;
+  height: 24px;
+  background: #111827;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  transition: transform 0.1s ease, background 0.1s ease;
+  z-index: 15;
+  border: none;
+}
+
+.slider-wrapper input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  background: #374151;
+}
+
+.slider-wrapper input[type="range"]::-moz-range-thumb:hover {
+  transform: scale(1.15);
+  background: #374151;
+}
+
+.slider-wrapper input[type="range"]::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 3px;
+}
+
+.slider-wrapper input[type="range"]::-moz-range-track {
+  width: 100%;
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 3px;
+}
+
+.slider-markers {
+  position: absolute;
+  top: 45px;
+  left: 0;
+  right: 0;
+  height: 20px;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.marker {
+  position: absolute;
+  width: 1px;
+  transform: translateX(-50%);
+  bottom: 0;
+}
+
+.marker.major {
+  height: 16px;
+  background: #1f2937;
+  width: 2px;
+  bottom: 10px;
+}
+
+.marker.minor {
+  height: 8px;
+  background: #9ca3af;
+  width: 1px;
+  bottom: 14px;
+}
+
+.slider-labels {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+  z-index: 6;
+  padding: 0 2px;
+}
+
+.slider-label {
+  font-size: 12px;
+  color: #1f2937;
+  font-weight: 500;
+  transform: translateX(-50%);
+  position: relative;
+  left: 0;
+  width: 0;
+  text-align: center;
+}
+
+.slider-label:first-child {
+  transform: translateX(0);
+}
+
+.slider-label:last-child {
+  transform: translateX(-100%);
+}
+
+/* ============================================ */
+/* CHART DIAGRAM SECTION */
+/* ============================================ */
+
+.score-diagram {
+  margin-top: 40px;
+  background: white;
+  border-radius: 14px;
+  padding: 30px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
+  display: flex;
+  justify-content: center;
+}
+
+/* ============================================ */
+/* SAVE SECTION */
+/* ============================================ */
+
+.save-section {
+  margin-top: 40px;
+  text-align: center;
+}
+
+.save-button-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 15px;
+}
+
+.save-button {
+  background: #111827;
+  color: white;
+  border: none;
+  padding: 12px 32px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  min-width: 200px;
+}
+
+.save-button:hover:not(:disabled) {
+  background: #374151;
+}
+
+.save-button:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+.save-message {
+  padding: 10px 15px;
+  border-radius: 6px;
+  font-size: 14px;
+  margin-top: 10px;
+  display: inline-block;
+}
+
+.save-message.success {
+  background-color: #d1fae5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.save-message.error {
+  background-color: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+/* ============================================ */
+/* BACK BUTTON */
+/* ============================================ */
+
+.back-to-forms {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.back-button {
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 8px 16px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.back-button:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+/* ============================================ */
+/* LOADING STATE */
+/* ============================================ */
+
+.loading {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  font-size: 16px;
+}
+
+/* ============================================ */
+/* RESPONSIVE DESIGN */
+/* ============================================ */
+
+@media (max-width: 768px) {
+  .competence-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .score-card {
+    padding: 20px;
+  }
+
+  .save-button {
+    width: 100%;
+    min-width: auto;
+    padding: 14px;
+  }
+  
+  .student-selector {
+    max-width: 100%;
+  }
+  
+  .save-button-container {
+    width: 100%;
+  }
+  
+  .slider-wrapper {
+    padding-top: 45px;
+  }
+  
+  .slider-value-bubble {
+    font-size: 12px;
+    padding: 4px 8px;
+    min-width: 40px;
+  }
+  
+  .students-tabs {
+    flex-direction: column;
+    gap: 5px;
+  }
+  
+  .student-tab {
+    width: 100%;
+    text-align: center;
+    padding: 12px;
+  }
+  
+  .selected-student-info {
+    font-size: 13px;
+    padding: 10px 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .team-info {
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
+  }
+  
+  .students-tabs {
+    padding: 4px;
+  }
+  
+  .student-tab {
+    padding: 10px;
+    font-size: 13px;
+    min-width: auto;
+  }
+}
+
+.student-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 260px;
+  margin-bottom: 30px;
+}
+
+.student-selector label {
+  font-size: 14px;
+  color: #374151;
+}
+
+.student-selector select {
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  font-size: 15px;
+  width: 100%;
+}
+
+/* ============================================ */
+/* TOOLTIP STYLES */
+/* ============================================ */
+
+.competence-name-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tooltip-icon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  background: #64748b;
+  color: white;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: help;
+  transition: background 0.2s;
+}
+
+.tooltip-icon:hover {
+  background: #0f172a;
+}
+
+.tooltip-content {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 10px;
+  width: 320px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e2e8f0;
+  z-index: 100;
+  padding: 12px;
+  animation: tooltipFadeIn 0.2s ease;
+}
+
+.tooltip-arrow {
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid white;
+}
+
+.tooltip-values {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tooltip-value {
+  font-size: 12px;
+  line-height: 1.4;
+  padding: 6px;
+  border-radius: 6px;
+}
+
+.tooltip-value.negative {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.tooltip-value.negative strong {
+  color: #dc2626;
+}
+
+.tooltip-value.neutral {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.tooltip-value.neutral strong {
+  color: #64748b;
+}
+
+.tooltip-value.positive {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.tooltip-value.positive strong {
+  color: #10b981;
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .tooltip-content {
+    width: 260px;
+    left: 0;
+    transform: translateX(0);
+  }
+  
+  .tooltip-arrow {
+    left: 15px;
+    transform: translateX(0);
+  }
+}
+
+.form-info-badge {
+  background-color: #667eea;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.slider-value-bubble {
+  position: absolute;
+  transform: translateX(-50%);
+  background: #1f2937;
+  border-radius: 20px;
+  padding: 2px 8px;
+  pointer-events: auto;
+  white-space: nowrap;
+}
+
+.value-input {
+  width: 45px;
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  outline: none;
+  padding: 2px 0;
+}
+
+.value-input:focus {
+  outline: none;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+}
