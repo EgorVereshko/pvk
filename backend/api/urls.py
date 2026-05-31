@@ -34,8 +34,8 @@ urlpatterns = [
     path('api/teams/<int:team_id>/members/', get_team_members, name='get_team_members'),
 
     # Индикаторы
-    path('api/indicators/', get_indicators, name='get_indicators'),
-    path('api/assessment_models/', get_assessment_models, name='get_assessment_models'),
+    # path('api/indicators/', get_indicators, name='get_indicators'),
+    # path('api/assessment_models/', get_assessment_models, name='get_assessment_models'),
 
     # Шаблоны индикаторов
     path('api/templates/', get_templates, name='get_templates'),
@@ -62,6 +62,19 @@ urlpatterns = [
     path('api/forms/submit/360', submit_360_form, name='submit_360'),
     path('api/forms/submit/check_list', submit_check_list_form, name='submit_check_list'),
     path('api/forms/submit/poll', submit_poll_form, name='submit_poll'),
+
+    # Добавьте эти пути в urlpatterns:
+
+    # Качества и индикаторы
+    path('api/qualities/', get_qualities_list, name='get_qualities_list'),
+    path('api/indicators/', get_indicators_list, name='get_indicators_list'),
+    
+    # Модели оценивания (новые эндпоинты)
+    path('api/assessment_models/', get_assessment_models_list, name='get_assessment_models_list'),
+    path('api/assessment_models/create', create_assessment_model_view, name='create_assessment_model'),
+    path('api/assessment_models/update', update_assessment_model_view, name='update_assessment_model'),
+    path('api/assessment_models/delete', delete_assessment_model_view, name='delete_assessment_model'),
+    path('api/assessment_models/set_active/', set_active_model_view, name='set_active_model'),
 ]
 
 if settings.DEBUG:

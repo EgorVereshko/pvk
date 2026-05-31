@@ -196,3 +196,75 @@ class ProjectantScoresSerializer(serializers.Serializer):
 class Assessment360SubmissionSerializer(serializers.Serializer):
     form_id = serializers.IntegerField()
     evaluated_projectants = ProjectantScoresSerializer(many=True)
+
+
+
+
+
+
+# Добавьте в конец файла serializers.py:
+
+class AssessmentModelSerializer(serializers.ModelSerializer):
+    qualities_indicators_ratios = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = AssessmentModel
+        fields = ['id', 'name', 'status', 'qualities_indicators_ratios']
+    
+    def get_qualities_indicators_ratios(self, obj):
+        ratios = QualityIndicatorRatio.objects.filter(model=obj).select_related('quality', 'indicator')
+        return [
+            {
+                'quality_id': r.quality.id,
+                'quality_name': r.quality.name,
+                'indicator_id': r.indicator.id,
+                'indicator_name': r.indicator.name,
+                'ratio': r.ratio
+            }
+            for r in ratios
+        ]
+
+
+class QualitySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Quality
+        fields = ['id', 'name', 'description']
+
+
+class IndicatorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Indicator
+        fields = ['id', 'name', 'description']
+
+
+class QualityIndicatorRatioSerializer(serializers.ModelSerializer):
+    quality_name = serializers.CharField(source='quality.name', read_only=True)
+    indicator_name = serializers.CharField(source='indicator.name', read_only=True)
+    
+    class Meta:
+        model = QualityIndicatorRatio
+        fields = ['id', 'quality_id', 'quality_name', 'indicator_id', 'indicator_name', 'ratio', 'model_id']
+
+
+class CreateAssessmentModelSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=100)
+    qualities_indicators_ratios = serializers.ListField(
+        child=serializers.DictField(),
+        required=True
+    )
+
+
+class UpdateAssessmentModelSerializer(serializers.Serializer):
+    model_id = serializers.IntegerField()
+    qualities_indicators_ratios = serializers.ListField(
+        child=serializers.DictField(),
+        required=True
+    )
+
+
+class DeleteAssessmentModelSerializer(serializers.Serializer):
+    model_id = serializers.IntegerField()
+
+
+class SetActiveModelSerializer(serializers.Serializer):
+    model_id = serializers.IntegerField()
