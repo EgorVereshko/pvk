@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import './Header.css';
+import './Header.scss';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -58,6 +58,11 @@ const Header = () => {
     setIsMenuOpen(false);
   };
 
+  const handleModelsClick = () => {
+    navigate('/models');
+    setIsMenuOpen(false);
+  };
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (menuRef.current && !menuRef.current.contains(event.target) && 
@@ -88,6 +93,11 @@ const Header = () => {
       {(isOrganizer()) && (
         <button onClick={handleQualitiesClick} className="header__item header__button">
           Качества
+        </button>
+      )}
+      {(isOrganizer()) && (
+        <button onClick={handleModelsClick} className="header__item header__button">
+          Модели
         </button>
       )}
       

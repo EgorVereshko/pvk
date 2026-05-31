@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api';
 import Header from '../../components/Header/Header';
-import './Poll.css';
+import './Poll.scss';
 
 const Poll = () => {
   const [user, setUser] = useState(null);
@@ -44,19 +44,16 @@ const Poll = () => {
     fetchTeams();
     fetchIndicators();
     
-    // Проверка каждые 30 секунд
     const interval = setInterval(() => {
       fetchPolls();
     }, 30000);
     
-    // Проверка при фокусе вкладки
     const handleVisibilityChange = () => {
       if (!document.hidden) {
         fetchPolls();
       }
     };
     
-    // Проверка при возвращении на страницу (для React Router)
     const handleRouteChange = () => {
       fetchPolls();
     };

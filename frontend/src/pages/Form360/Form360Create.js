@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api';
 import Header from '../../components/Header/Header';
-import './Form360.css';
+import './Form360.scss';
 
 const Form360Create = () => {
   const [user, setUser] = useState(null);
@@ -125,7 +125,6 @@ const Form360Create = () => {
     setSaving(true);
     
     try {
-      // Используем существующий эндпоинт /api/forms/create/
       const response = await api.post('/api/forms/create/', {
         name: formData.name,
         type: 'Оценка 360',
@@ -138,7 +137,6 @@ const Form360Create = () => {
       
       alert('Форма 360 успешно создана!');
       
-      // Перенаправляем на список форм, а не на оценку
       navigate('/form360');
       
     } catch (error) {
