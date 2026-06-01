@@ -266,12 +266,12 @@ class QualitiesScoreRegister(models.Model):
     quality = models.ForeignKey(Quality, models.CASCADE, related_name='users_scores')
     model = models.ForeignKey(AssessmentModel, models.CASCADE, related_name='qualities')
     created_at = models.DateTimeField(auto_now_add=True)
-    scores_count = models.IntegerField(default=1)
+    scores_count = models.IntegerField(default=0)
     score = models.FloatField(default=0.0)
 
     def __str__(self):
-        return f'{self.user}: {self.quality} №{self.scores_count} - {self.score}' \
-               f' {self.created_at.strftime("%d.%m.%Y %H:%M")}'
+        return f'{self.user}: {self.quality} №{self.scores_count}: {self.score}' \
+               # f' {self.created_at.strftime("%d.%m.%Y %H:%M")}'
 
 
 class Scores360Register(models.Model):
@@ -296,7 +296,7 @@ class Scores360Register(models.Model):
     score = models.FloatField(default=0.0)
 
     def __str__(self):
-        return f'Оценка 360.  Кто оценил: {self.evaluator}, ' \
+        return f'Форма: {self.form.name} Оценка 360.  Кто оценил: {self.evaluator}, ' \
                f'кого: {self.evaluated_projectant},' \
                f'качество: {self.quality}, оценка: {self.score}, {self.created_at.strftime("%d.%m.%Y %H:%M")}'
 
@@ -310,9 +310,10 @@ class IndicatorScoresRegister(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f'Оценка индикатора.  Кто оценил: {self.evaluator}, ' \
-               f'кого: {self.evaluated_projectant},' \
-               f'индикатор: {self.indicator}, оценка: {self.score}, {self.created_at.strftime("%d.%m.%Y %H:%M")}'
+        return f'Форма: {self.form.name} Оценка индикатора "{self.indicator}": {self.score}.  '\
+                f'Кто оценил: {self.evaluator}, '\
+                f'кого: {self.evaluated_projectant}, '\
+                f'дата: {self.created_at.strftime("%d.%m.%Y %H:%M")}'
 
 
 class AverageIndicatorScoresRegister(models.Model):

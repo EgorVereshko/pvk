@@ -223,6 +223,35 @@ def get_teams(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+def get_team_member_count(request, team_id):
+    """Получение количества участников команды"""
+    try:
+        team = Team.objects.get(id=team_id)
+        count = TeamMember.objects.filter(team=team).count()
+        return Response({'count': count}, status=status.HTTP_200_OK)
+    except Team.DoesNotExist:
+        return Response({'error': 'Команда не найдена'}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_team_members(request, team_id):
+    try:
+        team = Team.objects.get(id=team_id)
+        members = TeamMember.objects.filter(team=team).select_related('member')
+        members_list = [{
+            'id': m.member.id,
+            'name': m.member.short_name(),
+            'full_name': m.member.full_name(),
+            'short_name': m.member.short_name()
+        } for m in members]
+        return Response(members_list, status=status.HTTP_200_OK)
+    except Team.DoesNotExist:
+        return Response({'error': 'Команда не найдена'}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_indicators(request):
     """Получение списка индикаторов"""
     try:
@@ -269,6 +298,42 @@ def get_templates(request):
             })
 
         return Response(templates_data, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_template(request, template_id):
+    """Получение шаблона индикаторов.
+    Отправляет данные в формате:
+    {
+        'id': 1,
+        'name': 'Шаблон 1',
+        'creator_profile_id': 1,
+        'creator_name': Иванов И.И,
+        'created_at': 2026-01-01 12:00:00.000000,
+        'indicators': [{'id': 1, 'name': 'Умение планировать'}]
+    }
+    """
+    try:
+        template = Template.objects.get(id=template_id)
+        indicators_list = template.get_indicators()
+        template_data = {
+            'id': template.id,
+            'name': template.name,
+            'creator_profile_id': template.creator.id,
+            'creator_name': template.creator.short_name(),
+            'created_at': template.created_at,
+            'indicators': [
+                {
+                    'id': indicator.id,
+                    'name': indicator.name
+                }
+                for indicator in indicators_list]}
+
+        return Response(template_data, status=status.HTTP_200_OK)
 
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -419,10 +484,12 @@ def create_form(request):
         data = request.data
         name = data.get('name')
         form_type = data.get('type')
+
         if form_type != 'Оценка 360':
             template_id = data.get('template_id')
         else:
             template_id = None
+
         teams_id = data.get('teams_id')
         start_datetime = parse_datetime(data.get('start_datetime'))
         end_datetime = parse_datetime(data.get('end_datetime'))
@@ -443,7 +510,7 @@ def create_form(request):
         for team_id in teams_id:
             AssessmentFormTeam.objects.create(assessment_form=assessment_form, team_id=team_id)
 
-        return Response(status=status.HTTP_201_CREATED)
+        return Response({'id': assessment_form.id}, status=status.HTTP_201_CREATED)
 
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -1007,7 +1074,7 @@ def submit_360_form(request):
         if records_to_create:
             Scores360Register.objects.bulk_create(records_to_create)
 
-        check_form_completion_and_finalize(form)
+        check_form_completion(form)
 
         return Response({'message': 'Оценки успешно сохранены'}, status=status.HTTP_201_CREATED)
 
@@ -1039,13 +1106,12 @@ def submit_check_list_form(request):
         }
         """
     try:
-        serializer = CheckListSubmissionSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        data = request.data
+        form_id = data.get('form_id')
+        evaluator_id = data.get('evaluator_id')
+        evaluated_projectants = data.get('evaluated_projectants', [])
 
-        validated_data = serializer.validated_data
-        form_id = validated_data['form_id']
-        evaluator_id = validated_data['evaluator_id']
-
+        # Проверяем существование формы
         form = get_object_or_404(AssessmentForm, id=form_id)
 
         form.update_status()
@@ -1062,7 +1128,7 @@ def submit_check_list_form(request):
             )
 
         records_to_create = []
-        for projectant_data in validated_data['evaluated_projectants']:
+        for projectant_data in evaluated_projectants:
             evaluated_projectant_id = projectant_data['evaluated_projectant_id']
 
             for score_item in projectant_data['scores']:
@@ -1080,7 +1146,10 @@ def submit_check_list_form(request):
         if records_to_create:
             IndicatorScoresRegister.objects.bulk_create(records_to_create)
 
-        check_form_completion_and_finalize(form)
+        calculate_checklist_scores(form)
+
+        form.status = 'Завершена'
+        form.save()
 
         return Response({
             'message': 'Оценки чек-листа успешно сохранены',
@@ -1164,7 +1233,7 @@ def submit_poll_form(request):
         if records_to_create:
             IndicatorScoresRegister.objects.bulk_create(records_to_create)
 
-        check_form_completion_and_finalize(form)
+        check_form_completion(form)
 
         return Response({'message': 'Оценки опросника успешно сохранены'}, status=status.HTTP_201_CREATED)
 
@@ -1239,40 +1308,40 @@ def calculate_checklist_scores(form: AssessmentForm):
     period_start = form.start_datetime.date()
     period_end = form.end_datetime.date()
 
-    ind_agg = (IndicatorScoresRegister
-               .objects
-               .filter(created_at__gte=form.start_datetime, created_at__lte=form.end_datetime)
-               .values('evaluated_projectant_id', 'indicator_id')
-               .annotate(avg_score=Avg('score'), count=Count('id')))
+    indicators_aggregated = (IndicatorScoresRegister
+                             .objects
+                             .filter(created_at__gte=form.start_datetime, created_at__lte=form.end_datetime)
+                             .values('evaluated_projectant_id', 'indicator_id')
+                             .annotate(avg_score=Avg('score'), count=Count('id')))
 
     projectant_scores = {}
     projectant_ids = set()
 
-    for rec in ind_agg:
-        p_id = rec['evaluated_projectant_id']
-        i_id = rec['indicator_id']
-        score = rec['avg_score']
-        cnt = rec['count']
+    for record in indicators_aggregated:
+        projectant_id = record['evaluated_projectant_id']
+        indicator_id = record['indicator_id']
+        score = record['avg_score']
+        cnt = record['count']
 
         AverageIndicatorScoresRegister.objects.update_or_create(
-            projectant_id=p_id,
-            indicator_id=i_id,
+            projectant_id=projectant_id,
+            indicator_id=indicator_id,
             period_start=period_start,
             period_end=period_end,
             defaults={'average_score': score, 'scores_count': cnt}
         )
 
-        projectant_scores.setdefault(p_id, {})[i_id] = score
-        projectant_ids.add(p_id)
+        projectant_scores.setdefault(projectant_id, {})[indicator_id] = score
+        projectant_ids.add(projectant_id)
 
     # 2. Загружаем коэффициенты влияния в память: {quality_id: {indicator_id: ratio}}
     ratios_qs = QualityIndicatorRatio.objects.filter(model=model).values('quality_id', 'indicator_id', 'ratio')
     quality_ratios = {}
     all_quality_ids = set()
 
-    for rec in ratios_qs:
-        quality_ratios.setdefault(rec['quality_id'], {})[rec['indicator_id']] = rec['ratio']
-        all_quality_ids.add(rec['quality_id'])
+    for record in ratios_qs:
+        quality_ratios.setdefault(record['quality_id'], {})[record['indicator_id']] = record['ratio']
+        all_quality_ids.add(record['quality_id'])
 
     # 3. Загружаем полученные оценки по форме: {projectant_id: {indicator_id: score}}
     scores_qs = IndicatorScoresRegister.objects.filter(form=form).values(
@@ -1281,36 +1350,35 @@ def calculate_checklist_scores(form: AssessmentForm):
     projectant_scores = {}
     projectant_ids = set()
 
-    for rec in scores_qs:
-        proj_id = rec['evaluated_projectant_id']
-        ind_id = rec['indicator_id']
-        projectant_scores.setdefault(proj_id, {})[ind_id] = rec['score']
-        projectant_ids.add(proj_id)
+    for record in scores_qs:
+        projectant_id = record['evaluated_projectant_id']
+        indicator_id = record['indicator_id']
+        projectant_scores.setdefault(projectant_id, {})[indicator_id] = record['score']
+        projectant_ids.add(projectant_id)
 
-    # 4. Расчет и сохранение
-    for proj_id in projectant_ids:
-        proj_ind_scores = projectant_scores.get(proj_id, {})
-
+    for projectant_id in projectant_ids:
+        proj_ind_scores = projectant_scores.get(projectant_id, {})
         for quality_id in all_quality_ids:
             indicators_map = quality_ratios.get(quality_id, {})
             total_score = 0.0
-
-            for ind_id, ratio in indicators_map.items():
-                # Если индикатор не оценивался в этой форме, берём 0
-                ind_score = proj_ind_scores.get(ind_id, 0.0)
-                weighted_score = ind_score * ratio
-
-                # Умножение на 3 при положительной оценке
-                if weighted_score > 0:
-                    weighted_score *= 3
-
+            for indicator_id, ratio in indicators_map.items():
+                indicator_score = proj_ind_scores.get(indicator_id, 0.0)
+                weighted_score = indicator_score * ratio
                 total_score += weighted_score
-
+            if total_score > 0:
+                total_score *= 3
+            last_score = (QualitiesScoreRegister
+                          .objects
+                          .filter(user_id=projectant_id, quality_id=quality_id, model=model)
+                          .latest('created_at'))
+            new_score = round((last_score.score * last_score.scores_count + total_score) /
+                              (last_score.scores_count + 1), 2)
             QualitiesScoreRegister.objects.create(
-                user_id=proj_id,
+                user_id=projectant_id,
                 quality_id=quality_id,
                 model=model,
-                score=total_score
+                score=new_score,
+                scores_count=last_score.scores_count + 1
             )
 
     return None
@@ -1347,16 +1415,16 @@ def calculate_poll_scores(form: AssessmentForm):
         all_quality_ids.add(rec['quality_id'])
 
     # 3. Расчет итоговых оценок за качества и сохранение
-    for p_id in projectant_ids:
-        p_ind_scores = projectant_avg_scores.get(p_id, {})
+    for projectant_id in projectant_ids:
+        projectant_indicator_scores = projectant_avg_scores.get(projectant_id, {})
 
-        for q_id in all_quality_ids:
-            indicators_map = quality_ratios.get(q_id, {})
+        for quality_id in all_quality_ids:
+            indicators_map = quality_ratios.get(quality_id, {})
             total_score = 0.0
 
-            for i_id, ratio in indicators_map.items():
+            for indicator_id, ratio in indicators_map.items():
                 # Если индикатор не оценивался, берём 0
-                avg_ind_score = p_ind_scores.get(i_id, 0.0)
+                avg_ind_score = projectant_indicator_scores.get(indicator_id, 0.0)
                 weighted_score = avg_ind_score * ratio
 
                 if weighted_score > 0:
@@ -1364,32 +1432,51 @@ def calculate_poll_scores(form: AssessmentForm):
 
                 total_score += weighted_score
 
-            QualitiesScoreRegister.objects.update_or_create(
-                user_id=p_id,
-                quality_id=q_id,
+            total_score = round(total_score, 2)
+            last_score = (QualitiesScoreRegister
+                          .objects
+                          .filter(user_id=projectant_id, quality_id=quality_id, model=model)
+                          .latest('created_at'))
+            new_score = (last_score.score * last_score.scores_count + total_score) / (last_score.scores_count + 1)
+
+            QualitiesScoreRegister.objects.create(
+                user_id=projectant_id,
+                quality_id=quality_id,
                 model=model,
-                defaults={'score': total_score, 'created_at': timezone.now()}
+                score=new_score,
+                scores_count=last_score.scores_count + 1
             )
 
     return None
 
 
-def check_form_completion_and_finalize(form: AssessmentForm):
+def check_form_completion(form: AssessmentForm):
     """
     Проверяет, все ли участники команд отправили ответы.
     Если да -> вызывает расчёт и меняет статус на 'Завершена'.
     """
     # Ожидаемое количество уникальных оценивающих
-    team_ids = (
-        AssessmentFormTeam.objects.select_related('assessment_form', 'team').filter(assessment_form=form).values_list(
-            'team_id', flat=True))
-    expected_evaluators = TeamMember.objects.select_related('member', 'team').filter(team_id__in=team_ids).values(
-        'member_id').distinct().count()
+    team_ids = (AssessmentFormTeam
+                .objects
+                .select_related('assessment_form', 'team')
+                .filter(assessment_form=form)
+                .values_list('team_id', flat=True))
+    expected_evaluators = (TeamMember
+                           .objects
+                           .select_related('member', 'team')
+                           .filter(team_id__in=team_ids)
+                           .values('member_id')
+                           .distinct()
+                           .count())
 
     # Фактическое количество отправивших
     if form.type == 'Оценка 360':
-        actual_evaluators = Scores360Register.objects.select_related('form').filter(form=form).values(
-            'evaluator_id').distinct().count()
+        actual_evaluators = (Scores360Register
+                             .objects
+                             .select_related('form')
+                             .filter(form=form)
+                             .values(
+            'evaluator_id').distinct().count())
     else:
         actual_evaluators = IndicatorScoresRegister.objects.select_related('form').filter(form=form).values(
             'evaluator_id').distinct().count()
@@ -1568,8 +1655,6 @@ def finalize_form(form: AssessmentForm):
     if form.status == 'Завершена':
         if form.type == 'Оценка 360':
             calculate_360_scores(form)
-        elif form.type == 'Чек-лист':
-            calculate_checklist_scores(form)
         elif form.type == 'Опросник':
             calculate_poll_scores(form)
 
@@ -1739,18 +1824,3 @@ def get_students(request):
 #         )
 
 
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def get_team_members(request, team_id):
-    try:
-        team = Team.objects.get(id=team_id)
-        members = TeamMember.objects.filter(team=team).select_related('member')
-        members_list = [{
-            'id': m.member.id,
-            'name': m.member.short_name(),
-            'full_name': m.member.full_name(),
-            'short_name': m.member.short_name()
-        } for m in members]
-        return Response(members_list, status=status.HTTP_200_OK)
-    except Team.DoesNotExist:
-        return Response({'error': 'Команда не найдена'}, status=status.HTTP_404_NOT_FOUND)

@@ -1,6 +1,7 @@
 from django.urls import path
 from django.conf import settings
 from django.conf.urls.static import static
+from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from .views import *
@@ -25,8 +26,10 @@ urlpatterns = [
     path('api/qualities_stats/<int:user_id>/', get_qualities_stats, name='get_qualities_stats'),
     # Команды
     path('api/teams/', get_teams, name='get_teams'),
+    path('api/teams/<int:team_id>/member-count/', get_team_member_count, name='get_team_member_count'),
+    path('api/teams/<int:team_id>/members/', get_team_members, name='get_team_members'),
     # Индикаторы
-    # path('api/indicators/', get_indicators, name='get_indicators'),
+    path('api/indicators/', get_indicators, name='get_indicators'),
     path('api/assessment_models/', get_assessment_models, name='get_assessment_models'),
     path('api/assessment_models/create', create_assessment_model, name='get_assessment_models'),
     path('api/assessment_models/update', update_assessment_model, name='get_assessment_models'),
@@ -34,6 +37,7 @@ urlpatterns = [
     path('api/assessment_models/set_active/', set_active_model, name='set_active_model'),
     # Шаблоны индикаторов
     path('api/templates/', get_templates, name='get_templates'),
+    path('api/templates/<int:template_id>/', get_template, name='get_template'),
     path('api/templates/create/', create_template, name='save_template'),
     path('api/templates/<int:template_id>/update/', update_template, name='update_template'),
     path('api/templates/delete/<int:template_id>/', delete_template, name='delete_template'),
@@ -56,6 +60,11 @@ urlpatterns = [
     path('api/forms/submit/360', submit_360_form, name='submit_360'),
     path('api/forms/submit/check_list', submit_check_list_form, name='submit_check_list'),
     path('api/forms/submit/poll', submit_poll_form, name='submit_poll'),
+
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    path('api/schema/swagger/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    path('api/schema/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
+
 ]
 
 if settings.DEBUG:
