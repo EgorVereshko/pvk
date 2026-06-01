@@ -1,6 +1,6 @@
 import React from 'react';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, LabelList } from 'recharts';
-import './SpiderChart.css';
+import './SpiderChart.scss';
 
 const SpiderChart = ({ userScores = {} }) => {
   const data = [

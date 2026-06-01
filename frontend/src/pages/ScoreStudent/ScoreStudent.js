@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../../api';
 import Header from '../../components/Header/Header';
-import './ScoreStudent.css';
+import './ScoreStudent.scss';
 
 const ScoreStudent = () => {
   const [user, setUser] = useState(null);
@@ -215,12 +215,10 @@ const ScoreStudent = () => {
     }));
   };
 
-  // Обработчик изменения значения в окошке
   const handleInputChange = (competence, value) => {
     setEditingValue(prev => ({ ...prev, [competence]: value }));
   };
 
-  // Обработчик потери фокуса или нажатия Enter
   const handleInputBlur = (competence) => {
     const value = editingValue[competence];
     if (value !== undefined && value !== '') {
@@ -228,9 +226,7 @@ const ScoreStudent = () => {
       if (isNaN(numValue)) {
         numValue = 0;
       }
-      // Ограничиваем значение в пределах от -1 до 3
       numValue = Math.max(-1, Math.min(3, numValue));
-      // Округляем до 1 десятичного знака
       numValue = Math.round(numValue * 10) / 10;
       
       setSliderValues(prev => ({
@@ -241,7 +237,6 @@ const ScoreStudent = () => {
     setEditingValue(prev => ({ ...prev, [competence]: undefined }));
   };
 
-  // Обработчик нажатия Enter
   const handleInputKeyDown = (competence, e) => {
     if (e.key === 'Enter') {
       handleInputBlur(competence);

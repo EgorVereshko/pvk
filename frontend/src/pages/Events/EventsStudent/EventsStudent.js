@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import axios from 'axios';
 import Header from '../../../components/Header/Header';
-import './EventsStudent.css';
+import './EventsStudent.scss';
 
 const EventsStudent = () => {
   const [user, setUser] = useState(null);

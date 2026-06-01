@@ -1,3 +1,7 @@
+/* ============================================ */
+/* EVENTS PAGE */
+/* ============================================ */
+
 .events-info {
   width: 100%;
 }
@@ -178,7 +182,6 @@
 
 .event-content {
   display: contents;
-  /* grid-template-columns: 2fr 1.5fr 1fr; */
   gap: 1rem;
   flex: 1;
 }
@@ -295,37 +298,9 @@
   font-size: 18px;
 }
 
-@media (max-width: 768px) {
-  .events-header-main {
-    flex-direction: column;
-    gap: 1rem;
-    align-items: flex-start;
-  }
-
-  .tabs-container {
-    flex-direction: column;
-    gap: 1rem;
-    align-items: flex-start;
-  }
-
-  .tabs {
-    width: 100%;
-  }
-
-  .filter-buttons {
-    grid-template-columns: 1fr;
-  }
-
-  .event-content {
-    grid-template-columns: 1fr;
-    gap: 0.75rem;
-  }
-
-  .event-date {
-    justify-self: start;
-    padding: 0.5rem 1rem;
-  }
-}
+/* ============================================ */
+/* TOAST NOTIFICATION */
+/* ============================================ */
 
 .success-toast {
   position: fixed;
@@ -349,6 +324,10 @@
     opacity: 1;
   }
 }
+
+/* ============================================ */
+/* MODAL WINDOW */
+/* ============================================ */
 
 .modal-overlay {
   position: fixed;
@@ -439,4 +418,40 @@
   border: none;
   border-radius: 6px;
   cursor: pointer;
+}
+
+/* ============================================ */
+/* RESPONSIVE DESIGN */
+/* ============================================ */
+
+@media (max-width: 768px) {
+  .events-header-main {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+
+  .tabs-container {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+
+  .tabs {
+    width: 100%;
+  }
+
+  .filter-buttons {
+    grid-template-columns: 1fr;
+  }
+
+  .event-content {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .event-date {
+    justify-self: start;
+    padding: 0.5rem 1rem;
+  }
 }

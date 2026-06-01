@@ -663,7 +663,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api';
 import Header from '../../components/Header/Header';
-import './Form360.css';
+import './Form360.scss';
 
 const Form360Pass = () => {
   const { id } = useParams();

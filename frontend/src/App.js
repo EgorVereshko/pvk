@@ -18,6 +18,7 @@ import Form360List from './pages/Form360/Form360List';
 import Form360Create from './pages/Form360/Form360Create';
 import Form360Pass from './pages/Form360/Form360Pass';
 import PollCreate from './pages/Poll/PollCreate';
+import Models from './pages/Models/Models';
 import './styles/App.css';
 
 function Home() {
@@ -140,6 +141,11 @@ function AppRoutes() {
       <Route path="/qualities" element={
         <ProtectedRoute allowedRoles={['Организатор']}>
           <Qualities />
+        </ProtectedRoute>
+      } />
+      <Route path="/models" element={
+        <ProtectedRoute allowedRoles={['Организатор']}>
+          <Models />
         </ProtectedRoute>
       } />
       

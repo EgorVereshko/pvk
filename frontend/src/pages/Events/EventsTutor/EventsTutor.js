@@ -453,7 +453,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import api from '../../../api';
 import Header from '../../../components/Header/Header';
-import './EventsTutor.css';
+import './EventsTutor.scss';
 
 const EventsTutor = () => {
   const { user, logout, isTutor, isOrganizer } = useAuth();
@@ -478,11 +478,9 @@ const EventsTutor = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      // Загружаем все формы для куратора
       const formsRes = await api.get('/api/forms/tutor/');
       console.log('Все формы:', formsRes.data);
       
-      // Фильтруем только чек-листы
       const checklistItems = formsRes.data
         .filter(form => form.type === 'Чек-лист')
         .map(form => ({
@@ -506,15 +504,12 @@ const EventsTutor = () => {
   const getFilteredItems = () => {
     let items = [...checklists];
     
-    // Фильтр по статусу (активные/завершенные)
     items = items.filter(item => item.type === activeTab);
     
-    // Фильтр по командам
     if (selectedTeams.length > 0) {
       items = items.filter(item => selectedTeams.includes(item.team_name));
     }
     
-    // Сортировка
     items.sort((a, b) => {
       if (sortBy === 'name') {
         return sortOrder === 'asc' 

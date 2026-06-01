@@ -11,7 +11,6 @@
   padding: 2rem;
 }
 
-/* Auth Card - Main form container */
 .auth-card {
   background: #ffffff;
   border-radius: 16px;
@@ -22,7 +21,6 @@
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
 }
 
-/* Card heading */
 .auth-card h2 {
   text-align: center;
   font-size: 1.75rem;
@@ -32,20 +30,17 @@
   letter-spacing: -0.01em;
 }
 
-/* Form layout */
 .auth-form {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
 }
 
-/* Form group - wrapper for label + input */
 .form-group {
   display: flex;
   flex-direction: column;
 }
 
-/* Input labels */
 .form-group label {
   font-weight: 500;
   color: #475569;
@@ -55,7 +50,6 @@
   letter-spacing: 0.025em;
 }
 
-/* Input fields */
 .auth-input {
   padding: 0.75rem 1rem;
   border: 1px solid #e2e8f0;
@@ -67,13 +61,11 @@
   color: #1e293b;
 }
 
-/* Input placeholder styling */
 .auth-input::placeholder {
   color: #94a3b8;
   font-size: 0.85rem;
 }
 
-/* Input focus state */
 .auth-input:focus {
   outline: none;
   border-color: #0f172a;
@@ -84,7 +76,6 @@
 /* VALIDATION STYLES - Error states */
 /* ============================================ */
 
-/* Input with validation error */
 .auth-input.error {
   border-color: #dc2626;
   background-color: #fef2f2;
@@ -95,14 +86,12 @@
   box-shadow: 0 0 0 1px #dc2626;
 }
 
-/* Error text message below input */
 .error-text {
   color: #dc2626;
   font-size: 0.7rem;
   margin-top: 0.25rem;
 }
 
-/* Global error message (API errors) */
 .error-message {
   color: #dc2626;
   background: #fef2f2;
@@ -130,19 +119,16 @@
   margin-top: 0.75rem;
 }
 
-/* Button hover state */
 .auth-submit-button:hover:not(:disabled) {
   background: #1e293b;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(15, 23, 42, 0.1);
 }
 
-/* Button active/click state */
 .auth-submit-button:active {
   transform: translateY(0);
 }
 
-/* Button disabled state */
 .auth-submit-button:disabled {
   background: #94a3b8;
   cursor: not-allowed;
@@ -204,7 +190,6 @@
   padding: 2rem;
 }
 
-/* Auth Card - Main form container */
 .auth-card {
   background: #ffffff;
   border-radius: 24px;
@@ -220,7 +205,6 @@
   box-shadow: 0 25px 40px -12px rgba(0, 0, 0, 0.12);
 }
 
-/* Card heading */
 .auth-card h2 {
   text-align: center;
   font-size: 1.85rem;
@@ -237,7 +221,6 @@
   margin-bottom: 2rem;
 }
 
-/* Form layout - two columns */
 .auth-form {
   display: flex;
   flex-direction: column;
@@ -256,7 +239,6 @@
   gap: 1.25rem;
 }
 
-/* Form group - wrapper for label + input */
 .form-group {
   display: flex;
   flex-direction: column;
@@ -266,7 +248,6 @@
   margin-top: 0.25rem;
 }
 
-/* Input labels */
 .form-group label {
   font-weight: 500;
   color: #334155;
@@ -285,7 +266,6 @@
   margin-left: 0.125rem;
 }
 
-/* Input fields */
 .auth-input {
   padding: 0.8125rem 1rem;
   border: 1.5px solid #e2e8f0;
@@ -297,14 +277,12 @@
   color: #1e293b;
 }
 
-/* Input placeholder styling */
 .auth-input::placeholder {
   color: #94a3b8;
   font-size: 0.85rem;
   font-weight: 400;
 }
 
-/* Input focus state */
 .auth-input:focus {
   outline: none;
   border-color: #0f172a;
@@ -315,7 +293,6 @@
 /* VALIDATION STYLES - Error states */
 /* ============================================ */
 
-/* Input with validation error */
 .auth-input.error {
   border-color: #ef4444;
   background-color: #fef2f2;
@@ -326,7 +303,6 @@
   box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.08);
 }
 
-/* Error text message below input */
 .error-text {
   color: #ef4444;
   font-size: 0.7rem;
@@ -334,7 +310,6 @@
   font-weight: 500;
 }
 
-/* Global error message (API errors) */
 .error-message {
   color: #dc2626;
   background: #fef2f2;
@@ -364,19 +339,16 @@
   letter-spacing: 0.01em;
 }
 
-/* Button hover state */
 .auth-submit-button:hover:not(:disabled) {
   background: #1e293b;
   transform: translateY(-2px);
   box-shadow: 0 8px 20px rgba(15, 23, 42, 0.15);
 }
 
-/* Button active/click state */
 .auth-submit-button:active:not(:disabled) {
   transform: translateY(0);
 }
 
-/* Button disabled state */
 .auth-submit-button:disabled {
   background: #94a3b8;
   cursor: not-allowed;

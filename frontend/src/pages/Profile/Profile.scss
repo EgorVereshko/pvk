@@ -16,13 +16,11 @@
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
 }
 
-/* Two-column layout */
 .lk-content {
   display: flex;
   gap: 40px;
 }
 
-/* Left column */
 .lk-left {
   flex: 1;
 }
@@ -35,7 +33,6 @@
   letter-spacing: -0.01em;
 }
 
-/* Right column (wider for charts) */
 .lk-right {
   flex: 2;
 }
@@ -47,7 +44,6 @@
   margin-bottom: 1.5rem;
 }
 
-/* User info card */
 .lk-info {
   display: flex;
   align-items: center;
@@ -59,7 +55,6 @@
   border: 1px solid #f1f5f9;
 }
 
-/* Avatar image */
 .lk-photo {
   width: 80px;
   height: 80px;
@@ -69,7 +64,6 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
-/* User name */
 .lk-text h3 {
   font-size: 1.25rem;
   font-weight: 600;
@@ -77,14 +71,12 @@
   margin-bottom: 0.25rem;
 }
 
-/* User details */
 .lk-text p {
   color: #64748b;
   font-size: 0.95rem;
   margin: 0.25rem 0;
 }
 
-/* Statistics block for charts */
 .stats {
   background: #f8fafc;
   border-radius: 16px;
@@ -95,7 +87,6 @@
   min-height: 300px;
 }
 
-/* Loading state */
 .loading {
   display: flex;
   justify-content: center;
@@ -228,7 +219,6 @@
   border-top: 1px solid #e2e8f0;
 }
 
-/* Блок со средним баллом */
 .average-score-block {
   margin-top: 12px;
   padding-top: 10px;

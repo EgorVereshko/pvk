@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api';
 import Header from '../../components/Header/Header';
-import './Poll.css';
+import './Poll.scss';
 
 const PollCreate = () => {
   const [user, setUser] = useState(null);

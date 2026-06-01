@@ -21,7 +21,6 @@
   border: 1px solid #f1f5f9;
 }
 
-/* Прогресс-бар */
 .poll-pass-progress {
   margin-bottom: 2rem;
 }
@@ -47,7 +46,6 @@
   text-align: right;
 }
 
-/* Заголовок */
 .poll-pass-header {
   display: flex;
   justify-content: space-between;
@@ -97,7 +95,6 @@
   white-space: nowrap;
 }
 
-/* Карточка вопроса */
 .poll-pass-question-container {
   margin-bottom: 2rem;
 }
@@ -132,7 +129,6 @@
   margin-left: 4px;
 }
 
-/* Варианты ответов */
 .question-options-large {
   display: flex;
   flex-direction: column;
@@ -220,7 +216,6 @@
   margin-left: auto;
 }
 
-/* Навигация */
 .poll-pass-navigation {
   display: flex;
   justify-content: space-between;
@@ -276,7 +271,6 @@
   cursor: not-allowed;
 }
 
-/* Индикатор ответов */
 .poll-pass-indicator {
   display: flex;
   justify-content: center;
@@ -309,7 +303,6 @@
   transform: scale(1.2);
 }
 
-/* Состояния загрузки и ошибок */
 .poll-pass-loading,
 .poll-pass-error {
   display: flex;
@@ -350,7 +343,10 @@
   cursor: pointer;
 }
 
-/* Адаптивность */
+/* ============================================ */
+/* RESPONSIVE DESIGN */
+/* ============================================ */
+
 @media (max-width: 768px) {
   .poll-pass-wrapper {
     padding: 1rem;

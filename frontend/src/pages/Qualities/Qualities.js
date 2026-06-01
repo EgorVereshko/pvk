@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api';
 import Header from '../../components/Header/Header';
-import './Qualities.css';
+import './Qualities.scss';
 
 const KEY_QUALITIES = 'app_qualities';
 const KEY_COMPETENCES = 'app_competences';

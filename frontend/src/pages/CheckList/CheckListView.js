@@ -184,7 +184,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api';
 import Header from '../../components/Header/Header';
-import './CheckList.css';
+import './CheckList.scss';
 
 const CheckListView = () => {
   const { id } = useParams();
