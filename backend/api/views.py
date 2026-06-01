@@ -1729,24 +1729,6 @@ def recalculate_scores():
                     )
 
 
-# @api_view(['GET'])
-# @permission_classes([IsAuthenticated])
-# def get_students(request):
-#     try:
-#         students = UserProfile.objects.all().values(
-#             'id', 'last_name', 'first_name', 'middle_name'
-#         )
-#         students_list = []
-#         for student in students:
-#             students_list.append({
-#                 'id': student['id'],
-#                 'short_name': f"{student['last_name']} {student['first_name'][0]}.{student['middle_name'][0]}.",
-#                 'full_name': f"{student['last_name']} {student['first_name']} {student['middle_name']}"
-#             })
-#         return Response(students_list, status=status.HTTP_200_OK)
-#     except Exception as e:
-#         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_students(request):
@@ -1768,59 +1750,5 @@ def get_students(request):
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-
-# @api_view(['POST'])
-# @permission_classes([IsAuthenticated])
-# def save_competences_scores(request):
-#     """
-#     Сохраняет оценки качеств для студента
-#     Ожидаемый формат: [{"competence_name": "Вовлеченность", "score": 2, "student_profile_id": 1}, ...]
-#     """
-#     try:
-#         scores_data = request.data
-#         created_scores = []
-#
-#         for score_data in scores_data:
-#             competence_name = score_data.get('competence_name')
-#             score_value = float(score_data.get('score', 0))
-#             student_profile_id = score_data.get('student_profile_id')
-#
-#             try:
-#                 student_profile = UserProfile.objects.get(id=student_profile_id)
-#             except UserProfile.DoesNotExist:
-#                 return Response(
-#                     {'error': f'Студент с ID {student_profile_id} не найден'},
-#                     status=status.HTTP_404_NOT_FOUND
-#                 )
-#
-#             quality, created = Quality.objects.get_or_create(
-#                 name=competence_name
-#             )
-#
-#             assessment_model, _ = AssessmentModel.objects.get_or_create(status='Активная')
-#
-#             quality_score = QualitiesScoreRegister.objects.create(
-#                 user=student_profile,
-#                 quality=quality,
-#                 model=assessment_model,
-#                 score=score_value
-#             )
-#
-#             created_scores.append({
-#                 'student': student_profile.short_name(),
-#                 'competence': quality.name,
-#                 'score': float(quality_score.score)
-#             })
-#
-#         return Response({
-#             'message': 'Оценки успешно сохранены',
-#             'scores': created_scores
-#         }, status=status.HTTP_201_CREATED)
-#
-#     except Exception as e:
-#         return Response(
-#             {'error': f'Ошибка при сохранении: {str(e)}'},
-#             status=status.HTTP_400_BAD_REQUEST
-#         )
 
 
