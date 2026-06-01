@@ -1,18 +1,406 @@
+// import React, { useState, useEffect } from 'react';
+// import { useNavigate } from 'react-router-dom';
+// import { useAuth } from '../../context/AuthContext';
+// import api from '../../api';
+// import Header from '../../components/Header/Header';
+// import './CheckList.css';
+
+// const CheckList = () => {
+//   const { user, logout, isTutor, isOrganizer } = useAuth();
+//   const [loading, setLoading] = useState(true);
+//   const [teams, setTeams] = useState([]);
+//   const [templates, setTemplates] = useState([]);
+//   const [teamMembers, setTeamMembers] = useState([]);
+//   const [step, setStep] = useState(1);
+
+//   const [tableData, setTableData] = useState({
+//     students: ['', '', '', '', ''],
+//     studentNames: ['', '', '', '', ''],
+//     qualities: ['Обучаемость', 'Организованность', 'Работа в команде', 'Вовлеченность'],
+//     scores: []
+//   });
+  
+//   const [formData, setFormData] = useState({
+//     date: '',
+//     team: '',
+//     eventName: '',
+//     template: ''
+//   });
+  
+//   const [qualities, setQualities] = useState(['Обучаемость', 'Организованность', 'Работа в команде', 'Вовлеченность']);
+//   const [scores, setScores] = useState([]);
+  
+//   const [showSaveTemplate, setShowSaveTemplate] = useState(false);
+//   const [newTemplateName, setNewTemplateName] = useState('');
+//   const [newQuality, setNewQuality] = useState('');
+  
+//   const navigate = useNavigate();
+
+//   useEffect(() => {
+//     if (!isTutor() && !isOrganizer()) {
+//       alert('Доступ запрещен');
+//       navigate('/events/tutor');
+//     }
+//   }, [isTutor, isOrganizer]);
+
+//   useEffect(() => {
+//     const loadData = async () => {
+//       try {
+//         const [teamsRes, templatesRes] = await Promise.all([
+//           api.get('/api/teams/'),
+//           api.get('/api/templates/')
+//         ]);
+//         setTeams(teamsRes.data);
+//         setTemplates(templatesRes.data);
+//       } catch (error) {
+//         console.error('Ошибка загрузки:', error);
+//       } finally {
+//         setLoading(false);
+//       }
+//     };
+//     loadData();
+//   }, []);
+
+//   useEffect(() => {
+//     if (formData.team) {
+//       const loadMembers = async () => {
+//         try {
+//           const res = await api.get(`/api/teams/${formData.team}/members/`);
+//           setTeamMembers(res.data);
+//           const newScores = qualities.map(() => Array(res.data.length).fill(null));
+//           setScores(newScores);
+//         } catch (error) {
+//           console.error('Ошибка загрузки участников:', error);
+//           setTeamMembers([]);
+//         }
+//       };
+//       loadMembers();
+//     } else {
+//       setTeamMembers([]);
+//       setScores([]);
+//     }
+//   }, [formData.team]);
+
+//   const handleFormChange = (e) => {
+//     setFormData({ ...formData, [e.target.name]: e.target.value });
+//   };
+
+//   const handleTemplateSelect = (e) => {
+//     const templateId = e.target.value;
+//     setFormData(prev => ({ ...prev, template: templateId }));
+    
+//     if (templateId) {
+//       const selectedTemplate = templates.find(t => t.id === parseInt(templateId));
+//       if (selectedTemplate && selectedTemplate.indicators) {
+//         const templateQualities = selectedTemplate.competences || tableData.qualities;
+//         const newScores = templateQualities.map((quality, index) => {
+//           if (index < selectedTemplate.indicators.length) {
+//             const value = parseInt(selectedTemplate.indicators[index].name) || 0;
+//             return Array(5).fill(value);
+//           }
+//           return Array(5).fill(0);
+//         });
+        
+//         setTableData(prev => ({
+//           ...prev,
+//           qualities: templateQualities,
+//           scores: newScores
+//         }));
+//       }
+//     }
+//   };
+
+//   const handleNext = () => {
+//     if (!formData.date || !formData.eventName || !formData.team) {
+//       alert('Заполните все поля');
+//       return;
+//     }
+//     if (teamMembers.length === 0) {
+//       alert('В выбранной команде нет студентов');
+//       return;
+//     }
+//     setStep(2);
+//   };
+
+//   const handleScoreChange = (qualityIdx, studentIdx, value) => {
+//     const newScores = [...scores];
+//     newScores[qualityIdx][studentIdx] = value === '' ? null : parseInt(value);
+//     setScores(newScores);
+//   };
+
+//   const addQuality = () => {
+//     if (!newQuality.trim()) {
+//       alert('Введите название');
+//       return;
+//     }
+//     setQualities([...qualities, newQuality.trim()]);
+//     setScores([...scores, Array(teamMembers.length).fill(null)]);
+//     setNewQuality('');
+//   };
+
+//   const removeQuality = (idx) => {
+//     if (idx < 4) {
+//       alert('Нельзя удалить базовые компетенции');
+//       return;
+//     }
+//     setQualities(qualities.filter((_, i) => i !== idx));
+//     setScores(scores.filter((_, i) => i !== idx));
+//   };
+
+//   const saveAsTemplate = async () => {
+//     if (!newTemplateName) {
+//       alert('Введите название шаблона');
+//       return;
+//     }
+    
+//     try {
+//       let allFilled = true;
+//       for (let q = 0; q < qualities.length; q++) {
+//         for (let s = 0; s < teamMembers.length; s++) {
+//           if (scores[q]?.[s] === null || scores[q]?.[s] === undefined) {
+//             allFilled = false;
+//             break;
+//           }
+//         }
+//       }
+      
+//       if (!allFilled) {
+//         alert('Заполните все оценки');
+//         return;
+//       }
+      
+//       const indicators = qualities.map((q, idx) => {
+//         const values = scores[idx] || [];
+//         const avg = values.length ? Math.round(values.reduce((a, b) => a + b, 0) / values.length) : 0;
+//         return { name: avg.toString(), description: q };
+//       });
+      
+//       await api.post('/api/templates/create/', {
+//         name: newTemplateName,
+//         indicators: indicators.map((_, i) => i + 1)
+//       });
+      
+//       alert('Шаблон сохранен');
+//       setShowSaveTemplate(false);
+//       setNewTemplateName('');
+//       const res = await api.get('/api/templates/');
+//       setTemplates(res.data);
+//     } catch (error) {
+//       console.error('Ошибка:', error);
+//       alert('Ошибка при сохранении');
+//     }
+//   };
+
+//   const saveChecklist = async () => {
+//     if (!formData.team || !formData.date || !formData.eventName) {
+//       alert('Заполните все поля');
+//       return;
+//     }
+    
+//     for (let q = 0; q < qualities.length; q++) {
+//       for (let s = 0; s < teamMembers.length; s++) {
+//         if (scores[q]?.[s] === null || scores[q]?.[s] === undefined) {
+//           alert('Заполните все оценки');
+//           return;
+//         }
+//       }
+//     }
+    
+//     try {
+//       // 1. Создаем форму чек-листа
+//       const formResponse = await api.post('/api/forms/create/', {
+//         name: formData.eventName,
+//         type: 'Чек-лист',
+//         teams_id: [parseInt(formData.team)],
+//         start_datetime: new Date(formData.date).toISOString(),
+//         end_datetime: new Date(formData.date).toISOString(),
+//         template_id: formData.template || null,
+//         qualities: qualities
+//       });
+      
+//       const formId = formResponse.data.id;
+//       console.log('Форма создана, ID:', formId);
+      
+//       // 2. Сохраняем оценки напрямую через /api/competences/scores/
+//       const promises = [];
+//       for (let s = 0; s < teamMembers.length; s++) {
+//         for (let q = 0; q < qualities.length; q++) {
+//           const score = scores[q]?.[s];
+//           if (score !== null) {
+//             promises.push(
+//               api.post('/api/competences/scores/', [{
+//                 competence_name: qualities[q],
+//                 score: score,
+//                 student_profile_id: teamMembers[s].id
+//               }])
+//             );
+//           }
+//         }
+//       }
+//       await Promise.all(promises);
+      
+//       alert('Чек-лист успешно сохранен!');
+//       navigate('/events/tutor');
+      
+//     } catch (error) {
+//       console.error('Ошибка сохранения чек-листа:', error);
+//       alert('Ошибка при сохранении: ' + (error.response?.data?.error || 'Неизвестная ошибка'));
+//     }
+//   };
+
+//   if (loading) return <div className="loading">Загрузка...</div>;
+
+//   return (
+//     <div className="checklist-container">
+//       <Header onLogout={logout} user={user} />
+      
+//       <div className="checklist-content">
+//         <div className="checklist-card">
+//           <h1>Создание чек-листа</h1>
+          
+//           {step === 1 ? (
+//             <div className="form-step">
+//               <div className="form-group">
+//                 <label>Дата *</label>
+//                 <input type="date" name="date" value={formData.date} onChange={handleFormChange} />
+//               </div>
+              
+//               <div className="form-group">
+//                 <label>Команда *</label>
+//                 <select name="team" value={formData.team} onChange={handleFormChange}>
+//                   <option value="">Выберите команду</option>
+//                   {teams.map(team => (
+//                     <option key={team.id} value={team.id}>{team.name}</option>
+//                   ))}
+//                 </select>
+//                 {teamMembers.length > 0 && (
+//                   <small className="info">Студентов: {teamMembers.length}</small>
+//                 )}
+//               </div>
+              
+//               <div className="form-group">
+//                 <label>Название мероприятия *</label>
+//                 <input type="text" name="eventName" value={formData.eventName} onChange={handleFormChange} />
+//               </div>
+              
+//               <div className="form-group">
+//                 <label>Шаблон</label>
+//                 <select name="template" value={formData.template} onChange={handleTemplateSelect}>
+//                   <option value="">Выберите шаблон</option>
+//                   {templates.map(t => (
+//                     <option key={t.id} value={t.id}>{t.name}</option>
+//                   ))}
+//                 </select>
+//               </div>
+              
+//               <button className="next-button" onClick={handleNext} disabled={teamMembers.length === 0}>
+//                 Далее
+//               </button>
+//             </div>
+//           ) : (
+//             <div className="table-step">
+//               <div className="table-wrapper">
+//                 <table className="checklist-table">
+//                   <thead>
+//                     <tr>
+//                       <th>Студент/Качество</th>
+//                       {qualities.map((q, idx) => (
+//                         <th key={idx}>
+//                           {q}
+//                           {idx >= 4 && (
+//                             <button className="remove-btn" onClick={() => removeQuality(idx)}>×</button>
+//                           )}
+//                         </th>
+//                       ))}
+//                     </tr>
+//                   </thead>
+//                   <tbody>
+//                     {teamMembers.map((member, sIdx) => (
+//                       <tr key={member.id}>
+//                         <td>{member.name}</td>
+//                         {qualities.map((_, qIdx) => (
+//                           <td key={qIdx}>
+//                             <select
+//                               value={scores[qIdx]?.[sIdx] !== undefined ? scores[qIdx][sIdx] : ''}
+//                               onChange={(e) => handleScoreChange(qIdx, sIdx, e.target.value)}
+//                             >
+//                               <option value="">-</option>
+//                               <option value="-1">-1</option>
+//                               <option value="0">0</option>
+//                               <option value="1">1</option>
+//                             </select>
+//                           </td>
+//                         ))}
+//                       </tr>
+//                     ))}
+//                   </tbody>
+//                 </table>
+//               </div>
+              
+//               <div className="add-quality">
+//                 <input
+//                   type="text"
+//                   placeholder="Новая компетенция"
+//                   value={newQuality}
+//                   onChange={(e) => setNewQuality(e.target.value)}
+//                 />
+//                 <button onClick={addQuality}>+ Добавить</button>
+//               </div>
+              
+//               <div className="actions">
+//                 <button onClick={() => setShowSaveTemplate(true)}>Сохранить как шаблон</button>
+//                 <button onClick={saveChecklist}>Сохранить чек-лист</button>
+//                 <button onClick={() => setStep(1)}>Назад</button>
+//               </div>
+//             </div>
+//           )}
+//         </div>
+//       </div>
+      
+//       {showSaveTemplate && (
+//         <div className="modal">
+//           <div className="modal-content">
+//             <h3>Сохранить шаблон</h3>
+//             <input
+//               type="text"
+//               placeholder="Название шаблона"
+//               value={newTemplateName}
+//               onChange={(e) => setNewTemplateName(e.target.value)}
+//             />
+//             <div className="modal-buttons">
+//               <button onClick={saveAsTemplate}>Сохранить</button>
+//               <button onClick={() => setShowSaveTemplate(false)}>Отмена</button>
+//             </div>
+//           </div>
+//         </div>
+//       )}
+//     </div>
+//   );
+// };
+
+// export default CheckList;
+
+
+// чек-лист с добавлением индикаторов вместо качеств
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import api from '../../api';
 import Header from '../../components/Header/Header';
 import './CheckList.css';
 
 const CheckList = () => {
-  const [user, setUser] = useState(null);
+  const { user, logout, isTutor, isOrganizer } = useAuth();
   const [loading, setLoading] = useState(true);
   const [teams, setTeams] = useState([]);
   const [templates, setTemplates] = useState([]);
-  const [students, setStudents] = useState([]);
+  const [teamMembers, setTeamMembers] = useState([]);
   const [step, setStep] = useState(1);
   
-  // Данные формы
+  const [allIndicators, setAllIndicators] = useState([]);
+  const [selectedIndicators, setSelectedIndicators] = useState([]);
+  const [indicatorsLoading, setIndicatorsLoading] = useState(false);
+  
   const [formData, setFormData] = useState({
     date: '',
     team: '',
@@ -20,308 +408,251 @@ const CheckList = () => {
     template: ''
   });
   
-  // Данные таблицы - теперь качества могут динамически добавляться
-  const [tableData, setTableData] = useState({
-    students: ['', '', '', '', ''],
-    studentNames: ['', '', '', '', ''],
-    qualities: ['Обучаемость', 'Организованность', 'Работа в команде', 'Вовлеченность'], // базовые
-    scores: [] // будет динамически заполняться
-  });
+  const [scores, setScores] = useState([]);
   
-  // Состояние для сохранения шаблона
   const [showSaveTemplate, setShowSaveTemplate] = useState(false);
   const [newTemplateName, setNewTemplateName] = useState('');
-  const [editingTemplate, setEditingTemplate] = useState(null);
-  const [newCompetenceName, setNewCompetenceName] = useState('');
   
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchUserProfile();
-    fetchTeams();
-    fetchTemplates();
-    fetchStudents();
+    if (!isTutor() && !isOrganizer()) {
+      alert('Доступ запрещен');
+      navigate('/events/tutor');
+    }
+  }, [isTutor, isOrganizer]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [teamsRes, templatesRes, indicatorsRes] = await Promise.all([
+          api.get('/api/teams/'),
+          api.get('/api/templates/'),
+          api.get('/api/indicators/')
+        ]);
+        setTeams(teamsRes.data);
+        setTemplates(templatesRes.data);
+        setAllIndicators(indicatorsRes.data);
+      } catch (error) {
+        console.error('Ошибка загрузки:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
   }, []);
 
-  // Инициализация scores при изменении qualities
-  useEffect(() => {
-    const newScores = tableData.qualities.map(() => Array(5).fill(null));
-    setTableData(prev => ({ ...prev, scores: newScores }));
-  }, [tableData.qualities.length]);
-
-  const fetchUserProfile = async () => {
+  const loadTemplateIndicators = async (templateId) => {
+    setIndicatorsLoading(true);
     try {
-      const res = await api.get('/api/user/');
-      setUser(res.data);
-    } catch (err) {
-      if (err.response?.status === 401) {
-        localStorage.clear();
-        navigate('/');
+      const res = await api.get(`/api/templates/${templateId}/`);
+      if (res.data && res.data.indicators) {
+        const indicatorsWithDetails = res.data.indicators.map(ind => ({
+          id: ind.id,
+          name: ind.name,
+          quality: ind.quality || null
+        }));
+        setSelectedIndicators(indicatorsWithDetails);
+        
+        const newScores = indicatorsWithDetails.map(() => Array(teamMembers.length).fill(null));
+        setScores(newScores);
       }
-    }
-  };
-
-  const fetchTeams = async () => {
-    try {
-      const res = await api.get('/api/teams/');
-      setTeams(res.data);
     } catch (error) {
-      console.error('Ошибка загрузки команд:', error);
-    }
-  };
-
-  const fetchTemplates = async () => {
-    try {
-      const res = await api.get('/api/templates/');
-      setTemplates(res.data);
-    } catch (error) {
-      console.error('Ошибка загрузки шаблонов:', error);
-    }
-  };
-
-  const fetchStudents = async () => {
-    try {
-      const res = await api.get('/api/students/');
-      setStudents(res.data);
-    } catch (error) {
-      console.error('Ошибка загрузки студентов:', error);
+      console.error('Ошибка загрузки шаблона:', error);
     } finally {
-      setLoading(false);
+      setIndicatorsLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (formData.team) {
+      const loadMembers = async () => {
+        try {
+          const res = await api.get(`/api/teams/${formData.team}/members/`);
+          setTeamMembers(res.data);
+          const newScores = selectedIndicators.map(() => Array(res.data.length).fill(null));
+          setScores(newScores);
+        } catch (error) {
+          console.error('Ошибка загрузки участников:', error);
+          setTeamMembers([]);
+        }
+      };
+      loadMembers();
+    } else {
+      setTeamMembers([]);
+      setScores([]);
+    }
+  }, [formData.team]);
 
   const handleFormChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleTemplateSelect = (e) => {
+  const handleTemplateSelect = async (e) => {
     const templateId = e.target.value;
     setFormData(prev => ({ ...prev, template: templateId }));
     
     if (templateId) {
-      const selectedTemplate = templates.find(t => t.id === parseInt(templateId));
-      if (selectedTemplate && selectedTemplate.indicators) {
-        // Загружаем данные шаблона
-        const templateQualities = selectedTemplate.competences || tableData.qualities;
-        const newScores = templateQualities.map((quality, index) => {
-          if (index < selectedTemplate.indicators.length) {
-            const value = parseInt(selectedTemplate.indicators[index].name) || 0;
-            return Array(5).fill(value);
-          }
-          return Array(5).fill(0);
-        });
-        
-        setTableData(prev => ({
-          ...prev,
-          qualities: templateQualities,
-          scores: newScores
-        }));
-      }
+      await loadTemplateIndicators(templateId);
+    } else {
+      setSelectedIndicators([]);
+      setScores([]);
     }
   };
 
   const handleNext = () => {
     if (!formData.date || !formData.eventName || !formData.team) {
-      alert('Заполните дату, название мероприятия и выберите команду');
+      alert('Заполните все поля');
+      return;
+    }
+    if (teamMembers.length === 0) {
+      alert('В выбранной команде нет студентов');
+      return;
+    }
+    if (selectedIndicators.length === 0) {
+      alert('Выберите индикаторы для оценки (выберите шаблон или добавьте вручную)');
       return;
     }
     setStep(2);
   };
 
-  const handleStudentSelect = (index, studentId) => {
-    const newStudents = [...tableData.students];
-    const newStudentNames = [...tableData.studentNames];
-    
-    const selectedStudent = students.find(s => s.id === parseInt(studentId));
-    
-    newStudents[index] = studentId;
-    newStudentNames[index] = selectedStudent ? selectedStudent.short_name : '';
-    
-    setTableData(prev => ({
-      ...prev,
-      students: newStudents,
-      studentNames: newStudentNames
-    }));
+  const handleScoreChange = (indicatorIdx, studentIdx, value) => {
+    const newScores = [...scores];
+    newScores[indicatorIdx][studentIdx] = value === '' ? null : parseInt(value);
+    setScores(newScores);
   };
 
-  const handleScoreChange = (qualityIndex, studentIndex, value) => {
-    const newScores = [...tableData.scores];
-    if (!newScores[qualityIndex]) {
-      newScores[qualityIndex] = Array(5).fill(null);
+  const addIndicatorManually = (indicatorId) => {
+    const indicator = allIndicators.find(i => i.id === parseInt(indicatorId));
+    if (indicator && !selectedIndicators.find(i => i.id === indicator.id)) {
+      const newIndicators = [...selectedIndicators, indicator];
+      setSelectedIndicators(newIndicators);
+      const newScores = [...scores, Array(teamMembers.length).fill(null)];
+      setScores(newScores);
     }
-    newScores[qualityIndex][studentIndex] = (value !== null && value !== undefined && value !== '') ? parseInt(value, 10) : null;
-    setTableData(prev => ({ ...prev, scores: newScores }));
   };
 
-  // Добавление новой компетенции
-  const handleAddCompetence = () => {
-    if (!newCompetenceName.trim()) {
-      alert('Введите название компетенции');
-      return;
-    }
-
-    setTableData(prev => ({
-      ...prev,
-      qualities: [...prev.qualities, newCompetenceName.trim()],
-      scores: [...prev.scores, Array(5).fill(null)]
-    }));
-
-    setNewCompetenceName('');
+  const removeIndicator = (idx) => {
+    const newIndicators = selectedIndicators.filter((_, i) => i !== idx);
+    setSelectedIndicators(newIndicators);
+    const newScores = scores.filter((_, i) => i !== idx);
+    setScores(newScores);
   };
 
-  // Удаление компетенции
-  const handleRemoveCompetence = (index) => {
-    if (index < 4) {
-      alert('Нельзя удалить базовые компетенции');
-      return;
-    }
-
-    const newQualities = tableData.qualities.filter((_, i) => i !== index);
-    const newScores = tableData.scores.filter((_, i) => i !== index);
-
-    setTableData(prev => ({
-      ...prev,
-      qualities: newQualities,
-      scores: newScores
-    }));
-  };
-
-  const handleSaveTemplate = async () => {
+  const saveAsTemplate = async () => {
     if (!newTemplateName) {
       alert('Введите название шаблона');
       return;
     }
-
+    
+    if (selectedIndicators.length === 0) {
+      alert('Выберите хотя бы один индикатор');
+      return;
+    }
+    
     try {
-      // Проверяем, что все оценки заполнены
-      let allFilled = true;
-      for (let q = 0; q < tableData.qualities.length; q++) {
-        for (let s = 0; s < 5; s++) {
-          if (tableData.scores[q]?.[s] === null || tableData.scores[q]?.[s] === undefined) {
-            allFilled = false;
-            break;
-          }
-        }
-        if (!allFilled) break;
-      }
-
-      if (!allFilled) {
-        alert('Заполните все оценки для всех студентов перед сохранением шаблона');
-        return;
-      }
-
-      const indicators = [];
-      
-      for (let q = 0; q < tableData.qualities.length; q++) {
-        const values = tableData.scores[q] || [];
-        const avgValue = values.length > 0 
-          ? Math.round(values.reduce((a, b) => a + b, 0) / values.length)
-          : 0;
-        
-        indicators.push({
-          name: avgValue.toString(),
-          description: tableData.qualities[q]
-        });
-      }
-      
-      // Добавляем общую оценку как 5-й индикатор, если компетенций больше 4
-      if (indicators.length >= 4) {
-        const allValues = [];
-        for (let q = 0; q < tableData.qualities.length; q++) {
-          allValues.push(...(tableData.scores[q] || []));
-        }
-        const totalAvg = allValues.length > 0 
-          ? Math.round(allValues.reduce((a, b) => a + b, 0) / allValues.length)
-          : 0;
-        
-        // Ограничиваем до 5 индикаторов
-        while (indicators.length < 5) {
-          indicators.push({
-            name: totalAvg.toString(),
-            description: 'Общая оценка'
-          });
-        }
-      }
-
-      await api.post('/api/templates/save/', {
+      await api.post('/api/templates/create/', {
         name: newTemplateName,
-        indicators: indicators.slice(0, 5), // Берем только первые 5
-        competences: tableData.qualities // Сохраняем все компетенции
+        indicators: selectedIndicators.map(i => i.id)
       });
-
-      alert('Шаблон успешно сохранен');
+      
+      alert('Шаблон сохранен');
       setShowSaveTemplate(false);
       setNewTemplateName('');
-      fetchTemplates();
-      
+      const res = await api.get('/api/templates/');
+      setTemplates(res.data);
     } catch (error) {
-      console.error('Ошибка сохранения шаблона:', error);
-      alert('Ошибка при сохранении шаблона');
+      console.error('Ошибка:', error);
+      alert('Ошибка при сохранении');
     }
   };
 
-  const handleSaveChecklist = async () => {
-    try {
-      if (!formData.team || !formData.date || !formData.eventName) {
-        alert('Для сохранения чек-листа необходимо указать команду, дату и название мероприятия');
-        return;
-      }
-
-      const allStudentsSelected = tableData.students.every(id => id && id !== '');
-      if (!allStudentsSelected) {
-        alert('Выберите всех 5 студентов для оценки');
-        return;
-      }
-
-      let allFilled = true;
-      for (let q = 0; q < tableData.qualities.length; q++) {
-        for (let s = 0; s < 5; s++) {
-          if (tableData.scores[q]?.[s] === null || tableData.scores[q]?.[s] === undefined) {
-            allFilled = false;
-            break;
-          }
+  const saveChecklist = async () => {
+    if (!formData.team || !formData.date || !formData.eventName) {
+      alert('Заполните все поля');
+      return;
+    }
+    
+    for (let i = 0; i < selectedIndicators.length; i++) {
+      for (let s = 0; s < teamMembers.length; s++) {
+        if (scores[i]?.[s] === null || scores[i]?.[s] === undefined) {
+          alert(`Заполните оценку для индикатора "${selectedIndicators[i].name}" у студента ${teamMembers[s].name}`);
+          return;
         }
-        if (!allFilled) break;
       }
-
-      if (!allFilled) {
-        alert('Заполните все оценки для всех студентов перед сохранением');
-        return;
-      }
-
-      const eventResponse = await api.post('/api/events/create/', {
-        team_id: formData.team,
-        datetime: formData.date,
-        name: formData.eventName
+    }
+    
+    try {
+      const selectedDate = new Date(formData.date);
+      
+      const startDate = new Date(selectedDate);
+      startDate.setHours(0, 0, 0, 0);
+      
+      const endDate = new Date(selectedDate);
+      endDate.setHours(23, 59, 59, 999);
+      
+      console.log('Выбранная дата:', formData.date);
+      console.log('Start date:', startDate.toISOString());
+      console.log('End date:', endDate.toISOString());
+      
+      const formResponse = await api.post('/api/forms/create/', {
+        name: formData.eventName,
+        type: 'Чек-лист',
+        teams_id: [parseInt(formData.team)],
+        start_datetime: startDate.toISOString(),
+        end_datetime: endDate.toISOString(),
+        template_id: formData.template || null
       });
       
-      const checklistResponse = await api.post('/api/checklist/save/', {
-        event_id: eventResponse.data.id,
-        students_ids: tableData.students,
-        scores: tableData.scores,
-        qualities: tableData.qualities
+      const formId = formResponse.data.id;
+      console.log('Форма создана, ID:', formId);
+      
+      const evaluatedProjectants = teamMembers.map((member, sIdx) => ({
+        evaluated_projectant_id: member.id,
+        scores: selectedIndicators.map((indicator, iIdx) => ({
+          indicator_id: indicator.id,
+          score: scores[iIdx]?.[sIdx] || 0
+        }))
+      }));
+      
+      await api.post('/api/forms/submit/check_list', {
+        form_id: formId,
+        evaluator_id: user?.id,
+        evaluated_projectants: evaluatedProjectants
       });
-
-      alert('Чек-лист успешно сохранен');
+      
+      alert('Чек-лист успешно сохранен!');
       navigate('/events/tutor');
       
     } catch (error) {
       console.error('Ошибка сохранения чек-листа:', error);
-      alert('Ошибка при сохранении чек-листа: ' + (error.response?.data?.error || 'Неизвестная ошибка'));
+      alert('Ошибка при сохранении: ' + (error.response?.data?.error || 'Неизвестная ошибка'));
     }
   };
 
-  const handleLogout = () => {
-    localStorage.clear();
-    navigate('/');
+  const getQualityForIndicator = (indicatorName) => {
+    const qualityMap = {
+      'Вклад во взаимосвязанную задачу': 'Работа в команде',
+      'Предупреждает о возникающих проблемах': 'Работа в команде',
+      'Умение планировать': 'Организованность',
+      'Соблюдение сроков': 'Организованность',
+      'Поведение в ситуации неопределенности': 'Обучаемость',
+      'Исправление ошибок': 'Обучаемость',
+      'Реакция на критику (устное общение)': 'Обучаемость',
+      'Воспроизведение по инструкции': 'Обучаемость',
+      'Умение анализировать, выявлять существенное': 'Обучаемость',
+      'Умение анализировать, выявлять существенное': 'Вовлеченность',
+      'Реакция на критику (устное общение)': 'Вовлеченность',
+      'Предупреждает о возникающих проблемах': 'Вовлеченность'
+    };
+    return qualityMap[indicatorName] || 'Другое';
   };
 
   if (loading) return <div className="loading">Загрузка...</div>;
 
   return (
     <div className="checklist-container">
-      <Header onLogout={handleLogout} user={user} />
+      <Header onLogout={logout} user={user} />
       
       <div className="checklist-content">
         <div className="checklist-card">
@@ -329,178 +660,194 @@ const CheckList = () => {
           
           {step === 1 ? (
             <div className="form-step">
-              {/* Форма как была ранее */}
               <div className="form-group">
-                <label>Дата <span className="required">*</span>:</label>
-                <input
-                  type="date"
-                  name="date"
-                  value={formData.date}
-                  onChange={handleFormChange}
-                  required
-                />
+                <label>Дата *</label>
+                <input type="date" name="date" value={formData.date} onChange={handleFormChange} />
               </div>
               
               <div className="form-group">
-                <label>Команда <span className="required">*</span>:</label>
-                <select
-                  name="team"
-                  value={formData.team}
-                  onChange={handleFormChange}
-                  required
-                >
+                <label>Команда *</label>
+                <select name="team" value={formData.team} onChange={handleFormChange}>
                   <option value="">Выберите команду</option>
                   {teams.map(team => (
-                    <option key={team.id} value={team.id}>
-                      {team.name}
-                    </option>
+                    <option key={team.id} value={team.id}>{team.name}</option>
                   ))}
                 </select>
+                {teamMembers.length > 0 && (
+                  <small className="info">Студентов: {teamMembers.length}</small>
+                )}
               </div>
               
               <div className="form-group">
-                <label>Название мероприятия <span className="required">*</span>:</label>
-                <input
-                  type="text"
-                  name="eventName"
-                  value={formData.eventName}
-                  onChange={handleFormChange}
-                  placeholder="Введите название"
-                  required
-                />
+                <label>Название мероприятия *</label>
+                <input type="text" name="eventName" value={formData.eventName} onChange={handleFormChange} />
               </div>
               
               <div className="form-group">
-                <label>Шаблон чек-листа:</label>
-                <select
-                  name="template"
-                  value={formData.template}
-                  onChange={handleTemplateSelect}
-                >
+                <label>Шаблон</label>
+                <select name="template" value={formData.template} onChange={handleTemplateSelect}>
                   <option value="">Выберите шаблон</option>
-                  {templates.map(template => (
-                    <option key={template.id} value={template.id}>
-                      {template.name}
-                    </option>
+                  {templates.map(t => (
+                    <option key={t.id} value={t.id}>{t.name}</option>
                   ))}
                 </select>
+                <small className="info">Шаблон содержит набор индикаторов для оценки</small>
               </div>
               
-              <button className="next-button" onClick={handleNext}>
-                Далее
-              </button>
-            </div>
-          ) : (
-            <div className="table-step">
-              <h2>Заполните оценки</h2>
-              
-              <div className="checklist-table-wrapper">
-                  <table className="checklist-table">
-                    <thead>
-                      <tr>
-                        <th>Студент / Качество</th>
-                        {tableData.qualities.map((quality, qIndex) => (
-                          <th key={qIndex}>
-                            <div className="quality-with-remove">
-                              {quality}
-                              {qIndex >= 4 && (
-                                <button 
-                                  className="remove-competence"
-                                  onClick={() => handleRemoveCompetence(qIndex)}
-                                  title="Удалить компетенцию"
-                                >
-                                  ×
-                                </button>
-                              )}
-                            </div>
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {[0, 1, 2, 3, 4].map(sIndex => (
-                        <tr key={sIndex}>
-                          <td className="student-cell">
-                            <select
-                              value={tableData.students[sIndex] || ''}
-                              onChange={(e) => handleStudentSelect(sIndex, e.target.value)}
-                              className="student-select"
-                            >
-                              <option value="">Выберите студента {sIndex + 1}</option>
-                              {students.map(student => (
-                                <option key={student.id} value={student.id}>
-                                  {student.short_name}
-                                </option>
-                              ))}
-                            </select>
-                          </td>
-                          {tableData.qualities.map((_, qIndex) => (
-                            <td key={qIndex}>
-                              <select
-                                value={tableData.scores[qIndex]?.[sIndex] !== null && tableData.scores[qIndex]?.[sIndex] !== undefined 
-                                  ? tableData.scores[qIndex]?.[sIndex] 
-                                  : ''}
-                                onChange={(e) => handleScoreChange(qIndex, sIndex, e.target.value)}
-                                disabled={!tableData.students[sIndex]}
-                              >
-                                <option value="">-</option>
-                                <option value="-1">-1</option>
-                                <option value="0">0</option>
-                                <option value="1">1</option>
-                              </select>
-                            </td>
-                          ))}
-                        </tr>
+              <div className="indicators-selection">
+                <label>Индикаторы для оценки</label>
+                <p className="hint">Выберите индикаторы, по которым будет оцениваться студент</p>
+                
+                {indicatorsLoading ? (
+                  <div className="loading-small">Загрузка индикаторов...</div>
+                ) : (
+                  <>
+                    <div className="selected-indicators-list">
+                      {selectedIndicators.map((indicator, idx) => (
+                        <div key={indicator.id} className="selected-indicator-item">
+                          <div className="indicator-info">
+                            <span className="indicator-name">{indicator.name}</span>
+                            <span className="indicator-quality-badge">{getQualityForIndicator(indicator.name)}</span>
+                          </div>
+                          <button 
+                            type="button"
+                            className="remove-indicator-btn"
+                            onClick={() => removeIndicator(idx)}
+                          >
+                            ×
+                          </button>
+                        </div>
                       ))}
-                    </tbody>
-                  </table>
-                </div>
-
-              {/* Блок добавления новой компетенции */}
-              <div className="add-competence-section">
-                <input
-                  type="text"
-                  placeholder="Название новой компетенции"
-                  value={newCompetenceName}
-                  onChange={(e) => setNewCompetenceName(e.target.value)}
-                  className="competence-input"
-                />
-                <button 
-                  className="add-competence-button"
-                  onClick={handleAddCompetence}
-                >
-                  + Добавить компетенцию
-                </button>
+                      {selectedIndicators.length === 0 && (
+                        <div className="empty-indicators">
+                          <span>Нет выбранных индикаторов</span>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="add-indicator-section">
+                      <select 
+                        onChange={(e) => addIndicatorManually(e.target.value)}
+                        value=""
+                        className="indicator-select"
+                      >
+                        <option value="">-- Добавить индикатор --</option>
+                        {allIndicators
+                          .filter(i => !selectedIndicators.find(si => si.id === i.id))
+                          .map(indicator => (
+                            <option key={indicator.id} value={indicator.id}>
+                              {indicator.name}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+                  </>
+                )}
               </div>
               
-              <div className="table-actions">
+              <div className="form-actions-step1">
                 <button 
-                  className="template-button"
+                  className="save-template-btn"
+                  type="button"
                   onClick={() => setShowSaveTemplate(true)}
+                  disabled={selectedIndicators.length === 0}
                 >
                   Сохранить как шаблон
                 </button>
                 <button 
-                  className="save-button"
-                  onClick={handleSaveChecklist}
+                  className="next-button" 
+                  onClick={handleNext} 
+                  disabled={teamMembers.length === 0 || selectedIndicators.length === 0}
                 >
-                  Сохранить чек-лист
+                  Далее →
                 </button>
-                <button 
-                  className="back-button"
-                  onClick={() => setStep(1)}
+              </div>
+            </div>
+          ) : (
+            <div className="table-step">
+              <div className="table-wrapper">
+                <table className="checklist-table">
+                  <thead>
+                    <tr>
+                      <th className="student-col">Студент</th>
+                      {selectedIndicators.map((indicator, idx) => (
+                        <th key={indicator.id} className="indicator-col">
+                          <div className="indicator-header">
+                            <span className="indicator-header-name">{indicator.name}</span>
+                            <span className="indicator-header-quality">
+                              {getQualityForIndicator(indicator.name)}
+                            </span>
+                            <button 
+                              className="remove-indicator-table-btn"
+                              onClick={() => removeIndicator(idx)}
+                              title="Удалить индикатор"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {teamMembers.map((member, sIdx) => (
+                      <tr key={member.id}>
+                        <td className="student-name-cell">
+                          <span className="student-name">{member.name}</span>
+                        </td>
+                        {selectedIndicators.map((_, iIdx) => (
+                          <td key={iIdx} className="score-cell">
+                            <select
+                              value={scores[iIdx]?.[sIdx] !== undefined && scores[iIdx]?.[sIdx] !== null ? scores[iIdx][sIdx] : ''}
+                              onChange={(e) => handleScoreChange(iIdx, sIdx, e.target.value)}
+                              className="score-select"
+                            >
+                              <option value="">-</option>
+                              <option value="-1">-1</option>
+                              <option value="0">0</option>
+                              <option value="1">1</option>
+                            </select>
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              
+              <div className="add-indicator-table">
+                <select 
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      addIndicatorManually(e.target.value);
+                      e.target.value = '';
+                    }
+                  }}
+                  value=""
+                  className="indicator-select"
                 >
-                  Назад
-                </button>
+                  <option value="">+ Добавить индикатор</option>
+                  {allIndicators
+                    .filter(i => !selectedIndicators.find(si => si.id === i.id))
+                    .map(indicator => (
+                      <option key={indicator.id} value={indicator.id}>
+                        {indicator.name}
+                      </option>
+                    ))}
+                </select>
+              </div>
+              
+              <div className="actions">
+                <button onClick={saveChecklist}>Сохранить чек-лист</button>
+                <button onClick={() => setStep(1)}>Назад</button>
               </div>
             </div>
           )}
         </div>
       </div>
       
-      {/* Модальное окно сохранения шаблона */}
       {showSaveTemplate && (
-        <div className="modal-overlay">
+        <div className="modal">
           <div className="modal-content">
             <h3>Сохранить шаблон</h3>
             <input
@@ -509,14 +856,9 @@ const CheckList = () => {
               value={newTemplateName}
               onChange={(e) => setNewTemplateName(e.target.value)}
             />
-            <div className="modal-actions">
-              <button onClick={handleSaveTemplate}>Сохранить</button>
-              <button onClick={() => {
-                setShowSaveTemplate(false);
-                setNewTemplateName('');
-              }}>
-                Отмена
-              </button>
+            <div className="modal-buttons">
+              <button onClick={saveAsTemplate}>Сохранить</button>
+              <button onClick={() => setShowSaveTemplate(false)}>Отмена</button>
             </div>
           </div>
         </div>

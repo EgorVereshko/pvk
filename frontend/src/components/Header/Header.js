@@ -1,39 +1,24 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import './Header.css';
 
-const Header = ({ onLogout, user }) => {
+const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef(null);
   const avatarRef = useRef(null);
   const navigate = useNavigate();
+  const { user, userRole, logout, isOrganizer, isTutor, isProjectant } = useAuth();
 
-  // Функция для получения статуса на основе роли пользователя
   const getUserStatus = () => {
-    if (!user) return 'Проектант';
-    
-    const role = user.role?.toLowerCase();
-    
-    switch (role) {
-      case 'organizer':
-      case 'организатор':
-        return 'Организатор';
-      case 'curator':
-      case 'куратор':
-        return 'Куратор';
-      case 'projectant':
-      case 'проектант':
-        return 'Проектант';
-      default:
-        return 'Проектант'; // значение по умолчанию
-    }
+    if (isOrganizer()) return 'Организатор';
+    if (isTutor()) return 'Куратор';
+    return 'Проектант';
   };
 
   const handleExitClick = (e) => {
     e.preventDefault();
-    if (onLogout) {
-      onLogout();
-    }
+    logout();
     setIsMenuOpen(false);
   };
 
@@ -42,8 +27,34 @@ const Header = ({ onLogout, user }) => {
     setIsMenuOpen(false);
   };
 
-  const handleSettingsClick = () => {
-    navigate('/settings');
+  const handleStudentsClick = () => {
+    navigate('/students');
+    setIsMenuOpen(false);
+  };
+
+  const handleForm360Click = () => {
+    navigate('/form360');
+    setIsMenuOpen(false);
+  };
+
+  const handleEventsClick = () => {
+    if (isProjectant()) {
+      navigate('/events');
+    } else if (isTutor()) {
+      navigate('/events/tutor');
+    } else {
+      navigate('/events/tutor');
+    }
+    setIsMenuOpen(false);
+  };
+
+  const handlePollsClick = () => {
+    navigate('/polls');
+    setIsMenuOpen(false);
+  };
+
+  const handleQualitiesClick = () => {
+    navigate('/qualities');
     setIsMenuOpen(false);
   };
 
@@ -63,10 +74,22 @@ const Header = ({ onLogout, user }) => {
 
   return (
     <header className="main-header">
-      <a href='/score/student' className='header__item'>Форма 360</a>
-      <a href='/events' className='header__item'>Оценочные мероприятия</a>
-      <a href='/polls' className='header__item'>Опросники</a>
-      <a href='/qualities' className='header__item'>Качества</a>
+      <button onClick={handleForm360Click} className="header__item header__button">
+        Форма 360
+      </button>
+      {(!isProjectant()) && (
+        <button onClick={handleEventsClick} className="header__item header__button">
+          Чек-листы
+        </button>
+      )}
+      <button onClick={handlePollsClick} className="header__item header__button">
+        Опросники
+      </button>
+      {(isOrganizer()) && (
+        <button onClick={handleQualitiesClick} className="header__item header__button">
+          Качества
+        </button>
+      )}
       
       <div className="header__avatar-wrapper">
         <button 
@@ -96,8 +119,7 @@ const Header = ({ onLogout, user }) => {
                 <div className="dropdown-menu__email">
                   {user?.email || user?.username || 'user@example.com'}
                 </div>
-                {/* НОВЫЙ БЛОК СО СТАТУСОМ */}
-                <div className="dropdown-menu__status">
+                <div className={`dropdown-menu__status ${isOrganizer() ? 'status-organizer' : isTutor() ? 'status-tutor' : 'status-projectant'}`}>
                   {getUserStatus()}
                 </div>
               </div>
@@ -114,18 +136,19 @@ const Header = ({ onLogout, user }) => {
               </svg>
               Профиль
             </button>
-            
-            <button 
-              className="dropdown-menu__item"
-              onClick={handleSettingsClick}
-            >
-              <svg className="dropdown-menu__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              Настройки
-            </button>
-            
+
+            {isOrganizer() && (
+              <button 
+                className="dropdown-menu__item"
+                onClick={handleStudentsClick}
+              >
+                <svg className="dropdown-menu__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+                Все студенты
+              </button>
+            )}
+              
             <div className="dropdown-menu__divider"></div>
             
             <button 

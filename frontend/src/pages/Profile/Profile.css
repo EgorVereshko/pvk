@@ -1,3 +1,7 @@
+/* ============================================ */
+/* PROFILE PAGE - Main Container */
+/* ============================================ */
+
 .profile-container {
   min-height: 100vh;
   background-color: #f8fafc;
@@ -12,11 +16,13 @@
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
 }
 
+/* Two-column layout */
 .lk-content {
   display: flex;
   gap: 40px;
 }
 
+/* Left column */
 .lk-left {
   flex: 1;
 }
@@ -29,6 +35,7 @@
   letter-spacing: -0.01em;
 }
 
+/* Right column (wider for charts) */
 .lk-right {
   flex: 2;
 }
@@ -40,6 +47,7 @@
   margin-bottom: 1.5rem;
 }
 
+/* User info card */
 .lk-info {
   display: flex;
   align-items: center;
@@ -51,6 +59,7 @@
   border: 1px solid #f1f5f9;
 }
 
+/* Avatar image */
 .lk-photo {
   width: 80px;
   height: 80px;
@@ -60,6 +69,7 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
+/* User name */
 .lk-text h3 {
   font-size: 1.25rem;
   font-weight: 600;
@@ -67,12 +77,14 @@
   margin-bottom: 0.25rem;
 }
 
+/* User details */
 .lk-text p {
   color: #64748b;
   font-size: 0.95rem;
   margin: 0.25rem 0;
 }
 
+/* Statistics block for charts */
 .stats {
   background: #f8fafc;
   border-radius: 16px;
@@ -83,6 +95,7 @@
   min-height: 300px;
 }
 
+/* Loading state */
 .loading {
   display: flex;
   justify-content: center;
@@ -91,6 +104,10 @@
   font-size: 1rem;
   color: #64748b;
 }
+
+/* ============================================ */
+/* RESPONSIVE DESIGN */
+/* ============================================ */
 
 @media (max-width: 968px) {
   .lk-content {
@@ -113,4 +130,173 @@
   .lk-left h1 {
     font-size: 1.5rem;
   }
+}
+
+.form-selector {
+  margin-bottom: 20px;
+  padding: 15px;
+  background: #f8fafc;
+  border-radius: 12px;
+}
+
+.form-selector label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #0f172a;
+  font-size: 14px;
+}
+
+.form-select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  background: white;
+  cursor: pointer;
+}
+
+.form-select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.loading-small {
+  text-align: center;
+  padding: 40px;
+  color: #64748b;
+}
+
+.form-selector {
+  margin-bottom: 20px;
+  padding: 15px;
+  background: #f8fafc;
+  border-radius: 12px;
+}
+
+.form-selector label {
+  display: block;
+  margin-bottom: 10px;
+  font-weight: 600;
+  color: #0f172a;
+  font-size: 14px;
+}
+
+.form-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.form-btn {
+  padding: 8px 16px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.form-btn:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e0;
+}
+
+.form-btn.active {
+  background: #667eea;
+  border-color: #667eea;
+  color: white;
+}
+
+.loading-small {
+  text-align: center;
+  padding: 40px;
+  color: #64748b;
+}
+
+.user-role {
+  color: #667eea;
+  font-weight: 600;
+  font-size: 14px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #e2e8f0;
+}
+
+/* Блок со средним баллом */
+.average-score-block {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.average-score-label {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.average-score-value {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+  background-color: #48bb78;
+}
+
+.average-score-value.no-score {
+  background-color: #cbd5e0;
+  color: #666;
+}
+
+.user-role {
+  color: #667eea;
+  font-weight: 600;
+  font-size: 14px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #e2e8f0;
+}
+
+/* Блок со средним баллом */
+.average-score-block {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.average-score-label {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.average-score-value {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+  background-color: #48bb78;
+}
+
+.average-score-value.no-score {
+  background-color: #cbd5e0;
+  color: #666;
 }

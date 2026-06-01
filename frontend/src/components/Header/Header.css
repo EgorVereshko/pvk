@@ -1,9 +1,13 @@
+/* ============================================ */
+/* MAIN HEADER - Navigation Bar */
+/* ============================================ */
+
 .main-header {
     height: 65px;
-    padding: 10px 190px;
+    padding: 10px 250px;
     display: flex;
     align-items: center;
-    justify-content: center;
+    gap: 50px;
     color: #334155;
     font-size: 14px;
     font-weight: 700;
@@ -16,38 +20,34 @@
     background: white;
 }
 
-.header__item {
+/* Navigation buttons */
+.header__button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
     color: #334155;
-    text-decoration: none;
     transition: color 0.2s;
+    padding: 0;
 }
 
-.header__item:hover {
+.header__button:hover {
     color: #1e40af;
 }
 
-.header__item:nth-child(1) {
-    margin-right: 50px;
-}
-
-.header__item:nth-child(2) {
-    margin-right: 50px;
-}
-
-.header__item:nth-child(3) {
-    margin-right: 50px;
-}
-
-.header__item:nth-child(4) {
-    margin-right: auto;
-}
-
-/* Аватарка */
+/* Push avatar to the right */
 .header__avatar-wrapper {
+    margin-left: auto;
     position: relative;
-    margin: auto 0;
 }
 
+/* ============================================ */
+/* AVATAR & DROPDOWN MENU */
+/* ============================================ */
+
+/* Avatar button */
 .header__avatar-btn {
     background: none;
     border: none;
@@ -63,6 +63,7 @@
     transform: scale(1.05);
 }
 
+/* Avatar image */
 .header__ava {
     background-size: cover;
     background-position: center;
@@ -76,10 +77,10 @@
 }
 
 .header__avatar-btn:hover .header__ava {
-    border-color: #667eea;
+    border-color: #0f172a;
 }
 
-/* Выпадающее меню */
+/* Dropdown menu container */
 .dropdown-menu {
     position: absolute;
     top: calc(100% + 10px);
@@ -94,6 +95,7 @@
     animation: fadeIn 0.2s ease;
 }
 
+/* Dropdown animation */
 @keyframes fadeIn {
     from {
         opacity: 0;
@@ -105,7 +107,7 @@
     }
 }
 
-/* Инфо о пользователе */
+/* User info section in dropdown */
 .dropdown-menu__user {
     display: flex;
     align-items: center;
@@ -146,13 +148,36 @@
     text-overflow: ellipsis;
 }
 
+.dropdown-menu__status {
+    margin-top: 5px;
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: white;
+}
+
+.dropdown-menu__status.status-organizer {
+    background: #8b5cf6;
+}
+
+.dropdown-menu__status.status-tutor {
+    background: #3b82f6;
+}
+
+.dropdown-menu__status.status-projectant {
+    background: #10b981;
+}
+
+/* Divider between sections */
 .dropdown-menu__divider {
     height: 1px;
     background: #E2E8F0;
     margin: 8px 0;
 }
 
-/* Пункты меню */
+/* Dropdown menu items */
 .dropdown-menu__item {
     display: flex;
     align-items: center;
@@ -172,6 +197,7 @@
     background: #F1F5F9;
 }
 
+/* Logout button - red color */
 .dropdown-menu__item--logout {
     color: #EF4444;
 }
@@ -180,31 +206,32 @@
     background: #FEF2F2;
 }
 
+/* Icons in dropdown */
 .dropdown-menu__icon {
     width: 20px;
     height: 20px;
     flex-shrink: 0;
 }
 
-/* Адаптив */
+/* ============================================ */
+/* RESPONSIVE DESIGN */
+/* ============================================ */
+
 @media (max-width: 1024px) {
     .main-header {
         padding: 10px 20px;
+        gap: 30px;
     }
 }
 
 @media (max-width: 768px) {
     .main-header {
         padding: 10px 16px;
+        gap: 20px;
     }
     
-    .header__item:nth-child(1),
-    .header__item:nth-child(2) {
-        margin-right: 20px;
-    }
-    
-    .header__avatar-wrapper {
-        margin-right: 0;
+    .header__button {
+        font-size: 12px;
     }
     
     .dropdown-menu {
@@ -213,5 +240,15 @@
         right: 16px;
         left: auto;
         width: 280px;
+    }
+}
+
+@media (max-width: 640px) {
+    .main-header {
+        gap: 12px;
+    }
+    
+    .header__button {
+        font-size: 11px;
     }
 }
