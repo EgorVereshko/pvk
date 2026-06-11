@@ -18,7 +18,6 @@ const CheckList = () => {
   const [indicatorsLoading, setIndicatorsLoading] = useState(false);
   
   const [formData, setFormData] = useState({
-    date: '',
     team: '',
     eventName: '',
     template: ''
@@ -59,15 +58,18 @@ const CheckList = () => {
   }, []);
 
   const loadTemplateIndicators = async (templateId) => {
+    console.log('loadTemplateIndicators started for templateId:', templateId);
     setIndicatorsLoading(true);
     try {
       const res = await api.get(`/api/templates/${templateId}/`);
+      console.log('Template response:', res.data);
       if (res.data && res.data.indicators) {
         const indicatorsWithDetails = res.data.indicators.map(ind => ({
           id: ind.id,
           name: ind.name,
           quality: ind.quality || null
         }));
+        console.log('Indicators to set:', indicatorsWithDetails);
         setSelectedIndicators(indicatorsWithDetails);
         
         const newScores = indicatorsWithDetails.map(() => Array(teamMembers.length).fill(null));
@@ -77,6 +79,7 @@ const CheckList = () => {
       console.error('Ошибка загрузки шаблона:', error);
     } finally {
       setIndicatorsLoading(false);
+      console.log('loadTemplateIndicators finished');
     }
   };
 
@@ -106,9 +109,11 @@ const CheckList = () => {
 
   const handleTemplateSelect = async (e) => {
     const templateId = e.target.value;
+    console.log('Template selected:', templateId);
     setFormData(prev => ({ ...prev, template: templateId }));
     
     if (templateId) {
+      setSelectedIndicators([]);
       await loadTemplateIndicators(templateId);
     } else {
       setSelectedIndicators([]);
@@ -116,8 +121,19 @@ const CheckList = () => {
     }
   };
 
+  useEffect(() => {
+    console.log('selectedIndicators changed:', selectedIndicators.length, selectedIndicators);
+  }, [selectedIndicators]);
+
   const handleNext = () => {
-    if (!formData.date || !formData.eventName || !formData.team) {
+    console.log('=== handleNext called ===');
+    console.log('formData.eventName:', formData.eventName);
+    console.log('formData.team:', formData.team);
+    console.log('teamMembers.length:', teamMembers.length);
+    console.log('selectedIndicators.length:', selectedIndicators.length);
+    console.log('indicatorsLoading:', indicatorsLoading);
+    
+    if (!formData.eventName || !formData.team) {
       alert('Заполните все поля');
       return;
     }
@@ -126,9 +142,10 @@ const CheckList = () => {
       return;
     }
     if (selectedIndicators.length === 0) {
-      alert('Выберите индикаторы для оценки (выберите шаблон или добавьте вручную)');
+      alert('Выберите индикаторы для оценки (выберите шаблон)');
       return;
     }
+    console.log('All checks passed, moving to step 2');
     setStep(2);
   };
 
@@ -184,7 +201,7 @@ const CheckList = () => {
   };
 
   const saveChecklist = async () => {
-    if (!formData.team || !formData.date || !formData.eventName) {
+    if (!formData.team || !formData.eventName) {
       alert('Заполните все поля');
       return;
     }
@@ -199,17 +216,12 @@ const CheckList = () => {
     }
     
     try {
-      const selectedDate = new Date(formData.date);
-      
-      const startDate = new Date(selectedDate);
+      const now = new Date();
+      const startDate = new Date(now);
       startDate.setHours(0, 0, 0, 0);
       
-      const endDate = new Date(selectedDate);
+      const endDate = new Date(now);
       endDate.setHours(23, 59, 59, 999);
-      
-      console.log('Выбранная дата:', formData.date);
-      console.log('Start date:', startDate.toISOString());
-      console.log('End date:', endDate.toISOString());
       
       const formResponse = await api.post('/api/forms/create/', {
         name: formData.eventName,
@@ -266,6 +278,27 @@ const CheckList = () => {
 
   if (loading) return <div className="loading">Загрузка...</div>;
 
+  const isTemplateSelected = !!formData.template;
+  
+  const isNextDisabled = () => {
+    const disabled = !formData.eventName || 
+      !formData.team || 
+      teamMembers.length === 0 || 
+      selectedIndicators.length === 0 ||
+      indicatorsLoading;
+    
+    console.log('isNextDisabled check:', {
+      eventName: !formData.eventName,
+      team: !formData.team,
+      teamMembers: teamMembers.length === 0,
+      indicators: selectedIndicators.length === 0,
+      loading: indicatorsLoading,
+      result: disabled
+    });
+    
+    return disabled;
+  };
+
   return (
     <div className="checklist-container">
       <Header onLogout={logout} user={user} />
@@ -277,8 +310,8 @@ const CheckList = () => {
           {step === 1 ? (
             <div className="form-step">
               <div className="form-group">
-                <label>Дата *</label>
-                <input type="date" name="date" value={formData.date} onChange={handleFormChange} />
+                <label>Название мероприятия *</label>
+                <input type="text" name="eventName" value={formData.eventName} onChange={handleFormChange} />
               </div>
               
               <div className="form-group">
@@ -295,11 +328,6 @@ const CheckList = () => {
               </div>
               
               <div className="form-group">
-                <label>Название мероприятия *</label>
-                <input type="text" name="eventName" value={formData.eventName} onChange={handleFormChange} />
-              </div>
-              
-              <div className="form-group">
                 <label>Шаблон</label>
                 <select name="template" value={formData.template} onChange={handleTemplateSelect}>
                   <option value="">Выберите шаблон</option>
@@ -310,72 +338,104 @@ const CheckList = () => {
                 <small className="info">Шаблон содержит набор индикаторов для оценки</small>
               </div>
               
-              <div className="indicators-selection">
-                <label>Индикаторы для оценки</label>
-                <p className="hint">Выберите индикаторы, по которым будет оцениваться студент</p>
-                
-                {indicatorsLoading ? (
-                  <div className="loading-small">Загрузка индикаторов...</div>
-                ) : (
-                  <>
-                    <div className="selected-indicators-list">
-                      {selectedIndicators.map((indicator, idx) => (
-                        <div key={indicator.id} className="selected-indicator-item">
-                          <div className="indicator-info">
+              {/* Показываем индикаторы ТОЛЬКО если шаблон НЕ выбран */}
+              {!isTemplateSelected && (
+                <div className="indicators-selection">
+                  <label>Индикаторы для оценки</label>
+                  <p className="hint">Выберите индикаторы, по которым будет оцениваться студент</p>
+                  
+                  {indicatorsLoading ? (
+                    <div className="loading-small">Загрузка индикаторов...</div>
+                  ) : (
+                    <>
+                      <div className="selected-indicators-list">
+                        {selectedIndicators.map((indicator, idx) => (
+                          <div key={indicator.id} className="selected-indicator-item">
+                            <div className="indicator-info">
+                              <span className="indicator-name">{indicator.name}</span>
+                              <span className="indicator-quality-badge">{getQualityForIndicator(indicator.name)}</span>
+                            </div>
+                            <button 
+                              type="button"
+                              className="remove-indicator-btn"
+                              onClick={() => removeIndicator(idx)}
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                        {selectedIndicators.length === 0 && (
+                          <div className="empty-indicators">
+                            <span>Нет выбранных индикаторов</span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="add-indicator-section">
+                        <select 
+                          onChange={(e) => addIndicatorManually(e.target.value)}
+                          value=""
+                          className="indicator-select"
+                        >
+                          <option value="">-- Добавить индикатор --</option>
+                          {allIndicators
+                            .filter(i => !selectedIndicators.find(si => si.id === i.id))
+                            .map(indicator => (
+                              <option key={indicator.id} value={indicator.id}>
+                                {indicator.name}
+                              </option>
+                            ))}
+                        </select>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+              
+              {/* Показываем информацию о загруженных индикаторах из шаблона */}
+              {isTemplateSelected && (
+                <div className="template-indicators-info">
+                  <label>Индикаторы из шаблона:</label>
+                  {indicatorsLoading ? (
+                    <div className="loading-small">Загрузка индикаторов из шаблона...</div>
+                  ) : (
+                    <>
+                      <div className="template-indicators-list">
+                        {selectedIndicators.map((indicator, idx) => (
+                          <div key={indicator.id} className="template-indicator-item">
                             <span className="indicator-name">{indicator.name}</span>
                             <span className="indicator-quality-badge">{getQualityForIndicator(indicator.name)}</span>
                           </div>
-                          <button 
-                            type="button"
-                            className="remove-indicator-btn"
-                            onClick={() => removeIndicator(idx)}
-                          >
-                            ×
-                          </button>
-                        </div>
-                      ))}
-                      {selectedIndicators.length === 0 && (
-                        <div className="empty-indicators">
-                          <span>Нет выбранных индикаторов</span>
+                        ))}
+                      </div>
+                      {selectedIndicators.length === 0 && !indicatorsLoading && (
+                        <div className="warning-message">
+                          ⚠️ В выбранном шаблоне нет индикаторов
                         </div>
                       )}
-                    </div>
-                    
-                    <div className="add-indicator-section">
-                      <select 
-                        onChange={(e) => addIndicatorManually(e.target.value)}
-                        value=""
-                        className="indicator-select"
-                      >
-                        <option value="">-- Добавить индикатор --</option>
-                        {allIndicators
-                          .filter(i => !selectedIndicators.find(si => si.id === i.id))
-                          .map(indicator => (
-                            <option key={indicator.id} value={indicator.id}>
-                              {indicator.name}
-                            </option>
-                          ))}
-                      </select>
-                    </div>
-                  </>
-                )}
-              </div>
+                      <p className="info-text">
+                        ✓ Индикаторы загружены из шаблона. При необходимости вы сможете добавить дополнительные индикаторы на следующем шаге.
+                      </p>
+                    </>
+                  )}
+                </div>
+              )}
               
               <div className="form-actions-step1">
                 <button 
                   className="save-template-btn"
                   type="button"
                   onClick={() => setShowSaveTemplate(true)}
-                  disabled={selectedIndicators.length === 0}
+                  disabled={selectedIndicators.length === 0 || indicatorsLoading}
                 >
                   Сохранить как шаблон
                 </button>
                 <button 
                   className="next-button" 
                   onClick={handleNext} 
-                  disabled={teamMembers.length === 0 || selectedIndicators.length === 0}
+                  disabled={isNextDisabled()}
                 >
-                  Далее →
+                  {indicatorsLoading ? 'Загрузка...' : 'Далее →'}
                 </button>
               </div>
             </div>

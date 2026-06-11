@@ -81,26 +81,11 @@ function AppRoutes() {
           <PollPass />
         </ProtectedRoute>
       } />
-      {/* <Route path="/events" element={
-        <ProtectedRoute allowedRoles={['Проектант']}>
-          <EventsStudent />
-        </ProtectedRoute>
-      } /> */}
       <Route path="/score/student" element={
         <ProtectedRoute allowedRoles={['Проектант']}>
           <ScoreStudent />
         </ProtectedRoute>
       } />
-      {/* <Route path="/form360/pass/:id" element={
-        <ProtectedRoute allowedRoles={['Проектант']}>
-          <Form360Pass />
-        </ProtectedRoute>
-      } /> */}
-      {/* <Route path="/form360/pass/:id" element={
-        <ProtectedRoute allowedRoles={['Проектант']}>
-          <ScoreStudent />
-        </ProtectedRoute>
-      } /> */}
 
 
       {/* Только для кураторов и организаторов */}
@@ -129,8 +114,6 @@ function AppRoutes() {
           <EventsTutor />
         </ProtectedRoute>
       } />
-      
-      {/* Только для кураторов */}
       
       {/* Только для организаторов */}
       <Route path="/students" element={
@@ -165,5 +148,3 @@ function App() {
 }
 
 export default App;
-
-// test

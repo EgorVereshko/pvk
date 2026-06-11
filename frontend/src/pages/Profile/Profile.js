@@ -155,6 +155,8 @@ const Profile = () => {
 
   const teamName = displayUser?.team_name || 'Без команды';
   const displayRole = getUserRole(displayUser?.role || userRole);
+  
+  const hasTeam = teamName !== 'Без команды' && displayUser?.team_name;
 
   return (
     <div className="profile-container">
@@ -182,8 +184,7 @@ const Profile = () => {
                 <div className="lk-text">
                   <h3>{displayUser?.first_name} {displayUser?.last_name}</h3>
                   <p>{displayUser?.university || 'УрФУ'}</p>
-                  <p>{teamName}</p>
-                  <p className="user-role">Роль: {displayRole}</p>
+                  {hasTeam && <p>{teamName}</p>}
                   
                   {!isOwnProfile && isOrganizerOrTutor && (
                     <div className="average-score-block">
@@ -210,7 +211,10 @@ const Profile = () => {
               <div className="lk-right">
                 <h2>Статистика</h2>
                 <div className="stats">
-                  <SpiderChart userScores={userScores} />
+                  <SpiderChart 
+                    userId={displayUser?.id} 
+                    userScores={userScores} 
+                  />
                 </div>
               </div>
             )}

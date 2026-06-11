@@ -645,20 +645,149 @@
   white-space: nowrap;
 }
 
-.value-input {
-  width: 45px;
-  background: transparent;
-  border: none;
+.slider-value-bubble {
+  position: absolute;
+  top: 7px;
+  transform: translateX(-50%);
+  background: #111827;
   color: white;
+  padding: 7px 10px;
+  border-radius: 20px;
   font-size: 12px;
   font-weight: 600;
+  min-width: 45px;
   text-align: center;
-  outline: none;
-  padding: 2px 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: left 0.05s ease;
+  z-index: 20;
+  pointer-events: none;
 }
 
-.value-input:focus {
+.current-value {
+  display: block;
+  line-height: 1;
+}
+
+/* ============================================ */
+/* MANUAL INPUT FIELD - Ручной ввод справа */
+/* ============================================ */
+
+.competence-row {
+  display: grid;
+  grid-template-columns: 220px 1fr auto;
+  align-items: center;
+  gap: 15px;
+}
+
+.manual-input {
+  width: 70px;
+}
+
+.manual-input-field {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+  background: white;
+  transition: all 0.2s;
+}
+
+.manual-input-field:focus {
   outline: none;
-  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(102, 126, 234, 0.2);
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+}
+
+@media (max-width: 768px) {
+  .competence-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  
+  .manual-input {
+    width: 100%;
+  }
+  
+  .manual-input-field {
+    width: 100%;
+  }
+}
+
+.progress-section {
+  margin-bottom: 20px;
+  padding: 15px;
+  background: #f8fafc;
   border-radius: 12px;
+}
+
+.progress-info {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: #475569;
+}
+
+.progress-bar {
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+/* Завершённая форма */
+.form-completed-message {
+  text-align: center;
+  padding: 40px;
+}
+
+.form-completed-message svg {
+  margin-bottom: 20px;
+}
+
+.form-completed-message h2 {
+  font-size: 24px;
+  color: #0f172a;
+  margin-bottom: 10px;
+}
+
+.form-completed-message p {
+  color: #64748b;
+  margin-bottom: 30px;
+}
+
+/* Завершённый студент */
+.student-tab.completed {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.student-tab.completed .completed-check {
+  margin-left: 5px;
+  font-weight: bold;
+}
+
+.student-tab:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.already-completed-warning {
+  background: #fef3c7;
+  color: #92400e;
+  padding: 10px 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  text-align: center;
 }

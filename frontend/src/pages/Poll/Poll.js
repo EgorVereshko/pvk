@@ -99,16 +99,23 @@ const Poll = () => {
         const res = await api.get('/api/forms/projectant/');
         console.log('Формы для проектанта:', res.data);
         pollForms = res.data.forms_polls || [];
-      } else {
-        const res = await api.get('/api/forms/tutor/');
-        console.log('Формы для куратора:', res.data);
-        pollForms = res.data.filter(form => form.type === 'Опросник');
+      } else if (role === 'Куратор' || role === 'Организатор') {
+        try {
+          const res = await api.get('/api/forms/all/');
+          console.log('Все формы:', res.data);
+          pollForms = res.data.filter(form => form.type === 'Опросник');
+        } catch (err) {
+          console.error('Ошибка загрузки /all/, пробуем /tutor/', err);
+          const res = await api.get('/api/forms/tutor/');
+          pollForms = res.data.filter(form => form.type === 'Опросник');
+        }
       }
       
       console.log('Загруженные опросники:', pollForms);
       setPolls(pollForms);
     } catch (error) {
       console.error('Ошибка загрузки опросников:', error);
+      setPolls([]);
     }
   };
 
@@ -513,12 +520,14 @@ const Poll = () => {
                         poll.status === 'Запланирована' ? 'Скоро начнётся' : 'Завершён'}
                       </button>
                     )}
-                    <button 
-                      className="view-button"
-                      onClick={() => fetchPollDetails(poll)}
-                    >
-                      Подробнее
-                    </button>
+                    {(userRole === 'Куратор' || userRole === 'Организатор') && (
+                      <button 
+                        className="view-button"
+                        onClick={() => fetchPollDetails(poll)}
+                      >
+                        Подробнее
+                      </button>
+                    )}
                   </div>
                 </div>
               ))
@@ -667,62 +676,113 @@ const Poll = () => {
 
       {/* МОДАЛКА ПРОСМОТРА ОПРОСНИКА */}
       {selectedPoll && (
-        <div className="modal-overlay">
-          <div className="modal-content">
+        <div className="modal-overlay" onClick={() => setSelectedPoll(null)}>
+          <div className="modal-content poll-detail-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>{selectedPoll.name}</h2>
-              <button className="close-button" onClick={() => setSelectedPoll(null)}>×</button>
-            </div>
-            
-            <div className="poll-detail-info">
-              <div className="info-item">
-                <span className="info-label">Статус:</span>
+              <div className="modal-header-title">
+                <h2>{selectedPoll.name}</h2>
                 <span className={`status-badge ${getStatusClass(selectedPoll.status)}`}>
                   {getStatusText(selectedPoll.status)}
                 </span>
               </div>
-              <div className="info-item">
-                <span className="info-label">Период:</span>
-                <span>
-                  {new Date(selectedPoll.start_datetime).toLocaleString('ru-RU', {
-                    day: 'numeric',
-                    month: 'numeric',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })} - {new Date(selectedPoll.end_datetime).toLocaleString('ru-RU', {
-                    day: 'numeric',
-                    month: 'numeric',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
-                </span>
+              <button className="close-button" onClick={() => setSelectedPoll(null)}>×</button>
+            </div>
+            
+            <div className="modal-body">
+              {/* Основная информация */}
+              <div className="info-grid">
+                <div className="info-card">
+                  <div className="info-icon">📅</div>
+                  <div className="info-content">
+                    <span className="info-label">Период проведения</span>
+                    <span className="info-value">
+                      {new Date(selectedPoll.start_datetime).toLocaleString('ru-RU', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })} — {new Date(selectedPoll.end_datetime).toLocaleString('ru-RU', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="info-card">
+                  <div className="info-icon">👤</div>
+                  <div className="info-content">
+                    <span className="info-label">Создатель</span>
+                    <span className="info-value">{selectedPoll.creator_name || '—'}</span>
+                  </div>
+                </div>
+                
+                <div className="info-card">
+                  <div className="info-icon">📋</div>
+                  <div className="info-content">
+                    <span className="info-label">Количество вопросов</span>
+                    <span className="info-value">{selectedPoll.question_count || 0}</span>
+                  </div>
+                </div>
+                
+                <div className="info-card">
+                  <div className="info-icon">👥</div>
+                  <div className="info-content">
+                    <span className="info-label">Команды</span>
+                    <span className="info-value">
+                      {selectedPoll.teams_names?.length > 0 
+                        ? selectedPoll.teams_names.join(', ') 
+                        : 'Не указаны'}
+                    </span>
+                  </div>
+                </div>
               </div>
-              <div className="info-item">
-                <span className="info-label">Создатель:</span>
-                <span>{selectedPoll.creator_name || '—'}</span>
-              </div>
-              <div className="info-item">
-                <span className="info-label">Количество вопросов:</span>
-                <span>{selectedPoll.question_count || 0}</span>
-              </div>
+
+              {/* Дополнительная информация о шаблоне */}
+              {selectedPoll.template && (
+                <div className="template-info">
+                  <div className="template-info-header">
+                    <span className="template-icon">📄</span>
+                    <span className="template-name">Шаблон: {selectedPoll.template.name}</span>
+                  </div>
+                  {selectedPoll.template.indicators && selectedPoll.template.indicators.length > 0 && (
+                    <div className="indicators-preview">
+                      <div className="indicators-title">Индикаторы в опроснике:</div>
+                      <div className="indicators-tags">
+                        {selectedPoll.template.indicators.slice(0, 5).map(ind => (
+                          <span key={ind.id} className="indicator-tag">{ind.name}</span>
+                        ))}
+                        {selectedPoll.template.indicators.length > 5 && (
+                          <span className="indicator-tag more">
+                            +{selectedPoll.template.indicators.length - 5}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="modal-actions">
               {userRole === 'Проектант' && (
-              <button 
-                className="pass-button"
-                onClick={() => {
-                  setSelectedPoll(null);
-                  navigate(getPollLink(selectedPoll));
-                }}
-                disabled={selectedPoll.status !== 'Активна'}
-              >
-                {selectedPoll.status === 'Активна' ? 'Пройти опрос' : 'Опрос недоступен'}
-              </button>
+                <button 
+                  className={`action-button primary ${selectedPoll.status !== 'Активна' ? 'disabled' : ''}`}
+                  onClick={() => {
+                    setSelectedPoll(null);
+                    navigate(getPollLink(selectedPoll));
+                  }}
+                  disabled={selectedPoll.status !== 'Активна'}
+                >
+                  {selectedPoll.status === 'Активна' ? 'Начать опрос' : 
+                  selectedPoll.status === 'Запланирована' ? 'Опрос ещё не начался' : 'Опрос завершён'}
+                </button>
               )}
-              <button className="cancel-button" onClick={() => setSelectedPoll(null)}>
+              <button className="action-button secondary" onClick={() => setSelectedPoll(null)}>
                 Закрыть
               </button>
             </div>

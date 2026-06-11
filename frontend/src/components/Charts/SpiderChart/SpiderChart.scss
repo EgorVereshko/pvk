@@ -1,48 +1,234 @@
-/* ============================================ */
-/* SPIDER CHART - Radar Diagram Component */
-/* ============================================ */
-
 .spider-chart {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 20px;
-  font-family: Arial, sans-serif;
   background: white;
   border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-  width: 100%;
-  height: 100%;
-}
+  padding: 20px;
+  position: relative;
 
-/* Chart title */
-.spider-chart h3 {
-  margin-bottom: 20px;
-  color: #333;
-  text-align: center;
-  font-size: 18px;
-  font-weight: 600;
-  width: 100%;
-}
+  .spider-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 15px;
 
-/* Helper note below chart */
-.chart-note {
-  margin-top: 15px;
-  font-size: 11px;
-  color: #94a3b8;
-  font-style: italic;
-}
+    h3 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 600;
+      color: #0f172a;
+    }
 
-/* ============================================ */
-/* RESPONSIVE DESIGN */
-/* ============================================ */
+    .period-info {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+
+      .period-label {
+        font-size: 14px;
+        color: #4a90e2;
+        font-weight: 500;
+        background: #eef2ff;
+        padding: 4px 12px;
+        border-radius: 20px;
+      }
+
+      .average-score-badge {
+        font-size: 13px;
+        color: #10b981;
+        font-weight: 500;
+        background: #d1fae5;
+        padding: 4px 12px;
+        border-radius: 20px;
+      }
+    }
+  }
+
+  .spider-chart-container {
+    width: 100%;
+    margin-bottom: 20px;
+  }
+
+  .spider-navigation-bottom {
+    margin-top: 20px;
+    padding: 15px 0 10px;
+    border-top: 1px solid #e2e8f0;
+
+    .navigation-buttons {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 20px;
+
+      .nav-button {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        background: white;
+        border: 1px solid #e2e8f0;
+        cursor: pointer;
+        font-size: 18px;
+        color: #475569;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        &:hover:not(:disabled) {
+          background: #4a90e2;
+          color: white;
+          border-color: #4a90e2;
+          transform: translateY(-2px);
+        }
+
+        &:active:not(:disabled) {
+          transform: translateY(0);
+        }
+
+        &:disabled {
+          opacity: 0.4;
+          cursor: not-allowed;
+        }
+      }
+
+      .nav-counter {
+        min-width: 80px;
+        text-align: center;
+        font-size: 16px;
+        font-weight: 500;
+        padding: 8px 16px;
+        background: #f8fafc;
+        border-radius: 8px;
+        color: #0f172a;
+
+        .current {
+          color: #4a90e2;
+          font-size: 18px;
+          font-weight: 700;
+        }
+
+        .separator {
+          margin: 0 4px;
+          color: #94a3b8;
+        }
+
+        .total {
+          color: #64748b;
+          font-weight: 500;
+        }
+
+        .no-data {
+          color: #94a3b8;
+          font-size: 14px;
+        }
+      }
+    }
+
+    .period-dots {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+
+      .period-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #cbd5e0;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        padding: 0;
+
+        &:hover {
+          background: #4a90e2;
+          transform: scale(1.2);
+        }
+
+        &.active {
+          background: #4a90e2;
+          width: 24px;
+          border-radius: 4px;
+        }
+      }
+    }
+  }
+
+  .chart-loading,
+  .chart-error {
+    text-align: center;
+    padding: 60px 20px;
+    color: #64748b;
+    font-size: 14px;
+  }
+
+  .chart-error {
+    color: #ef4444;
+  }
+
+  .retry-button {
+    margin-top: 15px;
+    padding: 8px 20px;
+    background: #4a90e2;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: #3a7bc8;
+      transform: translateY(-1px);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+  }
+}
 
 @media (max-width: 768px) {
   .spider-chart {
     padding: 15px;
-  }
-  
-  .spider-chart h3 {
-    font-size: 16px;
+
+    .spider-header {
+      flex-direction: column;
+      align-items: flex-start;
+
+      .period-info {
+        width: 100%;
+        justify-content: space-between;
+      }
+    }
+
+    .spider-navigation-bottom {
+      .navigation-buttons {
+        gap: 8px;
+
+        .nav-button {
+          width: 36px;
+          height: 36px;
+          font-size: 16px;
+        }
+
+        .nav-counter {
+          min-width: 70px;
+          font-size: 14px;
+          padding: 6px 12px;
+
+          .current {
+            font-size: 16px;
+          }
+        }
+      }
+
+      .period-dots {
+        gap: 6px;
+      }
+    }
   }
 }

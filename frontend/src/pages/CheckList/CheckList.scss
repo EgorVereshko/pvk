@@ -1017,3 +1017,94 @@ select:disabled {
     font-size: 12px;
   }
 }
+
+
+/* Стили для отображения оценок */
+.score-badge {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  min-width: 50px;
+  text-align: center;
+}
+
+.score-badge.score-negative {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.score-badge.score-neutral {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.score-badge.score-positive {
+  background: #d1fae5;
+  color: #059669;
+}
+
+.score-badge.no-score {
+  background: #f1f5f9;
+  color: #94a3b8;
+}
+
+.indicator-col {
+  min-width: 250px;
+  background: #f8fafc;
+}
+
+.indicator-quality-badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  background: #e2e8f0;
+  border-radius: 12px;
+  color: #475569;
+  margin-left: 8px;
+  white-space: nowrap;
+}
+
+.average-cell {
+  background: #fef3c7;
+}
+
+.average-badge {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: #f59e0b;
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+  min-width: 50px;
+  text-align: center;
+}
+
+.student-header-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.student-name {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.indicator-cell {
+  background: #f8fafc;
+}
+
+.indicator-cell-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.indicator-name {
+  font-weight: 600;
+  color: #1e293b;
+}

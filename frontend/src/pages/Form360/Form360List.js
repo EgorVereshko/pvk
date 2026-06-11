@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api';
 import Header from '../../components/Header/Header';
@@ -10,9 +10,25 @@ const Form360List = () => {
   const [loading, setLoading] = useState(true);
   const [forms, setForms] = useState([]);
   const [activeTab, setActiveTab] = useState('active');
+  const [successMessage, setSuccessMessage] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
 
   const userTeamName = user?.team_name || 'Моя команда';
+
+  useEffect(() => {
+    if (location.state?.message) {
+      setSuccessMessage(location.state.message);
+      setTimeout(() => {
+        setSuccessMessage('');
+      }, 5000);
+    }
+    
+    if (location.state?.completedFormId) {
+      updateFormStatus(location.state.completedFormId, 'Завершена');
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   useEffect(() => {
     fetchForms();
@@ -20,7 +36,9 @@ const Form360List = () => {
 
   const fetchForms = async () => {
     try {
+      setLoading(true);
       let response;
+      let allForms = [];
       
       if (isProjectant()) {
         response = await api.get('/api/forms/projectant/');
@@ -32,29 +50,55 @@ const Form360List = () => {
           name: form.name,
           team_name: userTeamName,
           deadline: form.end_datetime,
-          qualities: form.qualities?.map(q => q.name) || ['Вовлеченность', 'Работа в команде', 'Обучаемость', 'Организованность'],
+          qualities: ['Вовлеченность', 'Работа в команде', 'Обучаемость', 'Организованность'],
           status: form.status
         }));
         setForms(formattedForms);
-      } else {
-        response = await api.get('/api/forms/tutor/');
-        console.log('Формы для куратора:', response.data);
-        
-        const formattedForms = response.data.map(form => ({
-          id: form.id,
-          name: form.name,
-          team_name: form.teams_names?.[0] || 'Без команды',
-          deadline: form.end_datetime,
-          qualities: form.qualities?.map(q => q.name) || ['Вовлеченность', 'Работа в команде', 'Обучаемость', 'Организованность'],
-          status: form.status
-        }));
-        setForms(formattedForms);
+        setLoading(false);
+        return;
       }
+      
+      if (isTutor()) {
+        response = await api.get('/api/forms/tutor/');
+        console.log('Формы для куратора (/tutor/):', response.data);
+        allForms = response.data;
+      } else if (isOrganizer()) {
+        response = await api.get('/api/forms/all/');
+        console.log('Все формы для организатора (/all/):', response.data);
+        allForms = response.data;
+      }
+      
+      if (!Array.isArray(allForms)) {
+        allForms = allForms.results || allForms.forms || [];
+      }
+      
+      const filteredForms = allForms.filter(form => form.type === 'Оценка 360');
+      console.log('Формы 360 после фильтрации:', filteredForms);
+      
+      const formattedForms = filteredForms.map(form => ({
+        id: form.id,
+        name: form.name,
+        team_name: form.teams_names?.[0] || 'Без команды',
+        deadline: form.end_datetime,
+        qualities: ['Вовлеченность', 'Работа в команде', 'Обучаемость', 'Организованность'],
+        status: form.status
+      }));
+      setForms(formattedForms);
+      
     } catch (error) {
       console.error('Ошибка загрузки форм:', error);
+      setForms([]);
     } finally {
       setLoading(false);
     }
+  };
+
+  const updateFormStatus = (formId, newStatus) => {
+    setForms(prevForms => 
+      prevForms.map(form => 
+        form.id === formId ? { ...form, status: newStatus } : form
+      )
+    );
   };
 
   const handleDeleteForm = async (formId) => {
@@ -75,18 +119,32 @@ const Form360List = () => {
     navigate('/');
   };
 
-  const getStatus = (deadline) => {
+  const getStatus = (deadline, formStatus) => {
+    if (formStatus === 'Завершена') {
+      return 'closed';
+    }
+    
     const now = new Date();
     const deadlineDate = new Date(deadline);
     return deadlineDate > now ? 'active' : 'closed';
   };
 
   const handleStartEvaluation = (form) => {
-    navigate('/score/student', { state: { formId: form.id, formName: form.name } });
+    if (form.status === 'Завершена') {
+      alert('Эта форма уже завершена');
+      return;
+    }
+    
+    navigate('/score/student', { 
+      state: { 
+        formId: form.id, 
+        formName: form.name
+      } 
+    });
   };
 
-  const activeForms = forms.filter(f => getStatus(f.deadline) === 'active');
-  const closedForms = forms.filter(f => getStatus(f.deadline) === 'closed');
+  const activeForms = forms.filter(f => getStatus(f.deadline, f.status) === 'active');
+  const closedForms = forms.filter(f => getStatus(f.deadline, f.status) === 'closed');
 
   const displayedForms = activeTab === 'active' ? activeForms : closedForms;
 
@@ -105,6 +163,12 @@ const Form360List = () => {
             </button>
           )}
         </div>
+        
+        {successMessage && (
+          <div className="success-message">
+            ✅ {successMessage}
+          </div>
+        )}
         
         <div className="form360-tabs">
           <button 
@@ -149,8 +213,8 @@ const Form360List = () => {
                         🗑️
                       </button>
                     )}
-                    <span className={`status-badge ${getStatus(form.deadline)}`}>
-                      {getStatus(form.deadline) === 'active' ? 'Активна' : 'Завершена'}
+                    <span className={`status-badge ${getStatus(form.deadline, form.status)}`}>
+                      {form.status === 'Завершена' ? 'Завершена' : (getStatus(form.deadline, form.status) === 'active' ? 'Активна' : 'Завершена')}
                     </span>
                   </div>
                 </div>
@@ -182,9 +246,9 @@ const Form360List = () => {
                     <button 
                       className="start-btn"
                       onClick={() => handleStartEvaluation(form)}
-                      disabled={getStatus(form.deadline) !== 'active'}
+                      disabled={form.status === 'Завершена'}
                     >
-                      {getStatus(form.deadline) === 'active' ? 'Пройти оценку' : 'Просмотреть результаты'}
+                      {form.status === 'Завершена' ? 'Завершена' : 'Пройти оценку'}
                     </button>
                   )}
                 </div>

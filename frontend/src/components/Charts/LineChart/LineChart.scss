@@ -2,16 +2,17 @@
 /* LINE CHART - Dynamic Development Chart */
 /* ============================================ */
 
-/* Main chart container */
 .line-chart {
   background: white;
   border-radius: 12px;
   padding: 20px;
   margin-top: 20px;
   border: 1px solid #f1f5f9;
+  width: 100%;
+  box-sizing: border-box;
+  position: relative;
 }
 
-/* Chart title */
 .line-chart h3 {
   font-size: 1rem;
   font-weight: 600;
@@ -19,25 +20,99 @@
   margin-bottom: 20px;
 }
 
-/* Scrollable chart container */
 .chart-container {
-  overflow-x: auto;
-  overflow-y: visible;
-  margin: 0 -10px;
+  display: flex;
+  gap: 0;
   position: relative;
 }
 
-/* Chart legend container */
+.chart-axis-panel {
+  flex-shrink: 0;
+  width: 50px;
+  position: relative;
+  z-index: 3;
+  background: white;
+}
+
+.axis-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.chart-scroll-area {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+}
+
+.chart-scrollable {
+  overflow-x: auto;
+  overflow-y: visible;
+  cursor: grab;
+  
+  &:active {
+    cursor: grabbing;
+  }
+  
+  &::-webkit-scrollbar {
+    height: 8px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 4px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+    
+    &:hover {
+      background: #94a3b8;
+    }
+  }
+}
+
+.chart-content {
+  position: relative;
+  
+  .chart-svg {
+    display: block;
+  }
+}
+
+.axis-x-label {
+  text-align: center;
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #475569;
+}
+
+.scroll-indicator {
+  text-align: center;
+  padding: 6px;
+  
+  .scroll-hint {
+    font-size: 11px;
+    color: #94a3b8;
+    background: #f8fafc;
+    padding: 4px 12px;
+    border-radius: 20px;
+    display: inline-block;
+  }
+}
+
 .chart-legend {
   display: flex;
   flex-wrap: wrap;
   gap: 16px;
-  margin-top: 20px;
+  margin-top: 30px;
   padding-top: 15px;
   border-top: 1px solid #f1f5f9;
 }
 
-/* Individual legend item */
 .legend-item {
   display: flex;
   align-items: center;
@@ -46,23 +121,27 @@
   color: #475569;
 }
 
-/* Legend color square */
 .legend-color {
   width: 12px;
   height: 12px;
   border-radius: 3px;
 }
 
-/* Helper note below chart */
+.legend-count {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-left: 4px;
+}
+
 .chart-note {
-  margin-top: 15px;
+  margin-top: 20px;
   font-size: 11px;
   color: #94a3b8;
   font-style: italic;
+  text-align: center;
 }
 
-/* Loading state */
-.chart-loading {
+.chart-loading, .chart-error, .chart-empty {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -72,18 +151,20 @@
   background: white;
   border-radius: 12px;
   border: 1px solid #f1f5f9;
+  text-align: center;
+  flex-direction: column;
+}
+
+.chart-empty-hint {
+  font-size: 12px;
+  color: #cbd5e1;
+  margin-top: 8px;
 }
 
 /* ============================================ */
 /* TOOLTIP STYLES */
 /* ============================================ */
 
-/* Tooltip container */
-.chart-container {
-  position: relative;
-}
-
-/* Tooltip bubble */
 .chart-tooltip {
   position: absolute;
   background: #0f172a;
@@ -99,7 +180,6 @@
   animation: tooltipFadeIn 0.15s ease-out;
 }
 
-/* Tooltip arrow */
 .chart-tooltip::after {
   content: '';
   position: absolute;
@@ -113,21 +193,18 @@
   border-top: 6px solid #0f172a;
 }
 
-/* Tooltip label (competence name) */
 .tooltip-label {
   font-size: 11px;
   color: #94a3b8;
   margin-bottom: 4px;
 }
 
-/* Tooltip value (score) */
 .tooltip-value {
   font-size: 13px;
   font-weight: 600;
   color: white;
 }
 
-/* Tooltip fade-in animation */
 @keyframes tooltipFadeIn {
   from {
     opacity: 0;
@@ -143,17 +220,7 @@
 /* RESPONSIVE DESIGN */
 /* ============================================ */
 
-/* Ensure SVG has minimum width for scrolling */
-.chart-container svg {
-  min-width: 450px;
-}
-
 @media (max-width: 768px) {
-  .chart-container svg {
-    min-width: 500px;
-  }
-  
-  /* Mobile tooltip adjustments */
   .chart-tooltip {
     padding: 6px 10px;
     font-size: 10px;
@@ -165,5 +232,9 @@
   
   .tooltip-value {
     font-size: 11px;
+  }
+  
+  .scroll-hint {
+    font-size: 9px;
   }
 }

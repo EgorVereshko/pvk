@@ -30,9 +30,7 @@ const Form360Create = () => {
     'Обучаемость',
     'Организованность'
   ]);
-  
-  const [newQuality, setNewQuality] = useState('');
-  
+    
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -89,17 +87,6 @@ const Form360Create = () => {
         return { ...prev, qualities: [...prev.qualities, quality] };
       }
     });
-  };
-
-  const addNewQuality = () => {
-    if (newQuality.trim() && !availableQualities.includes(newQuality.trim())) {
-      setAvailableQualities(prev => [...prev, newQuality.trim()]);
-      setFormData(prev => ({
-        ...prev,
-        qualities: [...prev.qualities, newQuality.trim()]
-      }));
-      setNewQuality('');
-    }
   };
 
   const handleSubmit = async (e) => {
@@ -217,19 +204,6 @@ const Form360Create = () => {
                     <span>{quality}</span>
                   </label>
                 ))}
-              </div>
-              
-              <div className="add-quality-row">
-                <input
-                  type="text"
-                  placeholder="Новое качество"
-                  value={newQuality}
-                  onChange={(e) => setNewQuality(e.target.value)}
-                  className="quality-input"
-                />
-                <button type="button" className="add-quality-btn" onClick={addNewQuality}>
-                  + Добавить
-                </button>
               </div>
             </div>
             
