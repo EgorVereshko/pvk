@@ -19,11 +19,12 @@ urlpatterns = [
 
     # Текущие оценки (для лепестковой диаграммы)
     path('api/latest_qualities_scores/', get_latest_qualities_scores, name='get_latest_qualities_scores'),
-    path('api/latest_qualities_scores/<int:user_id>/', get_latest_qualities_scores,
-         name='get_latest_qualities_scores_by_id'),
+    path('api/latest_qualities_scores/<int:user_id>/', get_latest_qualities_scores, name='get_latest_qualities_scores_by_id'),
 
-    # Оценки за 2 месяца (для динамики)
     path('api/qualities_stats/<int:user_id>/', get_qualities_stats, name='get_qualities_stats'),
+    path('api/qualities_scores/<int:user_id>/<int:model_id>/', get_qualities_scores_for_model, name='get_qualities_scores_for_model'),
+    path('api/scores_history/<int:user_id>/', get_all_scores_history, name='get_all_scores_history'),
+    path('api/scores/recalculate_all/', recalculate_all_models_scores, name='recalculate_all_models_scores'),
 
     # Оценки компетенций
     path('api/competences/scores/', save_competences_scores, name='save_competences_scores'),
@@ -40,6 +41,7 @@ urlpatterns = [
     # Шаблоны индикаторов
     path('api/templates/', get_templates, name='get_templates'),
     path('api/templates/create/', create_template, name='save_template'),
+    path('api/templates/<int:template_id>/', get_template_detail, name='get_template_detail'),
     path('api/templates/<int:template_id>/update/', update_template, name='update_template'),
     path('api/templates/delete/<int:template_id>/', delete_template, name='delete_template'),
     
@@ -62,12 +64,18 @@ urlpatterns = [
     path('api/forms/submit/360', submit_360_form, name='submit_360'),
     path('api/forms/submit/check_list', submit_check_list_form, name='submit_check_list'),
     path('api/forms/submit/poll', submit_poll_form, name='submit_poll'),
-
-    # Добавьте эти пути в urlpatterns:
+    path('api/forms/<int:form_id>/completed-students/', get_form_completed_students, name='get_form_completed_students'),
+    path('api/forms/<int:form_id>/check-complete/', check_and_complete_form, name='check_and_complete_form'),
+    path('api/forms/detailed/<int:form_id>/', get_form_detailed, name='get_form_detailed'),
 
     # Качества и индикаторы
     path('api/qualities/', get_qualities_list, name='get_qualities_list'),
+    path('api/qualities/', get_qualities_list, name='get_qualities_list'),
+    path('api/qualities/create/', create_quality, name='create_quality'),
+    path('api/qualities/<int:quality_id>/update/', update_quality, name='update_quality'),
+    path('api/qualities/<int:quality_id>/delete/', delete_quality, name='delete_quality'),
     path('api/indicators/', get_indicators_list, name='get_indicators_list'),
+    path('api/indicator_scores/<int:form_id>/<int:user_id>/', get_indicator_scores, name='get_indicator_scores'),
     
     # Модели оценивания (новые эндпоинты)
     path('api/assessment_models/', get_assessment_models_list, name='get_assessment_models_list'),

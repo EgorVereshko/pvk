@@ -80,23 +80,55 @@ def update_user(request):
         )
 
 
+# def get_qualities(profile):
+#     qualities = Quality.objects.all()
+#     qualities_scores = []
+
+#     for quality in qualities:
+#         score_record = QualitiesScoreRegister.objects.filter(
+#             quality=quality,
+#             user=profile
+#         ).order_by('-created_at').first()
+        
+#         qualities_scores.append(
+#             {
+#                 'quality_name': quality.name,
+#                 'score': score_record.score if score_record else 0.0,
+#             }
+#         )
+
+#     return qualities_scores
+
+
 def get_qualities(profile):
-    qualities = Quality.objects.all()
-    qualities_scores = []
+    """Получает последние оценки качеств для профиля на основе АКТИВНОЙ модели"""
+    try:
+        # Получаем активную модель
+        active_model = AssessmentModel.objects.get(status='Активная')
+        
+        # Получаем все качества
+        qualities = Quality.objects.all()
+        qualities_scores = []
 
-    for quality in qualities:
-        score_record = QualitiesScoreRegister.objects.filter(
-            quality=quality,
-            user=profile
-        ).latest('created_at')
-        qualities_scores.append(
-            {
+        for quality in qualities:
+            # Ищем оценку для активной модели
+            score_record = QualitiesScoreRegister.objects.filter(
+                quality=quality,
+                user=profile,
+                model=active_model  # Фильтруем по активной модели
+            ).order_by('-created_at').first()
+            
+            qualities_scores.append({
                 'quality_name': quality.name,
-                'score': score_record.score,
-            }
-        )
-
-    return qualities_scores
+                'score': score_record.score if score_record else 0.0,
+            })
+        
+        return qualities_scores
+        
+    except AssessmentModel.DoesNotExist:
+        # Если нет активной модели, возвращаем пустые оценки
+        qualities = Quality.objects.all()
+        return [{'quality_name': q.name, 'score': 0.0} for q in qualities]
 
 
 @api_view(['GET'])
@@ -255,6 +287,42 @@ def create_template(request):
 
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated, IsTutorOrOrganizer])
+def get_template_detail(request, template_id):
+    """Получение деталей шаблона с его индикаторами"""
+    try:
+        template = Template.objects.select_related('creator').get(id=template_id)
+        
+        indicators_list = []
+        for it in IndicatorTemplate.objects.filter(template=template).select_related('indicator'):
+            indicators_list.append({
+                'id': it.indicator.id,
+                'name': it.indicator.name,
+                'description': it.indicator.description
+            })
+        
+        return Response({
+            'id': template.id,
+            'name': template.name,
+            'creator_id': template.creator.id,
+            'creator_name': template.creator.short_name(),
+            'created_at': template.created_at,
+            'indicators': indicators_list
+        }, status=status.HTTP_200_OK)
+        
+    except Template.DoesNotExist:
+        return Response(
+            {'error': 'Шаблон не найден'}, 
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Exception as e:
+        return Response(
+            {'error': str(e)}, 
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
 
 @api_view(['PUT', 'PATCH'])
@@ -652,7 +720,7 @@ def get_form_data(form: AssessmentForm, detailed: bool = False, evaluator: UserP
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated, IsTutor])
+@permission_classes([IsAuthenticated, IsTutorOrOrganizer])
 def get_tutor_forms(request):
     profile = get_object_or_404(UserProfile, user=request.user)
     teams = Team.objects.filter(tutor=profile).select_related('tutor')
@@ -863,6 +931,8 @@ def save_competences_scores(request):
     try:
         scores_data = request.data
         created_scores = []
+
+        form_id = request.GET.get('form_id') or request.data.get('form_id')
         
         for score_data in scores_data:
             competence_name = score_data.get('competence_name')
@@ -890,6 +960,16 @@ def save_competences_scores(request):
                 score=score_value
             )
             
+            if form_id:
+                evaluator = UserProfile.objects.get(user=request.user)
+                Scores360Register.objects.create(
+                    form_id=form_id,
+                    evaluator=evaluator,
+                    evaluated_projectant=student_profile,
+                    quality=quality,
+                    score=score_value
+                )
+            
             created_scores.append({
                 'student': student_profile.short_name(),
                 'competence': quality.name,
@@ -906,7 +986,7 @@ def save_competences_scores(request):
             {'error': f'Ошибка при сохранении: {str(e)}'},
             status=status.HTTP_400_BAD_REQUEST
         )
-    
+
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -1022,7 +1102,7 @@ def update_assessment_model_view(request):
                 ratio=record['ratio'],
             )
         
-        recalculate_scores()
+        recalculate_scores_for_model(model)
         
         return Response({'message': 'Модель обновлена'}, status=status.HTTP_200_OK)
         
@@ -1057,142 +1137,406 @@ def delete_assessment_model_view(request):
         
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated, IsProjectant])
+def get_form_completed_students(request, form_id):
+    """Возвращает список студентов, уже оценённых в форме 360 текущим проектантом"""
+    try:
+        print(f"[DEBUG] get_form_completed_students called for form_id={form_id}")
+        
+        form = get_object_or_404(AssessmentForm, id=form_id)
+        
+        if form.type != 'Оценка 360':
+            return Response({}, status=status.HTTP_200_OK)
+        
+        evaluator = get_object_or_404(UserProfile, user=request.user)
+        
+        completed_students = Scores360Register.objects.filter(
+            form=form,
+            evaluator=evaluator
+        ).values_list('evaluated_projectant_id', flat=True).distinct()
+        
+        result = {str(student_id): True for student_id in completed_students}
+        print(f"[DEBUG] Completed students: {result}")
+        
+        return Response(result, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        print(f"[ERROR] in get_form_completed_students: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return Response({}, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated, IsProjectant])
+def check_and_complete_form(request, form_id):
+    """Проверяет, все ли студенты оценены, и если да - завершает форму"""
+    try:
+        print(f"[DEBUG] check_and_complete_form called for form_id={form_id}")
+        
+        form = get_object_or_404(AssessmentForm, id=form_id)
+        print(f"[DEBUG] Form found: {form.name}, type: {form.type}")
+        
+        if form.type != 'Оценка 360':
+            return Response({
+                'error': 'Эта функция только для формы 360',
+                'completed': False
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        evaluator = get_object_or_404(UserProfile, user=request.user)
+        print(f"[DEBUG] Evaluator: {evaluator.short_name()}")
+        
+        teams = form.get_teams()
+        if not teams:
+            print("[DEBUG] No teams found for form")
+            return Response({
+                'error': 'Команда не найдена',
+                'completed': False
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        team = teams[0]
+        print(f"[DEBUG] Team: {team.name}")
+        
+        all_students = team.get_members()
+        all_student_ids = set([s.id for s in all_students])
+        print(f"[DEBUG] All students: {all_student_ids}")
+        
+        evaluated_students = set(
+            Scores360Register.objects.filter(
+                form=form,
+                evaluator=evaluator
+            ).values_list('evaluated_projectant_id', flat=True).distinct()
+        )
+        print(f"[DEBUG] Evaluated students: {evaluated_students}")
+        
+        all_completed = all_student_ids.issubset(evaluated_students)
+        
+        if all_completed:
+            if form.status != 'Завершена':
+                form.status = 'Завершена'
+                form.save()
+                print(f"[DEBUG] Form {form_id} marked as completed")
+                return Response({
+                    'message': 'Все студенты оценены! Форма 360 завершена.',
+                    'completed': True,
+                    'form_status': 'Завершена'
+                }, status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'message': 'Форма уже завершена',
+                    'completed': True,
+                    'form_status': 'Завершена'
+                }, status=status.HTTP_200_OK)
+        
+        remaining = len(all_student_ids - evaluated_students)
+        return Response({
+            'message': f'Осталось оценить {remaining} студентов',
+            'completed': False,
+            'remaining': remaining,
+            'total': len(all_student_ids),
+            'form_status': form.status
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        print(f"[ERROR] in check_and_complete_form: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return Response({
+            'error': str(e),
+            'completed': False
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_indicator_scores(request, form_id, user_id):
+    """Возвращает оценки индикаторов для конкретной формы и студента"""
+    try:
+        scores = IndicatorScoresRegister.objects.filter(
+            form_id=form_id,
+            evaluated_projectant_id=user_id
+        ).select_related('indicator')
+        
+        result = []
+        for score in scores:
+            result.append({
+                'indicator_id': score.indicator.id,
+                'indicator_name': score.indicator.name,
+                'score': score.score
+            })
+        
+        return Response(result, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated, IsOrganizer])
+def create_quality(request):
+    """Создание нового качества с индикаторами"""
+    try:
+        data = request.data
+        name = data.get('name')
+        description = data.get('description', '')
+        indicators = data.get('indicators', [])
+        
+        if not name:
+            return Response({'error': 'Название качества обязательно'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if not indicators:
+            return Response({'error': 'Добавьте хотя бы один индикатор'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        quality = Quality.objects.create(name=name, description=description)
+        
+        created_indicators = []
+        for ind_data in indicators:
+            indicator = Indicator.objects.create(
+                name=ind_data.get('name'),
+                description=ind_data.get('description', '')
+            )
+            created_indicators.append({
+                'id': indicator.id,
+                'name': indicator.name,
+                'weight': ind_data.get('weight', 1.0)
+            })
+            
+            if ind_data.get('question'):
+                IndicatorQuestion.objects.create(
+                    indicator=indicator,
+                    question=ind_data.get('question'),
+                    answer_positive=ind_data.get('answer_positive', ''),
+                    answer_neutral=ind_data.get('answer_neutral', ''),
+                    answer_negative=ind_data.get('answer_negative', '')
+                )
+        
+        return Response({
+            'id': quality.id,
+            'name': quality.name,
+            'description': quality.description,
+            'indicators': created_indicators,
+            'message': 'Качество успешно создано'
+        }, status=status.HTTP_201_CREATED)
+        
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['PUT', 'PATCH'])
+@permission_classes([IsAuthenticated, IsOrganizer])
+def update_quality(request, quality_id):
+    """Обновление качества и его индикаторов"""
+    try:
+        quality = get_object_or_404(Quality, id=quality_id)
+        data = request.data
+        
+        quality.name = data.get('name', quality.name)
+        quality.description = data.get('description', quality.description)
+        quality.save()
+        
+        indicators_data = data.get('indicators', [])
+        if indicators_data:
+            
+            for ind_data in indicators_data:
+                if ind_data.get('id'):
+                    indicator = Indicator.objects.get(id=ind_data['id'])
+                    indicator.name = ind_data.get('name', indicator.name)
+                    indicator.save()
+                else:
+                    Indicator.objects.create(
+                        name=ind_data.get('name'),
+                        description=ind_data.get('description', '')
+                    )
+        
+        return Response({
+            'id': quality.id,
+            'name': quality.name,
+            'description': quality.description,
+            'message': 'Качество обновлено'
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated, IsOrganizer])
+def delete_quality(request, quality_id):
+    """Удаление качества"""
+    try:
+        quality = get_object_or_404(Quality, id=quality_id)
+        quality.delete()
+        return Response({'message': 'Качество удалено'}, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['POST'])
 @transaction.atomic
 @permission_classes([IsAuthenticated, IsOrganizer])
 def set_active_model_view(request):
-    """
-    Устанавливает новую активную модель и пересчитывает оценки.
-    Ожидает данные в формате:
-    {
-        'model_id': 1
-    }
-    """
+    """Устанавливает новую активную модель и пересчитывает оценки"""
     try:
         serializer = SetActiveModelSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
         model_id = serializer.validated_data.get('model_id')
-        
         new_active_model = get_object_or_404(AssessmentModel, id=model_id)
         
-        # Деактивируем все модели
         AssessmentModel.objects.filter(status='Активная').update(status='Неактивная')
         
-        # Активируем выбранную
         new_active_model.status = 'Активная'
         new_active_model.save()
         
-        # Пересчитываем оценки
-        recalculate_scores()
+        recalculate_scores_for_model(new_active_model)
         
         return Response({
-            'message': f'Активная модель изменена на "{new_active_model.name}", оценки пересчитаны'
+            'message': f'Активная модель изменена на "{new_active_model.name}", оценки пересчитаны',
+            'model': {
+                'id': new_active_model.id,
+                'name': new_active_model.name,
+                'status': new_active_model.status
+            }
         }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+def recalculate_scores_for_model(model):
+    """Пересчитывает оценки для конкретной модели для ВСЕХ проектантов"""
+    try:
+        print(f"[INFO] Пересчёт оценок для модели: {model.name}")
+        
+        projectants = UserProfile.objects.filter(role_owner__role='Проектант')
+        print(f"[INFO] Найдено проектантов: {projectants.count()}")
+        
+        ratios = QualityIndicatorRatio.objects.filter(model=model)
+        
+        quality_indicators = {}
+        for ratio in ratios:
+            if ratio.quality_id not in quality_indicators:
+                quality_indicators[ratio.quality_id] = {}
+            quality_indicators[ratio.quality_id][ratio.indicator_id] = ratio.ratio
+        
+        if not quality_indicators:
+            print(f"[WARNING] Нет коэффициентов для модели {model.name}")
+            return False
+        
+        print(f"[INFO] Качеств в модели: {len(quality_indicators)}")
+        
+        for projectant in projectants:
+            indicator_scores = IndicatorScoresRegister.objects.filter(
+                evaluated_projectant=projectant
+            ).values('indicator_id').annotate(avg_score=Avg('score'))
+            
+            indicator_avg_scores = {
+                item['indicator_id']: item['avg_score'] 
+                for item in indicator_scores
+            }
+            
+            for quality_id, indicators_map in quality_indicators.items():
+                total_score = 0.0
+                
+                for indicator_id, ratio in indicators_map.items():
+                    ind_score = indicator_avg_scores.get(indicator_id, 0.0)
+                    weighted = ind_score * ratio
+                    if weighted > 0:
+                        weighted *= 3
+                    total_score += weighted
+                
+                QualitiesScoreRegister.objects.update_or_create(
+                    user=projectant,
+                    quality_id=quality_id,
+                    model=model,
+                    defaults={
+                        'score': total_score,
+                        'created_at': timezone.now()
+                    }
+                )
+                print(f"[DEBUG] {projectant.short_name()} - {quality_id}: {total_score}")
+        
+        print(f"[INFO] Пересчёт завершён для {projectants.count()} проектантов")
+        return True
+        
+    except Exception as e:
+        print(f"[ERROR] Ошибка пересчёта: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return False
+    
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_qualities_scores_for_model(request, user_id, model_id):
+    """Получает оценки для конкретного пользователя и модели"""
+    try:
+        profile = get_object_or_404(UserProfile, id=user_id)
+        model = get_object_or_404(AssessmentModel, id=model_id)
+        
+        qualities = Quality.objects.all()
+        qualities_scores = []
+        
+        for quality in qualities:
+            score_record = QualitiesScoreRegister.objects.filter(
+                quality=quality,
+                user=profile,
+                model=model
+            ).order_by('-created_at').first()
+            
+            qualities_scores.append({
+                'quality_name': quality.name,
+                'score': score_record.score if score_record else 0.0,
+                'model_name': model.name
+            })
+        
+        return Response(qualities_scores, status=status.HTTP_200_OK)
         
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
 
-def recalculate_scores():
-    """
-    Пересчитывает оценки качеств для всех завершённых форм
-    на основе активной модели оценивания.
-    """
+@api_view(['GET'])
+@permission_classes([IsAuthenticated, IsOrganizer])
+def get_all_scores_history(request, user_id):
+    """Показывает все сохраненные оценки для пользователя по всем моделям"""
     try:
-        model = AssessmentModel.objects.get(status='Активная')
-        print(f"[INFO] Пересчёт оценок по модели: {model.name}")
+        profile = get_object_or_404(UserProfile, id=user_id)
         
-        completed_forms = AssessmentForm.objects.filter(status='Завершена')
-        print(f"[INFO] Найдено завершённых форм: {completed_forms.count()}")
+        scores = QualitiesScoreRegister.objects.filter(
+            user=profile
+        ).select_related('quality', 'model').order_by('model__id', 'quality__name')
         
-        if not completed_forms.exists():
-            print("[WARNING] Нет завершённых форм для пересчёта")
-            return
+        result = []
+        for score in scores:
+            result.append({
+                'quality_name': score.quality.name,
+                'score': score.score,
+                'model_name': score.model.name,
+                'model_status': score.model.status,
+                'created_at': score.created_at
+            })
         
-        for form in completed_forms:
-            print(f"[INFO] Обработка формы: {form.name} (ID: {form.id}, тип: {form.type})")
-            
-            if form.type == 'Оценка 360':
-                scores_qs = Scores360Register.objects.filter(form=form).values(
-                    'evaluated_projectant_id', 'quality_id'
-                ).annotate(avg_score=Avg('score'), count=Count('id'))
-                
-                for item in scores_qs:
-                    # ИСПРАВЛЕНО: используем update_or_create вместо delete + create
-                    QualitiesScoreRegister.objects.update_or_create(
-                        user_id=item['evaluated_projectant_id'],
-                        quality_id=item['quality_id'],
-                        model=model,
-                        defaults={
-                            'score': item['avg_score'],
-                            'scores_count': item['count'],
-                            'created_at': timezone.now()
-                        }
-                    )
-                print(f"[INFO]   Обработано {scores_qs.count()} записей для 360 формы")
-                
-            elif form.type in ['Чек-лист', 'Опросник']:
-                quality_ratios = {}
-                all_quality_ids = set()
-                
-                for rec in QualityIndicatorRatio.objects.filter(model=model).values('quality_id', 'indicator_id', 'ratio'):
-                    quality_ratios.setdefault(rec['quality_id'], {})[rec['indicator_id']] = rec['ratio']
-                    all_quality_ids.add(rec['quality_id'])
-                
-                if not quality_ratios:
-                    print(f"[WARNING]   Нет коэффициентов для модели {model.name}")
-                    continue
-                
-                avg_ind_scores_qs = IndicatorScoresRegister.objects.filter(form=form).values(
-                    'evaluated_projectant_id', 'indicator_id'
-                ).annotate(avg_score=Avg('score'))
-                
-                if not avg_ind_scores_qs.exists():
-                    print(f"[WARNING]   Нет оценок индикаторов для формы {form.name}")
-                    continue
-                
-                projectant_scores = {}
-                projectant_ids = set()
-                for rec in avg_ind_scores_qs:
-                    projectant_scores.setdefault(rec['evaluated_projectant_id'], {})[rec['indicator_id']] = rec['avg_score']
-                    projectant_ids.add(rec['evaluated_projectant_id'])
-                
-                # ИСПРАВЛЕНО: используем update_or_create для каждого студента и качества
-                new_scores_count = 0
-                for p_id in projectant_ids:
-                    p_ind = projectant_scores.get(p_id, {})
-                    for q_id in all_quality_ids:
-                        indicators_map = quality_ratios.get(q_id, {})
-                        total_score = 0.0
-                        for i_id, ratio in indicators_map.items():
-                            ind_score = p_ind.get(i_id, 0.0)
-                            weighted = ind_score * ratio
-                            if weighted > 0:
-                                weighted *= 3
-                            total_score += weighted
-                        
-                        obj, created = QualitiesScoreRegister.objects.update_or_create(
-                            user_id=p_id,
-                            quality_id=q_id,
-                            model=model,
-                            defaults={
-                                'score': total_score,
-                                'created_at': timezone.now()
-                            }
-                        )
-                        new_scores_count += 1
-                
-                print(f"[INFO]   Обработано {new_scores_count} записей")
+        return Response(result, status=status.HTTP_200_OK)
         
-        print("[INFO] Пересчёт оценок завершён")
-        
-    except AssessmentModel.DoesNotExist:
-        print("[ERROR] Нет активной модели для пересчёта")
     except Exception as e:
-        print(f"[ERROR] Ошибка пересчёта: {str(e)}")
-        import traceback
-        traceback.print_exc()
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
+@api_view(['POST'])
+@permission_classes([IsAuthenticated, IsOrganizer])
+def recalculate_all_models_scores(request):
+    """Пересчитывает оценки для ВСЕХ существующих моделей"""
+    try:
+        models = AssessmentModel.objects.all()
+        
+        for model in models:
+            recalculate_scores_for_model(model)
+        
+        return Response({
+            'message': f'Оценки пересчитаны для {models.count()} моделей'
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
